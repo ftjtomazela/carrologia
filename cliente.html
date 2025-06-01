@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cliente • Consulta de Serviços com Nota em PDF</title>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<style>
+    body {
+        font-family: 'Roboto', sans-serif;
+        margin: 0;
+        padding: 0;
+        background: #eef2f5;
+        color: #333;
+    }
+    .container {
+        max-width: 600px;
+        margin: 80px auto;
+        background: #fff;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    h1 {
+        margin-bottom: 20px;
+    }
+    .welcome {
+        background: #e7f1ff;
+        padding: 12px;
+        border-radius: 6px;
+        margin-bottom: 15px;
+        font-weight: 600;
+        color: #004085;
+        display: none;
+    }
+    input, button {
+        width: 100%;
+        padding: 12px;
+        margin: 8px 0;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+    button {
+        background: #007bff;
+        color: white;
+        border: none;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+    button:hover {
+        background: #0056b3;
+    }
+    .alert {
+        padding: 12px;
+        margin-top: 10px;
+        border-radius: 8px;
+        font-weight: bold;
+    }
+    .alert.success {
+        background: #d4edda;
+        color: #155724;
+    }
+    .alert.error {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    ul {
+        list-style: none;
+        padding: 0;
+        margin-top: 10px;
+        text-align: left;
+    }
+    ul li {
+        background: #e9ecef;
+        margin: 5px 0;
+        padding: 10px;
+        border-radius: 8px;
+        line-height: 1.4;
+    }
+    .nota-link {
+        display: inline-block;
+        margin-top: 8px;
+        color: #007bff;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .nota-link:hover {
+        text-decoration: underline;
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>👤 Área do Cliente</h1>
+
+    <!-- Mensagem “Bem-vindo” -->
+    <div id="welcome-box" class="welcome"></div>
+
+    <!-- Formulário de consulta -->
+    <input type="text" id="placaConsulta" placeholder="Placa do veículo (ex: ABC1D23)">
+    <input type="date" id="nascimentoConsulta">
+    <button onclick="consultar()">Consultar Histórico</button>
+
+    <!-- Onde mostra resultado / históricos -->
+    <div id="resultado"></div>
+
+    <!-- Onde mostra alertas -->
+    <div id="alertas"></div>
+</div>
+
+<script>
+  // === Configuração Supabase ===
+  const SUPABASE_URL = 'https://xyqsbhdhpfruslnqvvvz.supabase.co';       // substitua pela sua URL exata
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5cXNiaGRocGZydXNsbnF2dnZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg3MjIwOTksImV4cCI6MjA2NDI5ODA5OX0.qufDMeY2eys2BwhgO0Ih8YRJYjWDT9gbURs1dfYL7kw';          // substitua pela sua chave anônima
+  const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+  let conectado = true;
+
+  function mostrarAlerta(msg, tipo) {
+      const div = document.createElement('div');
+      div.className = 'alert ' + (tipo === 'error' ? 'error' : 'success');
+      div.textContent = msg;
+      document.getElementById('alertas').appendChild(div);
+      setTimeout(() => div.remove(), 4000);
+  }
+
+  async function consultar() {
+      if (!conectado) {
+          mostrarAlerta('Não foi possível conectar ao Supabase', 'error');
+          return;
+      }
+      const placa = document.getElementById('placaConsulta').value.trim().toUpperCase();
+      const nascimento = document.getElementById('nascimentoConsulta').value;
+      if (!placa || !nascimento) {
+          mostrarAlerta('Preencha placa e nascimento!', 'error');
+          return;
+      }
+
+      try {
+          // 1) Busca o cliente
+          const { data: cliente, error: errCliente } = await supabaseClient
+              .from('clientes')
+              .select('*')
+              .eq('placa', placa)
+              .eq('nascimento', nascimento)
+              .single();
+          if (errCliente || !cliente) {
+              document.getElementById('resultado').innerHTML = '<p>Nenhum cliente encontrado.</p>';
+              document.getElementById('welcome-box').style.display = 'none';
+              return;
+          }
+
+          // 2) Exibe mensagem de boas-vindas
+          const welcomeBox = document.getElementById('welcome-box');
+          welcomeBox.innerHTML = `
+            Bem-vindo, <strong>${cliente.nome}</strong>!<br>
+            Seu carro: <strong>${cliente.modelo || 'Modelo não cadastrado'}</strong>
+          `;
+          welcomeBox.style.display = 'block';
+
+          // 3) Busca histórico de serviços
+          //    Pressupomos que cada registro em 'servicos' já tenha um campo
+          //    'nota_pdf' contendo a URL pública do PDF da nota.
+          const { data: servicos, error: errServicos } = await supabaseClient
+              .from('servicos')
+              .select('*')
+              .eq('cliente_id', cliente.id)
+              .order('data_servico', { ascending: false });
+          if (errServicos) throw errServicos;
+
+          // 4) Monta lista de serviços, incluindo link para nota em PDF
+          let html = '';
+          if (!servicos || servicos.length === 0) {
+              html = '<p>Você ainda não realizou nenhum serviço.</p>';
+          } else {
+              html = '<ul>';
+              servicos.forEach(s => {
+                  html += `<li>
+                    <strong>Data do Serviço:</strong> ${s.data_servico || '-'}<br>
+                    <strong>Tipo:</strong> ${s.tipo || '-'}<br>
+                    <strong>Valor:</strong> R$ ${s.valor !== null ? s.valor.toFixed(2) : '-'}<br>
+                    <strong>Próxima Revisão:</strong> ${s.proxima_revisao || '-'}<br>
+                    <strong>Descrição:</strong> ${s.descricao || '-'}<br>`;
+
+                  // Se existir URL em 'nota_pdf', exibe link “Ver Nota (PDF)”
+                  if (s.nota_pdf) {
+                      html += `
+                        <span class="nota-link"
+                              onclick="window.open('${s.nota_pdf}', '_blank', 'width=800,height=600')">
+                          📄 Ver Nota (PDF)
+                        </span>
+                      `;
+                  } else {
+                      html += `<span style="color: #666; font-size: 0.9rem;">(Nenhuma nota disponível)</span>`;
+                  }
+
+                  html += `</li>`;
+              });
+              html += '</ul>';
+          }
+          document.getElementById('resultado').innerHTML = html;
+
+      } catch (error) {
+          console.error(error);
+          mostrarAlerta('Erro na consulta: ' + error.message, 'error');
+          document.getElementById('resultado').innerHTML = '';
+      }
+  }
+</script>
+
+</body>
+</html>
