@@ -164,8 +164,9 @@
 
     <script type="module">
         // Importa as funções necessárias do Firebase v12
+        // ⭐ MUDANÇA 1: Adicionamos 'get' e 'set' para poder LER e ESCREVER o histórico
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
-        import { getDatabase, ref, onChildAdded, onChildChanged, onChildRemoved, update, remove } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js";
+        import { getDatabase, ref, onChildAdded, onChildChanged, onChildRemoved, update, remove, get, set } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js";
 
         // Sua configuração do Firebase
         const firebaseConfig = {
@@ -183,6 +184,9 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app); 
         const pedidosRef = ref(database, 'pedidos'); 
+
+        // ⭐ MUDANÇA 2: Criamos a referência para o novo local do histórico
+        const historicoRef = ref(database, 'pedidos_concluidos');
 
         // Função para tocar o som de notificação
         function tocarNotificacao() {
@@ -225,21 +229,16 @@
             return '';
         }
 
-        // ==========================================================
-        //         ✨ MUDANÇA 1: RENDERIZAR PEDIDO ✨
-        // Adicionamos 'data-cliente-nome', 'data-cliente-wa' e 'data-entrega-tipo'
-        // ao card principal para que o botão saiba para quem enviar.
-        // ==========================================================
         function renderizarPedido(pedido, pedidoId, ehNovo = false) {
             const horaFormatada = new Date(pedido.hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             
             const cardHTML = `
                 <div class="pedido-card ${ehNovo ? 'novo' : ''}" 
-                     id="${pedidoId}" 
-                     data-cliente-nome="${pedido.cliente.nome}" 
-                     data-cliente-wa="${pedido.cliente.whatsapp}"
-                     data-entrega-tipo="${pedido.entrega.tipo}">
-                     
+                        id="${pedidoId}" 
+                        data-cliente-nome="${pedido.cliente.nome}" 
+                        data-cliente-wa="${pedido.cliente.whatsapp}"
+                        data-entrega-tipo="${pedido.entrega.tipo}">
+                    
                     <div class="pedido-header">
                         <span class="pedido-cliente">${pedido.cliente.nome}</span>
                         <span class="pedido-hora">${horaFormatada}</span>
@@ -327,17 +326,43 @@
             });
         }
         
+        // ⭐ MUDANÇA 3: Função 'finalizarPedido' totalmente modificada
+        // Agora ela LÊ, ESCREVE no histórico e DEPOIS apaga.
         function finalizarPedido(pedidoId) {
-            if (confirm('Tem certeza que deseja finalizar e apagar este pedido?')) {
-                const pedidoParaRemover = ref(database, 'pedidos/' + pedidoId);
-                remove(pedidoParaRemover);
+            if (confirm('Tem certeza que deseja finalizar e ARQUIVAR este pedido?')) {
+                
+                const pedidoParaRemoverRef = ref(database, 'pedidos/' + pedidoId);
+                
+                // 1. LER o pedido da lista 'pedidos'
+                get(pedidoParaRemoverRef).then((snapshot) => {
+                    if (snapshot.exists()) {
+                        const pedidoData = snapshot.val();
+                        
+                        // 2. CRIAR uma nova referência no histórico ('pedidos_concluidos')
+                        //    Usamos a mesma ID (pedidoId) para manter o registro
+                        const destinoRef = ref(database, 'pedidos_concluidos/' + pedidoId);
+                        
+                        // 3. ESCREVER (set) o pedido no histórico
+                        set(destinoRef, pedidoData).then(() => {
+                            // 4. Se a escrita deu certo, REMOVER o pedido da fila original
+                            remove(pedidoParaRemoverRef);
+                        }).catch((error) => {
+                            console.error("Erro ao MOVER o pedido (escrita no histórico): ", error);
+                            alert("Erro ao arquivar o pedido.");
+                        });
+
+                    } else {
+                        // Se não encontrou (ex: outro usuário já finalizou), apenas remove da fila
+                        console.log("Pedido não encontrado, talvez já tenha sido removido.");
+                        remove(pedidoParaRemoverRef);
+                    }
+                }).catch((error) => {
+                    console.error("Erro ao MOVER o pedido (leitura): ", error);
+                    alert("Erro ao ler o pedido para arquivar.");
+                });
             }
         }
 
-        // ==========================================================
-        //         ✨ MUDANÇA 2: OUVINTE DE CLIQUE ✨
-        // Este bloco agora controla a lógica de notificação
-        // ==========================================================
         document.addEventListener('click', (e) => {
             const button = e.target;
             
