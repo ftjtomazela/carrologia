@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar Cardápio - Dona Baguete</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(to bottom, #000000 0%, #1a1a2e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* --- NAV ADMIN --- */
+        .admin-nav {
+            background: #111827;
+            padding: 12px 20px;
+            margin: -20px -20px 20px -20px; 
+            border-bottom: 2px solid #d4a021;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .nav-btn {
+            background: #374151;
+            color: #f3f4f6;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-decoration: none; 
+            transition: all 0.3s;
+            font-family: inherit; 
+        }
+        .nav-btn:hover {
+            background: #4b5563;
+        }
+        .nav-btn.active {
+            background: #d4a021;
+            color: #000;
+        }
+        .nav-btn.logout {
+            background: #dc2626; 
+            color: #fff;
+            margin-left: auto; 
+        }
+        .nav-btn.logout:hover {
+            background: #ef4444;
+        }
+        /* --- FIM DA NAV --- */
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #d4a021;
+            padding-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #d4a021;
+        }
+
+        .cardapio-manager {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        @media (min-width: 768px) {
+            .cardapio-manager {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        .cardapio-coluna {
+            background: linear-gradient(145deg, #2d3748, #1a202c);
+            border-radius: 16px;
+            padding: 25px;
+        }
+        .coluna-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .coluna-header h2 {
+            font-size: 1.5rem;
+            color: #d4a021;
+        }
+        .btn-add {
+            background: #10b981;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .item-card {
+            background: #374151;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border-left: 4px solid #d4a021;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .item-card.pausado {
+            border-left-color: #ef4444;
+            opacity: 0.6;
+        }
+        .item-info .nome {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #fff;
+        }
+        .item-info .pausado-tag {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #ef4444;
+            margin-left: 5px;
+        }
+        .item-info .preco {
+            font-size: 1rem;
+            color: #9ca3af;
+        }
+        .btn-edit {
+            background: #d4a021;
+            color: #000;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        #loading-msg {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #d4a021;
+            padding: 40px;
+        }
+
+        /* --- ESTILOS DO MODAL --- */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; overflow-y: auto; }
+        .modal.active { display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .modal-content { background: linear-gradient(145deg, #2d3748, #1a202c); border-radius: 20px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; border: 2px solid #d4a021; }
+        .modal-header { background: #000; padding: 20px; border-bottom: 2px solid #d4a021; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+        .modal-title { font-size: 1.5rem; font-weight: bold; color: #d4a021; }
+        .close-btn { background: #dc2626; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
+        .modal-body { padding: 25px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .input-group { display: flex; flex-direction: column; }
+        .full-width { grid-column: 1 / -1; }
+        .input-group label { margin-bottom: 8px; color: #9ca3af; font-weight: bold; }
+        .input-field { background: #374151; color: #fff; border: 2px solid #4b5563; border-radius: 8px; padding: 12px; font-size: 1rem; font-family: inherit; }
+        .input-field:focus { outline: none; border-color: #d4a021; }
+        textarea.input-field { resize: vertical; min-height: 80px; }
+        .checkbox-group { display: flex; align-items: center; gap: 10px; background: #374151; padding: 12px; border-radius: 8px; }
+        .checkbox-group input { width: 18px; height: 18px; }
+        .checkbox-group label { margin: 0; color: #fff; }
+        .options-title { font-size: 1.1rem; font-weight: bold; color: #d4a021; margin: 20px 0 10px 0; }
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .modal-footer { padding: 20px; background: #1a202c; display: flex; justify-content: space-between; gap: 10px; position: sticky; bottom: 0; }
+        .modal-footer button { flex: 1; padding: 15px; border: none; border-radius: 10px; font-weight: bold; font-size: 1rem; cursor: pointer; }
+        .btn-delete { background: #dc2626; color: #fff; }
+        .btn-save { background: #10b981; color: #fff; }
+    </style>
+</head>
+<body>
+
+    <div class="admin-nav">
+        <a href="cozinha.html" class="nav-btn">🍳 Cozinha</a>
+        <a href="manual.html" class="nav-btn">✍️ Pedido Manual</a>
+        <a href="caixa.html" class="nav-btn">📊 Caixa</a>
+        <a href="admin.html" class="nav-btn">⚙️ Admin</a>
+        <a href="cardapio.html" class="nav-btn active">📖 Cardápio</a>
+        <button id="logout-btn" class="nav-btn logout">Sair ➔</button>
+    </div>
+    <div class="container">
+        <div class="header">
+            <h1>📖 Gerenciar Cardápio</h1>
+        </div>
+
+        <div id="loading-msg">Carregando cardápio...</div>
+
+        <div class="cardapio-manager" style="display: none;">
+            <div class="cardapio-coluna">
+                <div class="coluna-header">
+                    <h2>🔥 Lanches</h2>
+                    <button class="btn-add" onclick="openModal('lanche')">+ Adicionar Lanche</button>
+                </div>
+                <div id="lanches-lista">
+                    </div>
+            </div>
+            
+            <div class="cardapio-coluna">
+                <div class="coluna-header">
+                    <h2>🥤 Bebidas</h2>
+                    <button class="btn-add" onclick="openModal('bebida')">+ Adicionar Bebida</button>
+                </div>
+                <div id="bebidas-lista">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-title">Editar Item</h2>
+                <button class="close-btn" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-grid">
+                    <div class="input-group full-width">
+                        <label for="modal-nome">Nome</label>
+                        <input type="text" id="modal-nome" class="input-field">
+                    </div>
+                    <div class="input-group">
+                        <label for="modal-preco">Preço (Ex: 19.90)</label>
+                        <input type="number" step="0.01" id="modal-preco" class="input-field">
+                    </div>
+                    <div class="input-group checkbox-group">
+                        <input type="checkbox" id="modal-pausado">
+                        <label for="modal-pausado">Pausar item (não aparecerá no site)</label>
+                    </div>
+                </div>
+
+                <div id="modal-lanche-options">
+                    <div class="input-group full-width" style="margin-top: 15px;">
+                        <label for="modal-descricao">Descrição</label>
+                        <textarea id="modal-descricao" class="input-field"></textarea>
+                    </div>
+                    
+                    <div class="input-group full-width" style="margin-top: 15px;">
+                        <label for="modal-imagem">Nome da Imagem (Ex: pernil.jpg)</label>
+                        <input type="text" id="modal-imagem" class="input-field" placeholder="deixe em branco se não tiver">
+                    </div>
+                    
+                    <div class="options-title">➖ Ingredientes (para "Remover")</div>
+                    <p style="color: #9ca3af; font-size: 0.9rem; margin-bottom: 10px;">Marque os ingredientes que este lanche POSSUI, para o cliente poder removê-los.</p>
+                    <div class="options-grid" id="modal-remocoes-container">
+                        </div>
+
+                    <div class="options-title">🗓️ Dias Especiais (Ex: Só Hoje)</div>
+                    <p style="color: #9ca3af; font-size: 0.9rem; margin-bottom: 10px;">Deixe todos desmarcados para o lanche aparecer sempre.</p>
+                    <div class="options-grid" id="modal-dias-container">
+                        </div>
+                </div>
+
+                <div id="modal-bebida-options">
+                    <div class="input-group full-width" style="margin-top: 15px;">
+                        <label for="modal-sabores">Sabores (separados por vírgula)</label>
+                        <input type="text" id="modal-sabores" class="input-field" placeholder="Normal, Zero Açúcar">
+                    </div>
+                    
+                    <div class="input-group full-width" style="margin-top: 15px;">
+                        <label for="modal-bebida-imagem">Nome da Imagem (Ex: coca.jpg)</label>
+                        <input type="text" id="modal-bebida-imagem" class="input-field" placeholder="deixe em branco se não tiver">
+                    </div>
+                </div>
+
+                <input type="hidden" id="modal-edit-id">
+                <input type="hidden" id="modal-edit-tipo">
+            </div>
+            <div class="modal-footer">
+                <button class="btn-delete" onclick="handleDelete()">Excluir Item</button>
+                <button class="btn-save" onclick="handleSave()">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+        import { getDatabase, ref, push, get, set, remove, onChildAdded, onChildChanged, onChildRemoved } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+
+        // SUA MESMA CONFIGURAÇÃO
+        const firebaseConfig = {
+            apiKey: "AIzaSyAQTm3cL26REQloN8AFP28gwsIUzYz73og",
+            authDomain: "dona-baguete-kds.firebaseapp.com",
+            databaseURL: "https://dona-baguete-kds-default-rtdb.firebaseio.com", 
+            projectId: "dona-baguete-kds",
+            storageBucket: "dona-baguete-kds.firebasestorage.app",
+            messagingSenderId: "307283406823",
+            appId: "1:307283406823:web:a7d1761f0b4550cae59742",
+            measurementId: "G-NY4NTLFLCG"
+        };
+        
+        // Inicializa o App e o Database
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const auth = getAuth(app);
+        
+        // NOVOS CAMINHOS no Firebase
+        const lanchesRef = ref(database, 'cardapio/lanches');
+        const bebidasRef = ref(database, 'cardapio/bebidas');
+
+        // --- DADOS PARA MIGRAÇÃO (O cardápio antigo) ---
+        // (Já deve ter rodado, mas está aqui para referência)
+        const lanches_antigos = [
+            { id: 5, nome: '🔥 SÓ HOJE: LINGUIÇA TOSCANA', descricao: 'Aproveite! Edição limitada da nossa famosa baguete de linguiça toscana com rúcula e queijo. Peça já, é só hoje!', preco: 21.90, ingredientesBase: ['queijo', 'rucula', 'tomate'], diasEspeciais: [5, 6], imagem: 'linguica.jpg' }, 
+            { id: 1, nome: 'CLÁSSICO PERNIL', descricao: 'Pernil desfiado no tempero da casa, queijo prato ou mussarela derretido, salada de repolho crocante, vinagrete de tomate e cebola, maionese no pão baguete.', preco: 19.90, ingredientesBase: ['queijo', 'repolho-maionese', 'tomate', 'maionese'], imagem: 'pernil.jpg' },
+            { id: 2, nome: 'FRANGO CREMOSO', descricao: 'Frango desfiado temperado, Catupiry original cremoso, bacon, vinagrete de tomate e cebola no pão baguete.', preco: 21.90, ingredientesBase: ['catupiry', 'bacon', 'tomate'], imagem: 'frango.jpg' },
+            { id: 3, nome: 'COSTELA ESPECIAL', descricao: 'Costela bovina desfiada e suculenta, queijo prato ou mussarela derretido, molho barbecue, vinagrete de tomate e cebola no pão baguete.', preco: 21.90, ingredientesBase: ['queijo', 'tomate'], imagem: 'costela.jpg' },
+        ];
+        const bebidas_antigas = [
+            { id: 102, nome: 'Coca-Cola Lata 350ml', preco: 6.00, sabores: ['Normal', 'Zero Açúcar'], imagem: 'coca-lata.jpg' },
+            { id: 103, nome: 'Refrigerante Bellpar 600ml', preco: 5.00, sabores: ['Conch-Cola', 'Tubaína', 'Guaraná'], imagem: 'bellpar-600.jpg' },
+            { id: 104, nome: 'Coca-Cola 2L', preco: 15.00, sabores: ['Normal', 'Zero Açúcar'], imagem: 'coca-2l.jpg' },
+            { id: 105, nome: 'Refrigerante Bellpar 2L', preco: 7.00, sabores: ['Conch-Cola', 'Tubaína', 'Guaraná'], imagem: 'bellpar-2l.jpg' }
+        ];
+        // Lista de todas as remoções possíveis (para o modal)
+        const todas_remocoes = [
+            { id: 'bacon', nome: 'Bacon' }, 
+            { id: 'queijo', nome: 'Queijo' }, 
+            { id: 'catupiry', nome: 'Catupiry' },
+            { id: 'tomate', nome: 'Vinagrete (Tomate e Cebola)' }, 
+            { id: 'maionese', nome: 'Maionese' }, 
+            { id: 'repolho-maionese', nome: 'Repolho com Maionese' },
+            { id: 'rucula', nome: 'Rúcula' }
+        ];
+        const dias_semana = ['Domingo (0)', 'Segunda (1)', 'Terça (2)', 'Quarta (3)', 'Quinta (4)', 'Sexta (5)', 'Sábado (6)'];
+        // --- FIM DOS DADOS DE MIGRAÇÃO ---
+
+        
+        // --- VIGIA E LOGOUT ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                initPage();
+            } else {
+                console.log("Usuário não logado. Redirecionando...");
+                window.location.href = 'login.html';
+            }
+        });
+        
+        const logoutBtn = document.getElementById('logout-btn');
+        logoutBtn.addEventListener('click', () => {
+            if (confirm("Tem certeza que deseja sair?")) {
+                signOut(auth).then(() => { window.location.href = 'login.html'; });
+            }
+        });
+        
+        // --- INICIALIZAÇÃO DA PÁGINA ---
+        async function initPage() {
+            popularModalOptions();
+            await migrateMenuIfNeeded();
+            
+            document.getElementById('loading-msg').style.display = 'none';
+            document.querySelector('.cardapio-manager').style.display = 'grid';
+            
+            attachListeners();
+        }
+
+        // 1. MIGRAÇÃO (Roda só na primeira vez)
+        async function migrateMenuIfNeeded() {
+            try {
+                const lanchesSnap = await get(lanchesRef);
+                if (!lanchesSnap.exists()) {
+                    console.log("Migrando lanches antigos para o Firebase...");
+                    for (const lanche of lanches_antigos) {
+                        await push(lanchesRef, lanche);
+                    }
+                }
+                
+                const bebidasSnap = await get(bebidasRef);
+                if (!bebidasSnap.exists()) {
+                    console.log("Migrando bebidas antigas para o Firebase...");
+                    for (const bebida of bebidas_antigas) {
+                        await push(bebidasRef, bebida);
+                    }
+                }
+            } catch (e) {
+                console.error("Erro na migração: ", e);
+                alert("Erro ao migrar o cardápio inicial.");
+            }
+        }
+
+        // 2. OUVINTES (Listeners)
+        function attachListeners() {
+            // Lanches
+            onChildAdded(lanchesRef, (snapshot) => renderItemCard(snapshot, 'lanche'));
+            onChildChanged(lanchesRef, (snapshot) => renderItemCard(snapshot, 'lanche'));
+            onChildRemoved(lanchesRef, (snapshot) => {
+                const el = document.getElementById(snapshot.key);
+                if (el) el.remove();
+            });
+
+            // Bebidas
+            onChildAdded(bebidasRef, (snapshot) => renderItemCard(snapshot, 'bebida'));
+            onChildChanged(bebidasRef, (snapshot) => renderItemCard(snapshot, 'bebida'));
+            onChildRemoved(bebidasRef, (snapshot) => {
+                const el = document.getElementById(snapshot.key);
+                if (el) el.remove();
+            });
+        }
+        
+        // 3. RENDERIZAÇÃO
+        function renderItemCard(snapshot, tipo) {
+            const id = snapshot.key;
+            const item = snapshot.val();
+            const containerId = (tipo === 'lanche') ? 'lanches-lista' : 'bebidas-lista';
+            const container = document.getElementById(containerId);
+            
+            let existingCard = document.getElementById(id);
+            if (!existingCard) {
+                existingCard = document.createElement('div');
+                existingCard.id = id;
+                container.appendChild(existingCard);
+            }
+            
+            existingCard.className = `item-card ${item.pausado ? 'pausado' : ''}`;
+            existingCard.innerHTML = `
+                <div class="item-info">
+                    <span class="nome">${item.nome} ${item.pausado ? '<span class="pausado-tag">PAUSADO</span>' : ''}</span>
+                    <span class="preco">R$ ${Number(item.preco).toFixed(2)}</span>
+                </div>
+                <button class="btn-edit" onclick="openModal('${tipo}', '${id}')">Editar</button>
+            `;
+        }
+
+        // --- LÓGICA DO MODAL (FUNÇÕES GLOBAIS) ---
+        
+        window.openModal = async (tipo, id = null) => {
+            const modal = document.getElementById('modal');
+            
+            // Reseta o formulário
+            document.getElementById('modal-nome').value = '';
+            document.getElementById('modal-preco').value = '';
+            document.getElementById('modal-descricao').value = '';
+            document.getElementById('modal-sabores').value = '';
+            document.getElementById('modal-imagem').value = ''; 
+            document.getElementById('modal-bebida-imagem').value = ''; // ⭐ Reseta imagem da bebida
+            document.getElementById('modal-pausado').checked = false;
+            document.querySelectorAll('#modal-remocoes-container input').forEach(cb => cb.checked = false);
+            document.querySelectorAll('#modal-dias-container input').forEach(cb => cb.checked = false);
+            
+            document.getElementById('modal-edit-id').value = id;
+            document.getElementById('modal-edit-tipo').value = tipo;
+
+            // Mostra/esconde campos específicos
+            document.getElementById('modal-lanche-options').style.display = (tipo === 'lanche') ? 'block' : 'none';
+            document.getElementById('modal-bebida-options').style.display = (tipo === 'bebida') ? 'block' : 'none';
+            
+            if (id) {
+                // EDITANDO
+                document.getElementById('modal-title').textContent = (tipo === 'lanche') ? 'Editar Lanche' : 'Editar Bebida';
+                document.querySelector('.btn-delete').style.display = 'block';
+                
+                const itemRef = ref(database, `cardapio/${tipo}s/${id}`);
+                const snapshot = await get(itemRef);
+                const item = snapshot.val();
+                
+                document.getElementById('modal-nome').value = item.nome;
+                document.getElementById('modal-preco').value = item.preco;
+                document.getElementById('modal-pausado').checked = item.pausado || false;
+                
+                if (tipo === 'lanche') {
+                    document.getElementById('modal-descricao').value = item.descricao || '';
+                    document.getElementById('modal-imagem').value = item.imagem || ''; 
+                    // Marca os checkboxes de remoções
+                    if (item.ingredientesBase) {
+                        item.ingredientesBase.forEach(ingId => {
+                            const cb = document.getElementById(`rem-${ingId}`);
+                            if (cb) cb.checked = true;
+                        });
+                    }
+                    // Marca os checkboxes de dias
+                    if (item.diasEspeciais) {
+                        item.diasEspeciais.forEach(dia => {
+                            const cb = document.getElementById(`dia-${dia}`);
+                            if (cb) cb.checked = true;
+                        });
+                    }
+                } else {
+                    // Preenche sabores
+                    document.getElementById('modal-sabores').value = (item.sabores || []).join(', ');
+                    document.getElementById('modal-bebida-imagem').value = item.imagem || ''; // ⭐ Carrega imagem da bebida
+                }
+                
+            } else {
+                // ADICIONANDO
+                document.getElementById('modal-title').textContent = (tipo === 'lanche') ? 'Adicionar Lanche' : 'Adicionar Bebida';
+                document.querySelector('.btn-delete').style.display = 'none'; // Esconde o botão de excluir
+            }
+            
+            modal.classList.add('active');
+        }
+
+        window.closeModal = () => {
+            document.getElementById('modal').classList.remove('active');
+        }
+        
+        window.handleSave = async () => {
+            const id = document.getElementById('modal-edit-id').value;
+            const tipo = document.getElementById('modal-edit-tipo').value;
+            const containerRef = (tipo === 'lanche') ? lanchesRef : bebidasRef;
+            
+            let precoInput = document.getElementById('modal-preco').value.replace(',', '.');
+            
+            let itemData = {
+                nome: document.getElementById('modal-nome').value,
+                preco: Number(precoInput),
+                pausado: document.getElementById('modal-pausado').checked
+            };
+            
+            if (tipo === 'lanche') {
+                // Salva dados do lanche
+                itemData.descricao = document.getElementById('modal-descricao').value;
+                itemData.imagem = document.getElementById('modal-imagem').value; 
+                // Pega as remoções marcadas
+                itemData.ingredientesBase = Array.from(document.querySelectorAll('#modal-remocoes-container input:checked'))
+                                                .map(cb => cb.value);
+                // Pega os dias marcados
+                itemData.diasEspeciais = Array.from(document.querySelectorAll('#modal-dias-container input:checked'))
+                                                .map(cb => Number(cb.value));
+            } else {
+                // Salva dados da bebida
+                itemData.sabores = document.getElementById('modal-sabores').value
+                                        .split(',')
+                                        .map(s => s.trim())
+                                        .filter(s => s); // Remove strings vazias
+                itemData.imagem = document.getElementById('modal-bebida-imagem').value; // ⭐ Salva imagem da bebida
+            }
+            
+            try {
+                if (id) {
+                    // Atualiza
+                    await set(ref(database, `cardapio/${tipo}s/${id}`), itemData);
+                } else {
+                    // Cria
+                    await push(containerRef, itemData);
+                }
+                closeModal();
+            } catch (e) {
+                console.error("Erro ao salvar: ", e);
+                alert("Erro ao salvar o item.");
+            }
+        }
+        
+        window.handleDelete = async () => {
+            const id = document.getElementById('modal-edit-id').value;
+            const tipo = document.getElementById('modal-edit-tipo').value;
+            const nome = document.getElementById('modal-nome').value;
+
+            if (confirm(`Tem certeza que quer excluir o item "${nome}"? \n\nIsso não pode ser desfeito.`)) {
+                try {
+                    await remove(ref(database, `cardapio/${tipo}s/${id}`));
+                    closeModal();
+                } catch (e) {
+                    console.error("Erro ao excluir: ", e);
+                    alert("Erro ao excluir o item.");
+                }
+            }
+        }
+
+        function popularModalOptions() {
+            // Popula os checkboxes de remoções
+            const remContainer = document.getElementById('modal-remocoes-container');
+            remContainer.innerHTML = todas_remocoes.map(rem => `
+                <div class="checkbox-group">
+                    <input type="checkbox" id="rem-${rem.id}" value="${rem.id}">
+                    <label for="rem-${rem.id}">${rem.nome}</label>
+                </div>
+            `).join('');
+
+            // Popula os checkboxes de dias da semana
+            const diasContainer = document.getElementById('modal-dias-container');
+            diasContainer.innerHTML = dias_semana.map((nome, index) => `
+                <div class="checkbox-group">
+                    <input type="checkbox" id="dia-${index}" value="${index}">
+                    <label for="dia-${index}">${nome}</label>
+                </div>
+            `).join('');
+        }
+
+    </script>
+</body>
+</html>

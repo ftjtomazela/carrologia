@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório de Vendas - Dona Baguete</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(to bottom, #000000 0%, #1a1a2e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* ⭐ MENU DE NAVEGAÇÃO ADMIN ⭐ */
+        .admin-nav {
+            background: #111827;
+            padding: 12px 20px;
+            margin: -20px -20px 20px -20px; 
+            border-bottom: 2px solid #d4a021;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .nav-btn {
+            background: #374151;
+            color: #f3f4f6;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-decoration: none; 
+            transition: all 0.3s;
+            font-family: inherit; 
+        }
+        .nav-btn:hover {
+            background: #4b5563;
+        }
+        .nav-btn.active {
+            background: #d4a021;
+            color: #000;
+        }
+        .nav-btn.logout {
+            background: #dc2626; 
+            color: #fff;
+            margin-left: auto; 
+        }
+        .nav-btn.logout:hover {
+            background: #ef4444;
+        }
+        /* ⭐ FIM DO MENU ⭐ */
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #d4a021;
+            padding-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #d4a021;
+        }
+        .filtros {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        .filter-btn {
+            background: #374151;
+            color: #fff;
+            border: 2px solid #4b5563;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .filter-btn:hover {
+            background: #4b5563;
+        }
+        .filter-btn.active {
+            background: #d4a021;
+            color: #000;
+            border-color: #d4a021;
+        }
+        .caixa-resumo {
+            background: linear-gradient(145deg, #2d3748, #1a202c);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 2px solid #d4a021;
+        }
+        .caixa-resumo h2 {
+            font-size: 1.5rem;
+            color: #d4a021;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .summary-item {
+            background: #1a202c;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .summary-item .label {
+            font-size: 0.9rem;
+            color: #9ca3af;
+            margin-bottom: 5px;
+        }
+        .summary-item .value {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #fff;
+        }
+        .caixa-total {
+            background: #000;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+        .caixa-total h2 {
+            font-size: 1.2rem;
+            color: #9ca3af;
+            margin-bottom: 10px;
+        }
+        .caixa-total-valor {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #10b981;
+        }
+        #loading-msg {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #d4a021;
+            padding: 40px;
+        }
+        .pedidos-lista h3 {
+            font-size: 1.5rem;
+            color: #d4a021;
+            margin-bottom: 20px;
+        }
+        .pedido-item {
+            background: #374151;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .pedido-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #4b5563;
+        }
+        .pedido-header-info {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #fff;
+        }
+        .pedido-header-total {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #d4a021;
+        }
+        .pedido-cliente {
+            font-size: 0.9rem;
+            color: #9ca3af;
+            margin-bottom: 15px;
+        }
+        .pedido-itens-lista {
+            margin-bottom: 15px;
+        }
+        .pedido-item-detalhe {
+            display: flex;
+            justify-content: space-between;
+            background: #1a202c;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 5px;
+        }
+        .pedido-item-nome {
+            font-weight: 500;
+        }
+        .pedido-item-qtde {
+            color: #9ca3af;
+        }
+        .pedido-footer {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #9ca3af;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="admin-nav">
+        <a href="cozinha.html" class="nav-btn">🍳 Cozinha (KDS)</a>
+        <a href="manual.html" class="nav-btn">✍️ Pedido Manual</a>
+        <a href="caixa.html" class="nav-btn active">📊 Caixa (Relatório)</a>
+        <a href="admin.html" class="nav-btn">⚙️ Admin (Limpeza)</a>
+        <a href="cardapio.html" class="nav-btn">📖 Cardápio</a> <button id="logout-btn" class="nav-btn logout">Sair ➔</button>
+    </div>
+    <div class="container">
+        <div class="header">
+            <h1>🍔 Dona Baguete - Relatório de Vendas</h1>
+        </div>
+        
+        <div class="filtros">
+            <button class="filter-btn active" id="btn-hoje" onclick="definirPeriodo('hoje')">Hoje</button>
+            <button class="filter-btn" id="btn-semana" onclick="definirPeriodo('semana')">Esta Semana</button>
+            <button class="filter-btn" id="btn-mes" onclick="definirPeriodo('mes')">Este Mês</button>
+        </div>
+
+        <div class="caixa-resumo">
+            <h2 id="resumo-titulo">Resumo de Hoje</h2>
+            
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <div class="label">Total em Lanches</div>
+                    <div class="value" id="total-lanches">R$ 0,00</div>
+                </div>
+                <div class="summary-item">
+                    <div class="label">Total em Bebidas</div>
+                    <div class="value" id="total-bebidas">R$ 0,00</div>
+                </div>
+            </div>
+            
+            <div class="summary-grid" style="grid-template-columns: 1fr;">
+                <div class="summary-item">
+                    <div class="label">Total em Taxas de Entrega</div>
+                    <div class="value" id="total-taxa">R$ 0,00</div>
+                </div>
+            </div>
+
+            <div class="caixa-total">
+                <h2>TOTAL BRUTO VENDIDO</h2>
+                <div class="caixa-total-valor" id="total-geral">R$ 0,00</div>
+            </div>
+        </div>
+        
+        <div class="pedidos-lista">
+            <h3 id="pedidos-titulo">Pedidos de Hoje</h3>
+            <div id="loading-msg">Carregando pedidos...</div>
+            <div id="pedidos-container">
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
+    <script>
+        // ===============================================
+        //     CONFIGURAÇÃO DO FIREBASE (v8)
+        // ===============================================
+        var firebaseConfig = {
+            apiKey: "AIzaSyAQTm3cL26REQloN8AFP28gwsIUzYz73og",
+            authDomain: "dona-baguete-kds.firebaseapp.com",
+            databaseURL: "https://dona-baguete-kds-default-rtdb.firebaseio.com", 
+            projectId: "dona-baguete-kds",
+            storageBucket: "dona-baguete-kds.firebasestorage.app",
+            messagingSenderId: "307283406823",
+            appId: "1:307283406823:web:a7d1761f0b4550cae59742",
+            measurementId: "G-NY4NTLFLCG"
+        };
+        
+        // Inicializa o Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const database = firebase.database();
+        const auth = firebase.auth();
+        const pedidosRef = database.ref('pedidos_concluidos');
+
+        // ===============================================
+        //     VIGIA + LÓGICA DE LOGOUT
+        // ===============================================
+
+        // VIGIA (Verifica o login)
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                carregarPedidosDoPeriodo('hoje');
+            } else {
+                console.log("Usuário não logado. Redirecionando...");
+                window.location.href = 'login.html';
+            }
+        });
+        
+        // LÓGICA DO LOGOUT (Botão Sair)
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            if (confirm("Tem certeza que deseja sair?")) {
+                auth.signOut().then(() => {
+                    window.location.href = 'login.html';
+                }).catch(e => alert("Erro ao sair."));
+            }
+        });
+        
+        // ===============================================
+        //     LÓGICA DE FILTRO E CÁLCULO (sem alterações)
+        // ===============================================
+
+        function getInicioDaSemana(data) {
+            const dataCopia = new Date(data);
+            const diaDaSemana = dataCopia.getDay(); 
+            const diff = dataCopia.getDate() - diaDaSemana;
+            return new Date(dataCopia.setDate(diff));
+        }
+
+        function carregarPedidosDoPeriodo(periodo = 'hoje') {
+            const loadingMsg = document.getElementById('loading-msg');
+            const pedidosContainer = document.getElementById('pedidos-container');
+            
+            loadingMsg.textContent = 'Carregando pedidos...';
+            loadingMsg.style.display = 'block';
+            pedidosContainer.innerHTML = '';
+            
+            const agora = new Date();
+            let dataInicio;
+            
+            if (periodo === 'hoje') {
+                dataInicio = new Date(agora.setHours(0, 0, 0, 0));
+            } else if (periodo === 'semana') {
+                dataInicio = getInicioDaSemana(agora);
+                dataInicio.setHours(0, 0, 0, 0);
+            } else if (periodo === 'mes') {
+                dataInicio = new Date(agora.getFullYear(), agora.getMonth(), 1);
+                dataInicio.setHours(0, 0, 0, 0);
+            }
+
+            const timestampInicioString = new Date(dataInicio.getTime()).toISOString();
+
+            let totalGeral = 0;
+            let totalLanches = 0;
+            let totalBebidas = 0;
+            let totalTaxa = 0;
+            let htmlPedidos = '';
+            let contadorPedidos = 0;
+
+            pedidosRef.orderByChild('hora').startAt(timestampInicioString).once('value', (snapshot) => {
+                const pedidos = snapshot.val();
+                
+                if (!pedidos) {
+                    loadingMsg.textContent = 'Nenhum pedido encontrado para este período.';
+                    resetarValores();
+                    return;
+                }
+
+                snapshot.forEach(childSnapshot => {
+                    const pedido = childSnapshot.val();
+                    const dataPedido = new Date(pedido.hora);
+
+                    if (dataPedido >= dataInicio) {
+                        contadorPedidos++;
+                        totalGeral += pedido.total;
+                        totalTaxa += pedido.entrega.taxa || 0; 
+                        
+                        if(pedido.itens && Array.isArray(pedido.itens)) {
+                            pedido.itens.forEach(item => {
+                                const precoItem = (item.precoTotal || item.preco) * item.quantidade;
+                                if (item.tipo === 'lanche') {
+                                    totalLanches += precoItem;
+                                } else if (item.tipo === 'bebida') {
+                                    totalBebidas += precoItem;
+                                }
+                            });
+                        }
+                        htmlPedidos = criarCardPedido(pedido) + htmlPedidos; 
+                    }
+                });
+                
+                document.getElementById('total-geral').textContent = `R$ ${totalGeral.toFixed(2).replace('.', ',')}`;
+                document.getElementById('total-lanches').textContent = `R$ ${totalLanches.toFixed(2).replace('.', ',')}`;
+                document.getElementById('total-bebidas').textContent = `R$ ${totalBebidas.toFixed(2).replace('.', ',')}`;
+                document.getElementById('total-taxa').textContent = `R$ ${totalTaxa.toFixed(2).replace('.', ',')}`;
+                
+                if(contadorPedidos === 0) {
+                    loadingMsg.textContent = 'Nenhum pedido encontrado para este período.';
+                } else {
+                    loadingMsg.style.display = 'none';
+                    pedidosContainer.innerHTML = htmlPedidos;
+                }
+                
+            }).catch(error => {
+                console.error("Erro ao buscar pedidos: ", error);
+                loadingMsg.textContent = 'Erro ao carregar pedidos.';
+                resetarValores();
+            });
+        }
+        
+        function resetarValores() {
+            document.getElementById('total-geral').textContent = 'R$ 0,00';
+            document.getElementById('total-lanches').textContent = 'R$ 0,00';
+            document.getElementById('total-bebidas').textContent = 'R$ 0,00';
+            document.getElementById('total-taxa').textContent = 'R$ 0,00';
+        }
+        
+        function definirPeriodo(periodo) {
+            const tituloResumo = document.getElementById('resumo-titulo');
+            const tituloPedidos = document.getElementById('pedidos-titulo');
+            
+            if (periodo === 'hoje') {
+                tituloResumo.textContent = 'Resumo de Hoje';
+                tituloPedidos.textContent = 'Pedidos de Hoje';
+            } else if (periodo === 'semana') {
+                tituloResumo.textContent = 'Resumo desta Semana';
+                tituloPedidos.textContent = 'Pedidos da Semana';
+            } else if (periodo === 'mes') {
+                tituloResumo.textContent = 'Resumo deste Mês';
+                tituloPedidos.textContent = 'Pedidos do Mês';
+            }
+            
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${periodo}`).classList.add('active');
+            
+            carregarPedidosDoPeriodo(periodo);
+        }
+
+        function criarCardPedido(pedido) {
+            const data = new Date(pedido.hora);
+            const horaFormatada = data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            const dataFormatada = data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+
+            
+            let itensHTML = '<div class="pedido-itens-lista">';
+            if(pedido.itens && Array.isArray(pedido.itens)) {
+                pedido.itens.forEach(item => {
+                    itensHTML += `
+                        <div class="pedido-item-detalhe">
+                            <span class="pedido-item-nome">
+                                <span class="pedido-item-qtde">${item.quantidade}x</span> ${item.nome}
+                            </span>
+                            <span>R$ ${(item.precoTotal || item.preco * item.quantidade).toFixed(2).replace('.', ',')}</span>
+                        </div>
+                    `;
+                });
+            }
+            itensHTML += '</div>';
+            
+            return `
+                <div class="pedido-item">
+                    <div class="pedido-header">
+                        <div class="pedido-header-info">${pedido.cliente.nome}</div>
+                        <div class="pedido-header-total">R$ ${pedido.total.toFixed(2).replace('.', ',')}</div>
+                    </div>
+                    <div class="pedido-cliente">
+                        WhatsApp: ${pedido.cliente.whatsapp} <br>
+                        Endereço: ${pedido.entrega.endereco}
+                    </div>
+                    
+                    ${itensHTML} 
+                    
+                    <div class="pedido-footer">
+                        <span>Pagamento: ${pedido.pagamento}</span>
+                        <span>${dataFormatada} às ${horaFormatada}</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+    </script>
+</body>
+</html>

@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDV - Pedido Manual</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(to bottom, #000000 0%, #1a1a2e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        /* --- NAV ADMIN --- */
+        .admin-nav {
+            background: #111827;
+            padding: 12px 20px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #d4a021;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .nav-btn {
+            background: #374151;
+            color: #f3f4f6;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-decoration: none; 
+            transition: all 0.3s;
+            font-family: inherit; 
+        }
+        .nav-btn:hover {
+            background: #4b5563;
+        }
+        .nav-btn.active {
+            background: #d4a021;
+            color: #000;
+        }
+        .nav-btn.logout {
+            background: #dc2626; 
+            color: #fff;
+            margin-left: auto; 
+        }
+        .nav-btn.logout:hover {
+            background: #ef4444;
+        }
+        /* --- FIM DA NAV --- */
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px 20px 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #d4a021;
+            margin-bottom: 25px;
+            font-size: 2.5rem;
+        }
+        .pdv-grid {
+            display: grid;
+            grid-template-columns: 1fr; /* 1 coluna em telas pequenas */
+            gap: 20px;
+        }
+        @media (min-width: 768px) {
+             .pdv-grid { grid-template-columns: 1fr 1fr; } /* 2 colunas em tablets */
+        }
+        @media (min-width: 1200px) {
+            .pdv-grid { grid-template-columns: 1fr 1fr 1fr; } /* 3 colunas em desktops */
+        }
+
+        .pdv-coluna {
+            background: linear-gradient(145deg, #2d3748, #1a202c);
+            border-radius: 16px;
+            padding: 20px;
+            border: 2px solid #374151;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .pdv-coluna h2 {
+            font-size: 1.5rem;
+            color: #d4a021;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #4b5563;
+            padding-bottom: 10px;
+        }
+        
+        /* Coluna de Itens (Cardápio) */
+        .cardapio-scroll {
+            overflow-y: auto;
+            flex: 1;
+        }
+        .item-cardapio {
+            background: #374151;
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .item-cardapio:hover {
+            background: #4b5563;
+        }
+        .item-cardapio span {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        .item-cardapio .preco {
+            font-weight: bold;
+            color: #d4a021;
+        }
+
+        /* Coluna do Pedido Atual (Carrinho) */
+        .carrinho-scroll {
+            overflow-y: auto;
+            flex: 1;
+            min-height: 200px;
+        }
+        .carrinho-item {
+            background: #374151;
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .carrinho-info {
+            flex: 1;
+        }
+        .carrinho-info .nome {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        .carrinho-info .detalhes {
+            font-size: 0.85rem;
+            color: #9ca3af;
+        }
+        .carrinho-preco {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #d4a021;
+        }
+        /* ⭐ SEU BOTÃO DE EXCLUIR ⭐ */
+        .btn-excluir {
+            background: #dc2626;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        #total-carrinho {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #d4a021;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: right;
+        }
+        
+        /* Coluna do Formulário */
+        .form-scroll {
+            overflow-y: auto;
+            flex: 1;
+        }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .input-group { display: flex; flex-direction: column; }
+        .full-width { grid-column: 1 / -1; }
+        .input-group label { margin-bottom: 8px; color: #9ca3af; font-weight: bold; }
+        .input-field { background: #374151; color: #fff; border: 2px solid #4b5563; border-radius: 8px; padding: 12px; font-size: 1rem; font-family: inherit; }
+        .input-field:focus { outline: none; border-color: #d4a021; }
+        
+        #btn-enviar-manual {
+            width: 100%;
+            background: #10b981;
+            color: #fff;
+            border: none;
+            padding: 18px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+        #btn-enviar-manual:disabled {
+            background: #4b5563; color: #9ca3af; cursor: not-allowed;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="admin-nav">
+        <a href="cozinha.html" class="nav-btn">🍳 Cozinha</a>
+        <a href="manual.html" class="nav-btn active">✍️ Pedido Manual</a>
+        <a href="caixa.html" class="nav-btn">📊 Caixa</a>
+        <a href="admin.html" class="nav-btn">⚙️ Admin</a>
+        <a href="cardapio.html" class="nav-btn">📖 Cardápio</a>
+        <button id="logout-btn" class="nav-btn logout">Sair ➔</button>
+    </div>
+
+    <div class="container">
+        <h1>✍️ PDV - Lançar Pedido Manual</h1>
+
+        <div class="pdv-grid">
+            
+            <div class="pdv-coluna" id="coluna-cardapio">
+                <h2>1. Cardápio</h2>
+                <div class="cardapio-scroll">
+                    <h3 style="color:#d4a021; margin: 15px 0 10px 0;">🔥 Lanches</h3>
+                    <div id="lanches-container">
+                        <p>Carregando lanches...</p>
+                    </div>
+                    
+                    <h3 style="color:#d4a021; margin: 15px 0 10px 0;">🥤 Bebidas</h3>
+                    <div id="bebidas-container">
+                        <p>Carregando bebidas...</p>
+                    </div>
+                    
+                    <h3 style="color:#d4a021; margin: 15px 0 10px 0;">➕ Adicionais</h3>
+                    <div id="adicionais-container">
+                        </div>
+                </div>
+            </div>
+
+            <div class="pdv-coluna" id="coluna-carrinho">
+                <h2>2. Pedido Atual</h2>
+                <div class="carrinho-scroll" id="pedido-atual-container">
+                    <p style="color: #9ca3af; text-align: center;">Clique em um item ao lado para adicionar...</p>
+                </div>
+                <div id="total-carrinho">
+                    Total: R$ 0,00
+                </div>
+            </div>
+
+            <div class="pdv-coluna" id="coluna-cliente">
+                <h2>3. Cliente e Envio</h2>
+                <div class="form-scroll">
+                    <form id="form-manual">
+                        <div class="input-group full-width">
+                            <label for="cliente-nome">Nome</label>
+                            <input type="text" id="cliente-nome" class="input-field" required>
+                        </div>
+                        <div class="input-group full-width" style="margin-top: 15px;">
+                            <label for="cliente-whatsapp">WhatsApp (só números)</label>
+                            <input type="tel" id="cliente-whatsapp" class="input-field" placeholder="149...">
+                        </div>
+                        
+                        <h3 style="color:#d4a021; margin: 20px 0 10px 0;">Entrega</h3>
+                        <div class="form-grid">
+                            <div class="input-group full-width">
+                                <label for="localidade">Tipo</label>
+                                <select id="localidade" class="input-field" onchange="toggleEndereco(this.value)">
+                                    <option value="retirada">Retirada no Local</option>
+                                    <option value="dentro">Entrega em Conchas</option>
+                                    <option value="fora">Entrega Fora de Conchas</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-grid" id="endereco-inputs" style="display: none; margin-top: 15px;">
+                            <div class="input-group">
+                                <label for="endereco-rua">Rua</label>
+                                <input type="text" id="endereco-rua" class="input-field">
+                            </div>
+                            <div class="input-group">
+                                <label for="endereco-numero">Nº</label>
+                                <input type="text" id="endereco-numero" class="input-field">
+                            </div>
+                            <div class="input-group full-width">
+                                <label for="endereco-bairro">Bairro</label>
+                                <input type="text" id="endereco-bairro" class="input-field">
+                            </div>
+                        </div>
+                        
+                        <h3 style="color:#d4a021; margin: 20px 0 10px 0;">Pagamento</h3>
+                        <div class="form-grid">
+                             <div class="input-group full-width">
+                                <label for="pagamento">Forma</label>
+                                <select id="pagamento" class="input-field" onchange="toggleTroco(this.value)">
+                                    <option value="pix">PIX</option>
+                                    <option value="credito">Crédito</option>
+                                    <option value="debito">Débito</option>
+                                    <option value="dinheiro">Dinheiro</option>
+                                </select>
+                            </div>
+                            <div class="input-group" id="troco-section" style="display: none;">
+                                <label for="troco-valor">Troco para?</label>
+                                <input type="text" id="troco-valor" class="input-field" placeholder="Ex: 50">
+                            </div>
+                        </div>
+                        
+                        <button type="submit" id="btn-enviar-manual">Lançar Pedido na Cozinha</button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+        import { getDatabase, ref, push, get } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+
+        // SUA MESMA CONFIGURAÇÃO
+        const firebaseConfig = {
+            apiKey: "AIzaSyAQTm3cL26REQloN8AFP28gwsIUzYz73og",
+            authDomain: "dona-baguete-kds.firebaseapp.com",
+            databaseURL: "https://dona-baguete-kds-default-rtdb.firebaseio.com", 
+            projectId: "dona-baguete-kds",
+            storageBucket: "dona-baguete-kds.firebasestorage.app",
+            messagingSenderId: "307283406823",
+            appId: "1:307283406823:web:a7d1761f0b4550cae59742",
+            measurementId: "G-NY4NTLFLCG"
+        };
+        
+        // Inicializa o App e o Database
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const auth = getAuth(app);
+        const pedidosRef = ref(database, 'pedidos');
+        
+        // ⭐ ESTA É A GRANDE MUDANÇA: LER O CARDÁPIO DO FIREBASE
+        const lanchesRef = ref(database, 'cardapio/lanches');
+        const bebidasRef = ref(database, 'cardapio/bebidas');
+
+        // Adicionais (por enquanto, hardcoded)
+        const adicionais = [
+            { id: 'bacon', nome: 'Bacon Extra', preco: 5.00 }, 
+            { id: 'queijo-prato', nome: 'Queijo Prato Extra', preco: 4.00 }, 
+            { id: 'queijo-mussarela', nome: 'Queijo Mussarela Extra', preco: 4.00 }, 
+            { id: 'catupiry', nome: 'Catupiry Extra', preco: 5.00 },  
+            { id: 'repolho-maionese', nome: 'Repolho com Maionese', preco: 2.00 }
+        ];
+
+        // --- VARIÁVEIS GLOBAIS ---
+        var carrinho = [];
+        var freteAtual = 0;
+        var lanches_db = []; // Guarda os lanches do DB
+        var bebidas_db = []; // Guarda as bebidas do DB
+        
+        
+        // --- VIGIA E LOGOUT ---
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                console.log("Usuário não logado. Redirecionando...");
+                window.location.href = 'login.html';
+            } else {
+                // Se está logado, carrega o cardápio
+                carregarCardapioDoFirebase();
+            }
+        });
+        
+        const logoutBtn = document.getElementById('logout-btn');
+        logoutBtn.addEventListener('click', () => {
+            if (confirm("Tem certeza que deseja sair?")) {
+                signOut(auth).then(() => { window.location.href = 'login.html'; });
+            }
+        });
+
+        // --- CARREGAR O CARDÁPIO (NOVO) ---
+        
+        async function carregarCardapioDoFirebase() {
+            try {
+                const [lanchesSnap, bebidasSnap] = await Promise.all([
+                    get(lanchesRef),
+                    get(bebidasRef)
+                ]);
+                
+                const hoje = new Date().getDay(); // Pega o dia de hoje
+
+                // Processa Lanches
+                lanches_db = [];
+                if (lanchesSnap.exists()) {
+                    lanchesSnap.forEach(child => {
+                        const item = child.val();
+                        
+                        // NÃO mostra lanches pausados
+                        if (item.pausado) return; 
+                        
+                        // ⭐ AQUI ESTÁ A LÓGICA DO DIA ESPECIAL
+                        // Se o lanche tem dias especiais...
+                        if (item.diasEspeciais && item.diasEspeciais.length > 0) {
+                            // E o dia de hoje NÃO está na lista, pula o lanche
+                            if (!item.diasEspeciais.includes(hoje)) {
+                                return; 
+                            }
+                        }
+                        
+                        // Se passou, adiciona o lanche
+                        item.id = child.key; 
+                        lanches_db.push(item);
+                    });
+                }
+                
+                // Processa Bebidas
+                bebidas_db = [];
+                if (bebidasSnap.exists()) {
+                    bebidasSnap.forEach(child => {
+                        const item = child.val();
+                        if (!item.pausado) { // Não mostra bebidas pausadas
+                            item.id = child.key; 
+                            bebidas_db.push(item);
+                        }
+                    });
+                }
+                
+                // Renderiza o cardápio na tela
+                renderizarCardapio();
+
+            } catch (error) {
+                console.error("Erro ao carregar cardápio:", error);
+                alert("ERRO: Não foi possível carregar o cardápio do Firebase.");
+            }
+        }
+        
+        function renderizarCardapio() {
+            const lanchesContainer = document.getElementById('lanches-container');
+            const bebidasContainer = document.getElementById('bebidas-container');
+            const adicionaisContainer = document.getElementById('adicionais-container');
+            
+            lanchesContainer.innerHTML = '';
+            bebidasContainer.innerHTML = '';
+            adicionaisContainer.innerHTML = '';
+            
+            // Lanches
+            lanches_db.forEach(item => {
+                lanchesContainer.innerHTML += `
+                    <div class="item-cardapio" onclick="adicionarLanche('${item.id}')">
+                        <span>${item.nome}</span>
+                        <span class="preco">R$ ${Number(item.preco).toFixed(2)}</span>
+                    </div>
+                `;
+            });
+            // Mensagem se não houver lanches
+            if (lanches_db.length === 0) {
+                lanchesContainer.innerHTML = '<p style="color:#9ca3af;">Nenhum lanche disponível para hoje.</p>';
+            }
+            
+            // Bebidas
+            bebidas_db.forEach(item => {
+                bebidasContainer.innerHTML += `
+                    <div class="item-cardapio" onclick="adicionarBebida('${item.id}')">
+                        <span>${item.nome}</span>
+                        <span class="preco">R$ ${Number(item.preco).toFixed(2)}</span>
+                    </div>
+                `;
+            });
+            if (bebidas_db.length === 0) {
+                bebidasContainer.innerHTML = '<p style="color:#9ca3af;">Nenhuma bebida disponível.</p>';
+            }
+            
+            // Adicionais
+            adicionais.forEach(item => {
+                adicionaisContainer.innerHTML += `
+                    <div class="item-cardapio" onclick="adicionarAdicional('${item.id}')">
+                        <span>${item.nome}</span>
+                        <span class="preco">R$ ${Number(item.preco).toFixed(2)}</span>
+                    </div>
+                `;
+            });
+        }
+        
+        // --- LÓGICA DO CARRINHO (NOVO) ---
+        
+        function renderizarCarrinho() {
+            const container = document.getElementById('pedido-atual-container');
+            let subtotal = 0;
+            
+            if (carrinho.length === 0) {
+                container.innerHTML = '<p style="color: #9ca3af; text-align: center;">Clique em um item ao lado para adicionar...</p>';
+            } else {
+                container.innerHTML = '';
+                carrinho.forEach((item, index) => {
+                    subtotal += item.precoTotal;
+                    
+                    let detalhes = '';
+                    if (item.tipo === 'lanche' && item.queijo) detalhes += ` (Queijo: ${item.queijo})`;
+                    if (item.tipo === 'bebida' && item.sabor) detalhes += ` (Sabor: ${item.sabor})`;
+
+                    container.innerHTML += `
+                        <div class="carrinho-item">
+                            <div class="carrinho-info">
+                                <div class="nome">${item.quantidade}x ${item.nome}</div>
+                                <div class="detalhes">${detalhes}</div>
+                            </div>
+                            <span class="carrinho-preco">R$ ${item.precoTotal.toFixed(2)}</span>
+                            <button type="button" class="btn-excluir" onclick="removerDoCarrinho(${index})">Excluir</button>
+                        </div>
+                    `;
+                });
+            }
+            
+            // Atualiza total (Subtotal + Frete)
+            let total = subtotal + freteAtual;
+            document.getElementById('total-carrinho').textContent = `Total: R$ ${total.toFixed(2)}`;
+        }
+        
+        window.removerDoCarrinho = (index) => {
+            carrinho.splice(index, 1); // Remove o item do array
+            renderizarCarrinho(); // Re-desenha o carrinho
+        }
+
+        // Funções de ADICIONAR
+        window.adicionarLanche = (id) => {
+            const lanche = lanches_db.find(l => l.id === id);
+            
+            // Pergunta o queijo, se o lanche tiver queijo
+            let queijoSelecionado = null;
+            if (lanche.ingredientesBase && lanche.ingredientesBase.includes('queijo')) {
+                queijoSelecionado = prompt("Qual queijo? (1 - Prato, 2 - Mussarela)", "1");
+                queijoSelecionado = (queijoSelecionado === '2') ? 'Mussarela' : 'Prato';
+            }
+            
+            carrinho.push({
+                cartId: Date.now(),
+                tipo: 'lanche',
+                nome: lanche.nome,
+                preco: lanche.preco,
+                precoTotal: lanche.preco,
+                queijo: queijoSelecionado,
+                adicionais: [], // No PDV, adicionais são itens separados
+                remocoes: [],
+                quantidade: 1
+            });
+            renderizarCarrinho();
+        }
+
+        window.adicionarBebida = (id) => {
+            const bebida = bebidas_db.find(b => b.id === id);
+            
+            let saborSelecionado = null;
+            if (bebida.sabores && bebida.sabores.length > 0) {
+                saborSelecionado = prompt(`Qual sabor? (${bebida.sabores.join(', ')})`, bebida.sabores[0]);
+            }
+            
+            carrinho.push({
+                cartId: Date.now(),
+                tipo: 'bebida',
+                nome: bebida.nome,
+                preco: bebida.preco,
+                precoTotal: bebida.preco,
+                sabor: saborSelecionado,
+                quantidade: 1
+            });
+            renderizarCarrinho();
+        }
+
+        window.adicionarAdicional = (id) => {
+            const adicional = adicionais.find(a => a.id === id);
+            carrinho.push({
+                cartId: Date.now(),
+                tipo: 'adicional',
+                nome: adicional.nome,
+                preco: adicional.preco,
+                precoTotal: adicional.preco,
+                quantidade: 1
+            });
+            renderizarCarrinho();
+        }
+
+        // --- LÓGICA DO FORMULÁRIO ---
+        
+        window.toggleEndereco = (valor) => {
+            const enderecoDiv = document.getElementById('endereco-inputs');
+            if (valor === 'retirada') {
+                freteAtual = 0.00;
+                enderecoDiv.style.display = 'none';
+            } else {
+                freteAtual = (valor === 'dentro') ? 3.00 : 10.00; // Taxa do PDV (pode ser diferente do site)
+                enderecoDiv.style.display = 'grid';
+            }
+            renderizarCarrinho(); // Atualiza o total com o novo frete
+        }
+        
+        window.toggleTroco = (valor) => {
+            document.getElementById('troco-section').style.display = (valor === 'dinheiro') ? 'block' : 'none';
+        }
+        
+        // --- ENVIO DO PEDIDO MANUAL ---
+        
+        const form = document.getElementById('form-manual');
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const submitBtn = document.getElementById('btn-enviar-manual');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Enviando...';
+            
+            if (carrinho.length === 0) {
+                alert('O carrinho está vazio!');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Lançar Pedido na Cozinha';
+                return;
+            }
+            
+            // Coleta dados
+            const clienteNome = document.getElementById('cliente-nome').value;
+            let clienteWhatsApp = document.getElementById('cliente-whatsapp').value.replace(/\D/g, '');
+            if (clienteWhatsApp.length > 0 && clienteWhatsApp.length < 12) {
+                 clienteWhatsApp = "55" + clienteWhatsApp;
+            }
+
+            const localidade = document.getElementById('localidade').value;
+            let enderecoCompleto = "Retirada no Local";
+            if (localidade !== 'retirada') {
+                const rua = document.getElementById('endereco-rua').value;
+                const numero = document.getElementById('endereco-numero').value;
+                const bairro = document.getElementById('endereco-bairro').value;
+                enderecoCompleto = `${rua}, ${numero} - ${bairro}`;
+            }
+
+            const pagamentoSelect = document.getElementById('pagamento');
+            let metodoPagamento = pagamentoSelect.options[pagamentoSelect.selectedIndex].text;
+            if (pagamentoSelect.value === 'dinheiro' && document.getElementById('troco-valor').value) {
+                metodoPagamento += ` (Troco para: R$ ${document.getElementById('troco-valor').value})`;
+            }
+
+            // Calcula Totais
+            var subtotal = carrinho.reduce((sum, item) => sum + item.precoTotal, 0);
+            var total = subtotal + freteAtual;
+            
+            // Monta Objeto
+            const pedidoCompleto = {
+                cliente: {
+                    nome: clienteNome,
+                    whatsapp: clienteWhatsApp 
+                },
+                itens: carrinho, // O carrinho já está no formato correto
+                entrega: {
+                    tipo: localidade, 
+                    endereco: enderecoCompleto,
+                    taxa: freteAtual
+                },
+                pagamento: metodoPagamento,
+                subtotal: subtotal,
+                total: total,
+                status: 'Pendente', 
+                hora: new Date().toISOString() 
+            };
+            
+            // Envia para o Firebase
+            push(pedidosRef, pedidoCompleto)
+                .then(() => {
+                    alert('Pedido enviado para a cozinha com sucesso!');
+                    // Limpar tudo
+                    carrinho = [];
+                    form.reset();
+                    freteAtual = 0;
+                    toggleEndereco('retirada'); // Reseta o frete
+                    renderizarCarrinho();
+                    
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Lançar Pedido na Cozinha';
+                })
+                .catch((error) => {
+                    console.error("Erro ao enviar pedido: ", error);
+                    alert('Erro ao enviar pedido. Tente novamente.');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Lançar Pedido na Cozinha';
+                });
+        });
+        
+        // --- INICIALIZAÇÃO ---
+        // Expõe funções para o escopo global (para os botões 'onclick')
+        window.toggleEndereco = toggleEndereco;
+        window.toggleTroco = toggleTroco;
+        window.adicionarLanche = adicionarLanche;
+        window.adicionarBebida = adicionarBebida;
+        window.adicionarAdicional = adicionarAdicional;
+        window.removerDoCarrinho = removerDoCarrinho;
+
+    </script>
+</body>
+</html>

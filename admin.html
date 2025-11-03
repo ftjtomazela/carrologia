@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Limpar Histórico - Dona Baguete</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(to bottom, #000000 0%, #1a1a2e 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* ⭐ MENU DE NAVEGAÇÃO ADMIN ⭐ */
+        .admin-nav {
+            background: #111827;
+            padding: 12px 20px;
+            margin: -20px -20px 20px -20px; 
+            border-bottom: 2px solid #d4a021;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .nav-btn {
+            background: #374151;
+            color: #f3f4f6;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-decoration: none; 
+            transition: all 0.3s;
+            font-family: inherit; 
+        }
+        .nav-btn:hover {
+            background: #4b5563;
+        }
+        .nav-btn.active {
+            background: #d4a021;
+            color: #000;
+        }
+        .nav-btn.logout {
+            background: #dc2626; 
+            color: #fff;
+            margin-left: auto; 
+        }
+        .nav-btn.logout:hover {
+            background: #ef4444;
+        }
+        /* ⭐ FIM DO MENU ⭐ */
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #d4a021;
+            padding-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #d4a021;
+        }
+        .header p {
+            font-size: 1.1rem;
+            color: #ef4444; 
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        
+        .delete-all-container {
+            background: #4b5563;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 30px;
+            border: 2px solid #ef4444;
+        }
+        
+        .btn-delete-all {
+            background: #ef4444;
+            color: #fff;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-delete-all:hover {
+            background: #dc2626;
+            transform: scale(1.05);
+        }
+        
+        #loading-msg {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #d4a021;
+            padding: 40px;
+        }
+        
+        .pedidos-lista h3 {
+            font-size: 1.5rem;
+            color: #d4a021;
+            margin-bottom: 20px;
+        }
+        
+        .pedido-item {
+            background: #374151;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .pedido-info {
+            flex: 1;
+        }
+
+        .pedido-header-info {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #fff;
+        }
+        
+        .pedido-detalhes {
+            font-size: 0.9rem;
+            color: #9ca3af;
+            margin-top: 5px;
+        }
+        
+        .pedido-total {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #d4a021;
+        }
+        
+        .btn-delete-single {
+            background: #ef4444;
+            color: #fff;
+            border: none;
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-delete-single:hover {
+            background: #dc2626;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="admin-nav">
+        <a href="cozinha.html" class="nav-btn">🍳 Cozinha (KDS)</a>
+        <a href="manual.html" class="nav-btn">✍️ Pedido Manual</a>
+        <a href="caixa.html" class="nav-btn">📊 Caixa (Relatório)</a>
+        <a href="admin.html" class="nav-btn active">⚙️ Admin (Limpeza)</a>
+        <a href="cardapio.html" class="nav-btn">📖 Cardápio</a> <button id="logout-btn" class="nav-btn logout">Sair ➔</button>
+    </div>
+    <div class="container">
+        <div class="header">
+            <h1>🔒 Admin - Limpeza de Histórico</h1>
+            <p>CUIDADO: Ações nesta página são permanentes!</p>
+        </div>
+        
+        <div class="delete-all-container">
+            <button class="btn-delete-all" id="btn-delete-all">EXCLUIR TODO O HISTÓRICO</button>
+        </div>
+        
+        <div class="pedidos-lista">
+            <h3>Pedidos Arquivados (Testes e Reais)</h3>
+            <div id="loading-msg">Carregando histórico...</div>
+            <div id="pedidos-container">
+                </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+        import { getDatabase, ref, onChildAdded, onChildRemoved, remove } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+
+        // ===============================================
+        //     CONFIGURAÇÃO DO FIREBASE
+        // ===============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyAQTm3cL26REQloN8AFP28gwsIUzYz73og",
+            authDomain: "dona-baguete-kds.firebaseapp.com",
+            databaseURL: "https://dona-baguete-kds-default-rtdb.firebaseio.com", 
+            projectId: "dona-baguete-kds",
+            storageBucket: "dona-baguete-kds.firebasestorage.app",
+            messagingSenderId: "307283406823",
+            appId: "1:307283406823:web:a7d1761f0b4550cae59742",
+            measurementId: "G-NY4NTLFLCG"
+        };
+        
+        // Inicializa o Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const auth = getAuth(app);
+        const historicoRef = ref(database, 'pedidos_concluidos');
+        
+        // ===============================================
+        //     VIGIA + LÓGICA DE LOGOUT
+        // ===============================================
+
+        // VIGIA (Verifica o login)
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                console.log("Usuário não logado. Redirecionando...");
+                window.location.href = 'login.html';
+            }
+        });
+        
+        // LÓGICA DO LOGOUT (Botão Sair)
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                if (confirm("Tem certeza que deseja sair?")) {
+                    signOut(auth).then(() => {
+                        window.location.href = 'login.html';
+                    }).catch((error) => {
+                        console.error("Erro ao sair: ", error);
+                        alert("Não foi possível sair. Tente novamente.");
+                    });
+                }
+            });
+        }
+        
+        // ===============================================
+        //     LÓGICA DE CARREGAR E EXCLUIR
+        // ===============================================
+        
+        const loadingMsg = document.getElementById('loading-msg');
+        const pedidosContainer = document.getElementById('pedidos-container');
+        let contadorPedidos = 0;
+
+        onChildAdded(historicoRef, (snapshot) => {
+            if (contadorPedidos === 0) {
+                loadingMsg.style.display = 'none'; 
+            }
+            contadorPedidos++;
+            
+            const pedido = snapshot.val();
+            const pedidoId = snapshot.key;
+            renderizarCardDeletar(pedido, pedidoId);
+        });
+        
+        onChildRemoved(historicoRef, (snapshot) => {
+            const pedidoId = snapshot.key;
+            const card = document.getElementById(pedidoId);
+            if (card) {
+                card.remove();
+            }
+            
+            contadorPedidos--;
+            if (contadorPedidos === 0) {
+                loadingMsg.textContent = 'Histórico de pedidos está vazio.';
+                loadingMsg.style.display = 'block';
+            }
+        });
+
+        function renderizarCardDeletar(pedido, pedidoId) {
+            const data = new Date(pedido.hora);
+            const horaFormatada = data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            const dataFormatada = data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+
+            const cardHTML = `
+                <div class="pedido-item" id="${pedidoId}">
+                    <div class="pedido-info">
+                        <div class="pedido-header-info">
+                            ${pedido.cliente.nome} - <span class="pedido-total">R$ ${pedido.total.toFixed(2).replace('.', ',')}</span>
+                        </div>
+                        <div class="pedido-detalhes">
+                            Pedido em: ${dataFormatada} às ${horaFormatada}
+                        </div>
+                    </div>
+                    <button class="btn-delete-single" data-id="${pedidoId}">Excluir</button>
+                </div>
+            `;
+            pedidosContainer.insertAdjacentHTML('afterbegin', cardHTML); 
+        }
+
+        document.addEventListener('click', (e) => {
+            
+            if (e.target.matches('.btn-delete-single')) {
+                const pedidoId = e.target.dataset.id;
+                const card = document.getElementById(pedidoId);
+                const nomeCliente = card.querySelector('.pedido-header-info').textContent.split(' - ')[0];
+
+                if (confirm(`Tem certeza que quer EXCLUIR PERMANENTEMENTE o pedido de "${nomeCliente}"? \n\nEsta ação não pode ser desfeita.`)) {
+                    const pedidoRef = ref(database, 'pedidos_concluidos/' + pedidoId);
+                    remove(pedidoRef);
+                }
+            }
+            
+            if (e.target.matches('#btn-delete-all')) {
+                if (confirm('⚠️ PERIGO! ⚠️\n\nTem certeza que quer excluir TODOS OS PEDIDOS ARQUIVADOS?')) {
+                    if (confirm('CONFIRMAÇÃO FINAL:\n\nIsso vai apagar TODO O SEU HISTÓRICO DE VENDAS. Não tem volta.\n\nContinuar?')) {
+                        remove(historicoRef);
+                        alert("Histórico de vendas limpo.");
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
