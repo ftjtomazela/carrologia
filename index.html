@@ -3,412 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KDS - Cozinha Dona Baguete</title>
+    <title>Login - Painel Dona Baguete</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #1f2937;
-            color: #f3f4f6;
+            background: linear-gradient(to bottom, #000000 0%, #1a1a2e 100%);
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
             padding: 20px;
         }
-        h1 {
+        .login-container {
+            background: linear-gradient(145deg, #2d3748, #1a202c);
+            padding: 40px;
+            border-radius: 20px;
+            border: 2px solid #d4a021;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             text-align: center;
+        }
+        .login-container h1 {
             color: #d4a021;
+            font-size: 2rem;
             margin-bottom: 25px;
-            font-size: 2.5rem;
         }
-        .kds-container {
-            display: flex;
-            gap: 20px;
-            align-items: flex-start;
-            overflow-x: auto;
-            min-height: 90vh;
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
         }
-        .kds-coluna {
-            background: #374151;
-            border-radius: 12px;
-            width: 380px;
-            min-width: 380px;
-            padding: 15px;
-            flex-shrink: 0;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-        .kds-coluna h2 {
-            font-size: 1.3rem;
-            color: #d4a021;
-            padding-bottom: 15px;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #4b5563;
-        }
-        .pedidos-container {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            height: 75vh;
-            overflow-y: auto;
-        }
-        .pedido-card {
-            background: #4b5563;
-            border-radius: 10px;
-            padding: 15px;
-            border: 2px solid #5e6c80;
-            transition: all 0.3s;
-        }
-        .pedido-card.novo {
-            border-color: #10b981;
-            animation: piscarBorda 1.5s 3;
-        }
-        @keyframes piscarBorda {
-            0%, 100% { border-color: #10b981; }
-            50% { border-color: #d4a021; }
-        }
-        .pedido-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .pedido-cliente {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #fff;
-        }
-        .pedido-hora {
-            font-size: 0.9rem;
-            color: #9ca3af;
-        }
-        .pedido-itens ul {
-            list-style: none;
-            padding-left: 10px;
-            margin-bottom: 15px;
-        }
-        .pedido-itens li {
-            font-size: 1rem;
-            color: #e5e7eb;
+        .input-group label {
+            display: block;
             margin-bottom: 8px;
-            border-bottom: 1px dashed #5e6c80;
-            padding-bottom: 8px;
-        }
-        .item-detalhes {
-            font-size: 0.85rem;
-            color: #d1d5db;
-            padding-left: 10px;
-        }
-        .pedido-info {
-            background: #374151;
-            border-radius: 6px;
-            padding: 10px;
-            margin: 10px 0;
-        }
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.9rem;
-            margin-bottom: 5px;
-        }
-        .info-row span:first-child { color: #9ca3af; }
-        .info-row span:last-child { color: #e5e7eb; font-weight: bold; }
-        .info-row.total {
-            font-size: 1.1rem;
-            border-top: 1px solid #5e6c80;
-            padding-top: 8px;
-            margin-top: 8px;
-        }
-        .info-row.total span:last-child { color: #d4a021; }
-        .pedido-acoes {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        .btn-kds {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
+            color: #9ca3af;
             font-weight: bold;
-            font-size: 0.9rem;
+        }
+        .input-field {
+            width: 100%;
+            background: #374151;
+            color: #fff;
+            border: 2px solid #4b5563;
+            border-radius: 8px;
+            padding: 14px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #d4a021;
+        }
+        .login-btn {
+            width: 100%;
+            background: #d4a021;
+            color: #000;
+            border: none;
+            padding: 15px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 1.1rem;
             cursor: pointer;
             transition: all 0.3s;
+            margin-top: 10px;
         }
-        .btn-kds.preparo { background: #d4a021; color: #000; }
-        .btn-kds.pronto { background: #10b981; color: #fff; }
-        .btn-kds.finalizar { background: #ef4444; color: #fff; }
+        .login-btn:hover {
+            background: #ffc107;
+            transform: scale(1.02);
+        }
+        .login-btn:disabled {
+            background: #4b5563;
+            color: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+        #error-message {
+            color: #ef4444;
+            font-weight: bold;
+            margin-top: 20px;
+            display: none; /* Começa escondido */
+        }
     </style>
 </head>
 <body>
 
-    <audio id="audio-novo-pedido" src="https://www.myinstants.com/media/sounds/notification-sound.mp3" preload="auto"></audio>
-
-    <h1>🖥️ Cozinha - Dona Baguete</h1>
-
-    <div class="kds-container">
-        <div class="kds-coluna" id="coluna-pendente">
-            <h2>🔔 Novos Pedidos</h2>
-            <div class="pedidos-container" id="container-pendente">
-                </div>
-        </div>
-
-        <div class="kds-coluna" id="coluna-preparo">
-            <h2>🍳 Em Preparo</h2>
-            <div class="pedidos-container" id="container-preparo">
-                </div>
-        </div>
-
-        <div class="kds-coluna" id="coluna-pronto">
-            <h2>✅ Prontos (Entrega/Retirada)</h2>
-            <div class="pedidos-container" id="container-pronto">
-                </div>
-        </div>
+    <div class="login-container">
+        <h1>🔒 Painel Admin</h1>
+        <form id="login-form">
+            <div class="input-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" class="input-field" required>
+            </div>
+            <div class="input-group">
+                <label for="password">Senha</label>
+                <input type="password" id="password" class="input-field" required>
+            </div>
+            <button type="submit" class="login-btn" id="login-btn">Entrar</button>
+            <p id="error-message"></p>
+        </form>
     </div>
 
     <script type="module">
-        // Importa as funções necessárias do Firebase v12
-        // ⭐ MUDANÇA 1: Adicionamos 'get' e 'set' para poder LER e ESCREVER o histórico
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
-        import { getDatabase, ref, onChildAdded, onChildChanged, onChildRemoved, update, remove, get, set } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
 
-        // Sua configuração do Firebase
+        // SUA MESMA CONFIGURAÇÃO (só precisa ser declarada)
         const firebaseConfig = {
             apiKey: "AIzaSyAQTm3cL26REQloN8AFP28gwsIUzYz73og",
             authDomain: "dona-baguete-kds.firebaseapp.com",
-            databaseURL: "https://dona-baguete-kds-default-rtdb.firebaseio.com",
+            databaseURL: "https://dona-baguete-kds-default-rtdb.firebaseio.com", 
             projectId: "dona-baguete-kds",
             storageBucket: "dona-baguete-kds.firebasestorage.app",
             messagingSenderId: "307283406823",
             appId: "1:307283406823:web:a7d1761f0b4550cae59742",
             measurementId: "G-NY4NTLFLCG"
         };
-
-        // Inicializa o Firebase
+        
+        // Inicializa o App e o serviço de Autenticação
         const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app); 
-        const pedidosRef = ref(database, 'pedidos'); 
+        const auth = getAuth(app);
 
-        // ⭐ MUDANÇA 2: Criamos a referência para o novo local do histórico
-        const historicoRef = ref(database, 'pedidos_concluidos');
+        const loginForm = document.getElementById('login-form');
+        const loginBtn = document.getElementById('login-btn');
+        const errorMessage = document.getElementById('error-message');
 
-        // Função para tocar o som de notificação
-        function tocarNotificacao() {
-            const audio = document.getElementById('audio-novo-pedido');
-            audio.currentTime = 0; 
-            audio.play().catch(e => console.log("Não foi possível tocar o som:", e));
-        }
-
-        // Função para formatar os itens do pedido em HTML
-        function formatarItens(itens) {
-            if (!itens) return '';
-            return '<ul>' + itens.map(item => {
-                let detalhes = '';
-                if (item.queijo) detalhes += `<div class="item-detalhes">🧀 Queijo: ${item.queijo}</div>`;
-                if (item.sabor) detalhes += `<div class="item-detalhes">🥤 Sabor: ${item.sabor}</div>`;
-                if (item.adicionais && item.adicionais.length > 0) {
-                    detalhes += `<div class="item-detalhes">➕ ${item.adicionais.map(ad => ad.nome).join(', ')}</div>`;
-                }
-                if (item.remocoes && item.remocoes.length > 0) {
-                    detalhes += `<div class="item-detalhes">➖ ${item.remocoes.map(rem => rem.nome).join(', ')}</div>`;
-                }
-                if (item.observacao) {
-                    detalhes += `<div class="item-detalhes">📝 Obs: ${item.observacao}</div>`;
-                }
-                return `<li><strong>${item.quantidade}x ${item.nome}</strong>${detalhes}</li>`;
-            }).join('') + '</ul>';
-        }
-
-        // Função para formatar os botões de ação (agora usa data- attributes)
-        function formatarAcoes(pedidoId, status) {
-            if (status === 'Pendente') {
-                return `<button class="btn-kds preparo" data-id="${pedidoId}" data-status="Em Preparo">Mover para Preparo 🍳</button>`;
-            }
-            if (status === 'Em Preparo') {
-                return `<button class="btn-kds pronto" data-id="${pedidoId}" data-status="Pronto">Mover para Pronto ✅</button>`;
-            }
-            if (status === 'Pronto') {
-                return `<button class="btn-kds finalizar" data-id="${pedidoId}">Finalizar Pedido 🗑️</button>`;
-            }
-            return '';
-        }
-
-        function renderizarPedido(pedido, pedidoId, ehNovo = false) {
-            const horaFormatada = new Date(pedido.hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-            
-            const cardHTML = `
-                <div class="pedido-card ${ehNovo ? 'novo' : ''}" 
-                        id="${pedidoId}" 
-                        data-cliente-nome="${pedido.cliente.nome}" 
-                        data-cliente-wa="${pedido.cliente.whatsapp}"
-                        data-entrega-tipo="${pedido.entrega.tipo}">
-                    
-                    <div class="pedido-header">
-                        <span class="pedido-cliente">${pedido.cliente.nome}</span>
-                        <span class="pedido-hora">${horaFormatada}</span>
-                    </div>
-                    <div class="pedido-itens">
-                        ${formatarItens(pedido.itens)}
-                    </div>
-                    
-                    <div class="pedido-info">
-                        <div class="info-row">
-                            <span>📞 WhatsApp:</span>
-                            <span>${pedido.cliente.whatsapp}</span>
-                        </div>
-                        <div class="info-row">
-                            <span>📍 Entrega:</span>
-                            <span>${pedido.entrega.tipo === 'retirada' ? 'Retirada' : pedido.entrega.endereco}</span>
-                        </div>
-                        <div class="info-row">
-                            <span>💳 Pagamento:</span>
-                            <span>${pedido.pagamento}</span>
-                        </div>
-                        <div class="info-row total">
-                            <span>TOTAL:</span>
-                            <span>R$ ${pedido.total.toFixed(2).replace('.', ',')}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="pedido-acoes">
-                        ${formatarAcoes(pedidoId, pedido.status)}
-                    </div>
-                </div>
-            `;
-
-            const cardAntigo = document.getElementById(pedidoId);
-            if (cardAntigo) cardAntigo.remove();
-
-            let container;
-            if (pedido.status === 'Pendente') {
-                container = document.getElementById('container-pendente');
-            } else if (pedido.status === 'Em Preparo') {
-                container = document.getElementById('container-preparo');
-            } else if (pedido.status === 'Pronto') {
-                container = document.getElementById('container-pronto');
-            }
-            
-            if (container) {
-                container.insertAdjacentHTML('afterbegin', cardHTML);
-            }
-        }
-        
-        // --- OUVINTES DO FIREBASE (Sintaxe v12) ---
-
-        onChildAdded(pedidosRef, (snapshot) => {
-            const pedido = snapshot.val();
-            const pedidoId = snapshot.key;
-            
-            if(pedido.status === 'Pendente') {
-                tocarNotificacao();
-                renderizarPedido(pedido, pedidoId, true);
-            } else {
-                renderizarPedido(pedido, pedidoId, false);
+        // VERIFICAR SE O USUÁRIO JÁ ESTÁ LOGADO
+        // Se já estiver, manda direto para a cozinha (não precisa logar de novo)
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Usuário está logado, redireciona para a cozinha
+                window.location.href = 'cozinha.html';
             }
         });
 
-        onChildChanged(pedidosRef, (snapshot) => {
-            const pedido = snapshot.val();
-            const pedidoId = snapshot.key;
-            renderizarPedido(pedido, pedidoId, false);
-        });
+        // QUANDO O FORMULÁRIO FOR ENVIADO
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault(); // Impede o recarregamento da página
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Verificando...';
+            errorMessage.style.display = 'none';
 
-        onChildRemoved(pedidosRef, (snapshot) => {
-            const pedidoId = snapshot.key;
-            const card = document.getElementById(pedidoId);
-            if (card) {
-                card.remove();
-            }
-        });
-
-        // --- FUNÇÕES DE AÇÃO (Sintaxe v12) ---
-        
-        function moverPedido(pedidoId, novoStatus) {
-            const pedidoParaAtualizar = ref(database, 'pedidos/' + pedidoId);
-            update(pedidoParaAtualizar, {
-                status: novoStatus
-            });
-        }
-        
-        // ⭐ MUDANÇA 3: Função 'finalizarPedido' totalmente modificada
-        // Agora ela LÊ, ESCREVE no histórico e DEPOIS apaga.
-        function finalizarPedido(pedidoId) {
-            if (confirm('Tem certeza que deseja finalizar e ARQUIVAR este pedido?')) {
-                
-                const pedidoParaRemoverRef = ref(database, 'pedidos/' + pedidoId);
-                
-                // 1. LER o pedido da lista 'pedidos'
-                get(pedidoParaRemoverRef).then((snapshot) => {
-                    if (snapshot.exists()) {
-                        const pedidoData = snapshot.val();
-                        
-                        // 2. CRIAR uma nova referência no histórico ('pedidos_concluidos')
-                        //    Usamos a mesma ID (pedidoId) para manter o registro
-                        const destinoRef = ref(database, 'pedidos_concluidos/' + pedidoId);
-                        
-                        // 3. ESCREVER (set) o pedido no histórico
-                        set(destinoRef, pedidoData).then(() => {
-                            // 4. Se a escrita deu certo, REMOVER o pedido da fila original
-                            remove(pedidoParaRemoverRef);
-                        }).catch((error) => {
-                            console.error("Erro ao MOVER o pedido (escrita no histórico): ", error);
-                            alert("Erro ao arquivar o pedido.");
-                        });
-
+            // Função do Firebase para tentar fazer o login
+            signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    // SUCESSO!
+                    // O 'onAuthStateChanged' acima vai detectar o login e redirecionar
+                    // Não precisamos fazer nada aqui
+                })
+                .catch((error) => {
+                    // FALHA!
+                    console.error(error.code, error.message);
+                    if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+                        errorMessage.textContent = 'Email ou senha incorretos.';
                     } else {
-                        // Se não encontrou (ex: outro usuário já finalizou), apenas remove da fila
-                        console.log("Pedido não encontrado, talvez já tenha sido removido.");
-                        remove(pedidoParaRemoverRef);
+                        errorMessage.textContent = 'Ocorreu um erro. Tente novamente.';
                     }
-                }).catch((error) => {
-                    console.error("Erro ao MOVER o pedido (leitura): ", error);
-                    alert("Erro ao ler o pedido para arquivar.");
+                    errorMessage.style.display = 'block';
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Entrar';
                 });
-            }
-        }
-
-        document.addEventListener('click', (e) => {
-            const button = e.target;
-            
-            // --- Ação de Mover (Preparo ou Pronto) ---
-            if (button.matches('.btn-kds.preparo') || button.matches('.btn-kds.pronto')) {
-                const card = button.closest('.pedido-card');
-                const pedidoId = button.dataset.id;
-                const novoStatus = button.dataset.status;
-                
-                // Pega os dados do cliente que salvamos no card
-                const clienteNome = card.dataset.clienteNome;
-                const clienteWa = card.dataset.clienteWa;
-                const tipoEntrega = card.dataset.entregaTipo; // 'retirada', 'dentro', 'fora'
-
-                let mensagem = "";
-
-                if (novoStatus === 'Em Preparo') {
-                    mensagem = `Olá, ${clienteNome}! 👋 Seu pedido na Dona Baguete foi confirmado e já está *em preparo*! 🍳`;
-                } else if (novoStatus === 'Pronto') {
-                    if (tipoEntrega === 'retirada') {
-                        mensagem = `Olá, ${clienteNome}! 👋 Boas notícias! Seu pedido na Dona Baguete está *pronto para retirada*! 📍\n\nNosso endereço: Rua Romualdo Albino Balestrin, 35 - COHAB III`;
-                    } else {
-                        mensagem = `Olá, ${clienteNome}! 👋 Boas notícias! Seu pedido na Dona Baguete está *pronto* e já está saindo para entrega! 🛵`;
-                    }
-                }
-
-                // Pergunta ao usuário se quer notificar
-                if (mensagem) {
-                    const notificar = confirm(`Deseja NOTIFICAR o cliente "${clienteNome}" no WhatsApp sobre essa mudança?`);
-                    
-                    if (notificar) {
-                        const whatsappUrl = `https://wa.me/${clienteWa}?text=${encodeURIComponent(mensagem)}`;
-                        window.open(whatsappUrl, '_blank');
-                    }
-                }
-                
-                // Move o pedido no KDS (independentemente de ter notificado ou não)
-                moverPedido(pedidoId, novoStatus);
-            }
-            
-            // --- Ação de Finalizar ---
-            if (button.matches('.btn-kds.finalizar')) {
-                finalizarPedido(button.dataset.id); // A função finalizarPedido já tem um 'confirm'
-            }
         });
-
     </script>
+
 </body>
 </html>
