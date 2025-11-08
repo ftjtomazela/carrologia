@@ -232,159 +232,292 @@
         </div>
     </div>
 
-    <script type="module">
-        // Importações (sempre verifique se 'get' está aqui)
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
-        import { getDatabase, ref, onChildAdded, onChildChanged, onChildRemoved, update, remove, get, set } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+   <script type="module">
+    // Importações
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
+    import { getDatabase, ref, onChildAdded, onChildChanged, onChildRemoved, update, remove, get, set } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
 
 
-        // Sua configuração do Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyAQTm3cL26REQloN8AFP28gwsIUzYz73og",
-            authDomain: "dona-baguete-kds.firebaseapp.com",
-            databaseURL: "https://dona-baguete-kds-default-rtdb.firebaseio.com",
-            projectId: "dona-baguete-kds",
-            storageBucket: "dona-baguete-kds.firebasestorage.app",
-            messagingSenderId: "307283406823",
-            appId: "1:307283406823:web:a7d1761f0b4550cae59742",
-            measurementId: "G-NY4NTLFLCG"
-        };
+    // Sua configuração do Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyAQTm3cL26REQloN8AFP28gwsIUzYz73og",
+        authDomain: "dona-baguete-kds.firebaseapp.com",
+        databaseURL: "https://dona-baguete-kds-default-rtdb.firebaseio.com",
+        projectId: "dona-baguete-kds",
+        storageBucket: "dona-baguete-kds.firebasestorage.app",
+        messagingSenderId: "307283406823",
+        appId: "1:307283406823:web:a7d1761f0b4550cae59742",
+        measurementId: "G-NY4NTLFLCG"
+    };
 
-        // Inicializa o Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app); 
-        const auth = getAuth(app); 
-        const pedidosRef = ref(database, 'pedidos'); 
-        const historicoRef = ref(database, 'pedidos_concluidos');
+    // Inicializa o Firebase
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app); 
+    const auth = getAuth(app); 
+    const pedidosRef = ref(database, 'pedidos'); 
+    const historicoRef = ref(database, 'pedidos_concluidos');
 
-        // VIGIA (Verifica o login)
-        onAuthStateChanged(auth, (user) => {
-            if (!user) {
-                console.log("Usuário não logado. Redirecionando...");
-                window.location.href = 'login.html';
+
+    // LÓGICA DO LOGOUT (Botão Sair)
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            if (confirm("Tem certeza que deseja sair?")) {
+                signOut(auth).then(() => {
+                    window.location.href = 'login.html';
+                }).catch((error) => {
+                    console.error("Erro ao sair: ", error);
+                    alert("Não foi possível sair. Tente novamente.");
+                });
             }
         });
+    }
 
-        // LÓGICA DO LOGOUT (Botão Sair)
-        const logoutBtn = document.getElementById('logout-btn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', () => {
-                if (confirm("Tem certeza que deseja sair?")) {
-                    signOut(auth).then(() => {
-                        window.location.href = 'login.html';
-                    }).catch((error) => {
-                        console.error("Erro ao sair: ", error);
-                        alert("Não foi possível sair. Tente novamente.");
-                    });
-                }
-            });
-        }
+    // --- FUNÇÕES DE AUXÍLIO (Mantidas) ---
+    function tocarNotificacao() {
+        const audio = document.getElementById('audio-novo-pedido');
+        audio.currentTime = 0; 
+        audio.play().catch(e => console.log("Não foi possível tocar o som:", e));
+    }
 
-        // --- LÓGICA DA COZINHA ---
-
-        function tocarNotificacao() {
-            const audio = document.getElementById('audio-novo-pedido');
-            audio.currentTime = 0; 
-            audio.play().catch(e => console.log("Não foi possível tocar o som:", e));
-        }
-
-        function formatarItens(itens) {
-            if (!itens) return '';
-            return '<ul>' + itens.map(item => {
-                let detalhes = '';
-                if (item.queijo) detalhes += `<div class="item-detalhes">🧀 Queijo: ${item.queijo}</div>`;
-                if (item.sabor) detalhes += `<div class="item-detalhes">🥤 Sabor: ${item.sabor}</div>`;
-                if (item.adicionais && item.adicionais.length > 0) {
-                    detalhes += `<div class="item-detalhes">➕ ${item.adicionais.map(ad => ad.nome).join(', ')}</div>`;
-                }
-                if (item.remocoes && item.remocoes.length > 0) {
-                    detalhes += `<div class="item-detalhes">➖ ${item.remocoes.map(rem => rem.nome).join(', ')}</div>`;
-                }
-                if (item.observacao) {
-                    detalhes += `<div class="item-detalhes">📝 Obs: ${item.observacao}</div>`;
-                }
-                return `<li><strong>${item.quantidade}x ${item.nome}</strong>${detalhes}</li>`;
-            }).join('') + '</ul>';
-        }
-
-        // ⭐ FUNÇÃO DE AÇÕES ATUALIZADA (com botão Imprimir) ⭐
-        function formatarAcoes(pedidoId, status) {
-            // O botão de imprimir aparece em todos os status
-            let printBtn = `<button class="btn-kds btn-print" data-id="${pedidoId}">🖨️</button>`;
-            
-            if (status === 'Pendente') {
-                return printBtn + `<button class="btn-kds preparo" data-id="${pedidoId}" data-status="Em Preparo">Mover para Preparo 🍳</button>`;
+    function formatarItens(itens) {
+        if (!itens) return '';
+        return '<ul>' + itens.map(item => {
+            let detalhes = '';
+            if (item.queijo) detalhes += `<div class="item-detalhes">🧀 Queijo: ${item.queijo}</div>`;
+            if (item.sabor) detalhes += `<div class="item-detalhes">🥤 Sabor: ${item.sabor}</div>`;
+            if (item.adicionais && item.adicionais.length > 0) {
+                detalhes += `<div class="item-detalhes">➕ ${item.adicionais.map(ad => ad.nome).join(', ')}</div>`;
             }
-            if (status === 'Em Preparo') {
-                return printBtn + `<button class="btn-kds pronto" data-id="${pedidoId}" data-status="Pronto">Mover para Pronto ✅</button>`;
+            if (item.remocoes && item.remocoes.length > 0) {
+                detalhes += `<div class="item-detalhes">➖ ${item.remocoes.map(rem => rem.nome).join(', ')}</div>`;
             }
-            if (status === 'Pronto') {
-                return printBtn + `<button class="btn-kds finalizar" data-id="${pedidoId}">Finalizar Pedido 🗑️</button>`;
+            if (item.observacao) {
+                detalhes += `<div class="item-detalhes">📝 Obs: ${item.observacao}</div>`;
             }
-            return printBtn; // Caso tenha algum status inesperado
-        }
+            return `<li><strong>${item.quantidade}x ${item.nome}</strong>${detalhes}</li>`;
+        }).join('') + '</ul>';
+    }
 
-        function renderizarPedido(pedido, pedidoId, ehNovo = false) {
-            const horaFormatada = new Date(pedido.hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-            
-            const cardHTML = `
-                <div class="pedido-card ${ehNovo ? 'novo' : ''}" 
+    function formatarAcoes(pedidoId, status) {
+        let printBtn = `<button class="btn-kds btn-print" data-id="${pedidoId}">🖨️</button>`;
+        
+        if (status === 'Pendente') {
+            return printBtn + `<button class="btn-kds preparo" data-id="${pedidoId}" data-status="Em Preparo">Mover para Preparo 🍳</button>`;
+        }
+        if (status === 'Em Preparo') {
+            return printBtn + `<button class="btn-kds pronto" data-id="${pedidoId}" data-status="Pronto">Mover para Pronto ✅</button>`;
+        }
+        if (status === 'Pronto') {
+            return printBtn + `<button class="btn-kds finalizar" data-id="${pedidoId}">Finalizar Pedido 🗑️</button>`;
+        }
+        return printBtn; 
+    }
+
+    function renderizarPedido(pedido, pedidoId, ehNovo = false) {
+        const horaFormatada = new Date(pedido.hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        
+        const cardHTML = `
+            <div class="pedido-card ${ehNovo ? 'novo' : ''}" 
                         id="${pedidoId}" 
                         data-cliente-nome="${pedido.cliente.nome}" 
                         data-cliente-wa="${pedido.cliente.whatsapp}"
                         data-entrega-tipo="${pedido.entrega.tipo}">
-                    
-                    <div class="pedido-header">
-                        <span class="pedido-cliente">${pedido.cliente.nome}</span>
-                        <span class="pedido-hora">${horaFormatada}</span>
+                
+                <div class="pedido-header">
+                    <span class="pedido-cliente">${pedido.cliente.nome}</span>
+                    <span class="pedido-hora">${horaFormatada}</span>
+                </div>
+                <div class="pedido-itens">
+                    ${formatarItens(pedido.itens)}
+                </div>
+                
+                <div class="pedido-info">
+                    <div class="info-row">
+                        <span>📞 WhatsApp:</span>
+                        <span>${pedido.cliente.whatsapp}</span>
                     </div>
-                    <div class="pedido-itens">
-                        ${formatarItens(pedido.itens)}
+                    <div class="info-row">
+                        <span>📍 Entrega:</span>
+                        <span>${pedido.entrega.tipo === 'retirada' ? 'Retirada' : pedido.entrega.endereco}</span>
                     </div>
-                    
-                    <div class="pedido-info">
-                        <div class="info-row">
-                            <span>📞 WhatsApp:</span>
-                            <span>${pedido.cliente.whatsapp}</span>
-                        </div>
-                        <div class="info-row">
-                            <span>📍 Entrega:</span>
-                            <span>${pedido.entrega.tipo === 'retirada' ? 'Retirada' : pedido.entrega.endereco}</span>
-                        </div>
-                        <div class="info-row">
-                            <span>💳 Pagamento:</span>
-                            <span>${pedido.pagamento}</span>
-                        </div>
-                        <div class="info-row total">
-                            <span>TOTAL:</span>
-                            <span>R$ ${pedido.total.toFixed(2).replace('.', ',')}</span>
-                        </div>
+                    <div class="info-row">
+                        <span>💳 Pagamento:</span>
+                        <span>${pedido.pagamento}</span>
                     </div>
-                    
-                    <div class="pedido-acoes">
-                        ${formatarAcoes(pedidoId, pedido.status)}
+                    <div class="info-row total">
+                        <span>TOTAL:</span>
+                        <span>R$ ${pedido.total.toFixed(2).replace('.', ',')}</span>
                     </div>
                 </div>
-            `;
+                
+                <div class="pedido-acoes">
+                    ${formatarAcoes(pedidoId, pedido.status)}
+                </div>
+            </div>
+        `;
 
-            const cardAntigo = document.getElementById(pedidoId);
-            if (cardAntigo) cardAntigo.remove();
+        const cardAntigo = document.getElementById(pedidoId);
+        if (cardAntigo) cardAntigo.remove();
 
-            let container;
-            if (pedido.status === 'Pendente') {
-                container = document.getElementById('container-pendente');
-            } else if (pedido.status === 'Em Preparo') {
-                container = document.getElementById('container-preparo');
-            } else if (pedido.status === 'Pronto') {
-                container = document.getElementById('container-pronto');
-            }
-            
-            if (container) {
-                container.insertAdjacentHTML('afterbegin', cardHTML);
-            }
+        let container;
+        if (pedido.status === 'Pendente') {
+            container = document.getElementById('container-pendente');
+        } else if (pedido.status === 'Em Preparo') {
+            container = document.getElementById('container-preparo');
+        } else if (pedido.status === 'Pronto') {
+            container = document.getElementById('container-pronto');
         }
         
+        if (container) {
+            container.insertAdjacentHTML('afterbegin', cardHTML);
+        }
+    }
+    
+    function moverPedido(pedidoId, novoStatus) {
+        const pedidoParaAtualizar = ref(database, 'pedidos/' + pedidoId);
+        update(pedidoParaAtualizar, {
+            status: novoStatus
+        });
+    }
+    
+    function finalizarPedido(pedidoId) {
+        if (confirm('Tem certeza que deseja finalizar e ARQUIVAR este pedido?')) {
+            const pedidoParaRemoverRef = ref(database, 'pedidos/' + pedidoId);
+            
+            get(pedidoParaRemoverRef).then((snapshot) => {
+                if (snapshot.exists()) {
+                    const pedidoData = snapshot.val();
+                    const destinoRef = ref(database, 'pedidos_concluidos/' + pedidoId);
+                    
+                    set(destinoRef, pedidoData).then(() => {
+                        remove(pedidoParaRemoverRef);
+                    }).catch((error) => {
+                        console.error("Erro ao MOVER o pedido (escrita no histórico): ", error);
+                        alert("Erro ao arquivar o pedido.");
+                    });
+                } else {
+                    console.log("Pedido não encontrado, talvez já tenha sido removido.");
+                    remove(pedidoParaRemoverRef);
+                }
+            }).catch((error) => {
+                console.error("Erro ao MOVER o pedido (leitura): ", error);
+                alert("Erro ao ler o pedido para arquivar.");
+            });
+        }
+    }
+
+    async function handlePrint(pedidoId) {
+        const pedidoParaImprimirRef = ref(database, 'pedidos/' + pedidoId);
+        try {
+            const snapshot = await get(pedidoParaImprimirRef);
+            if (!snapshot.exists()) {
+                alert("Erro: Pedido não encontrado para impressão.");
+                return;
+            }
+            const pedido = snapshot.val();
+            
+            const printHTML = buildPrintHTML(pedido);
+            
+            const printWindow = window.open('', '_blank', 'width=300,height=600');
+            
+            printWindow.document.write(printHTML);
+            printWindow.document.close();
+            
+            printWindow.focus();
+            
+            setTimeout(() => {
+                printWindow.print();
+            }, 500); 
+
+        } catch (error) {
+            console.error("Erro ao buscar pedido para impressão:", error);
+            alert("Erro ao gerar comanda.");
+        }
+    }
+
+    function buildPrintHTML(pedido) {
+        const horaFormatada = new Date(pedido.hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        
+        let itensHTML = '';
+        pedido.itens.forEach(item => {
+            itensHTML += `
+                <div class="item">
+                    <div class="item-header"><strong>${item.quantidade}x ${item.nome}</strong></div>
+                    <div class="item-detalhes">
+            `;
+            if (item.queijo) itensHTML += `&nbsp; &nbsp; 🧀 ${item.queijo}<br>`;
+            if (item.sabor) itensHTML += `&nbsp; &nbsp; 🥤 ${item.sabor}<br>`;
+            if (item.adicionais && item.adicionais.length > 0) {
+                itensHTML += `&nbsp; &nbsp; ➕ ${item.adicionais.map(ad => ad.nome).join(', ')}<br>`;
+            }
+            if (item.remocoes && item.remocoes.length > 0) {
+                itensHTML += `&nbsp; &nbsp; ➖ ${item.remocoes.map(rem => rem.nome).join(', ')}<br>`;
+            }
+            if (item.observacao) {
+                itensHTML += `&nbsp; &nbsp; 📝 ${item.observacao}<br>`;
+            }
+            itensHTML += `</div></div>`;
+        });
+
+        return `
+            <html>
+            <head>
+                <title>Comanda ${pedido.cliente.nome}</title>
+                <style>
+                    body {
+                        width: 280px;
+                        font-family: 'Courier New', Courier, monospace;
+                        font-size: 12px;
+                        line-height: 1.4;
+                        margin: 0;
+                        padding: 10px;
+                        color: #000;
+                    }
+                    h1 { font-size: 16px; text-align: center; margin: 0 0 10px 0; }
+                    h2 { font-size: 14px; margin: 10px 0 5px 0; border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 5px 0; }
+                    .section { margin-bottom: 10px; }
+                    .item { margin-bottom: 5px; }
+                    .item-header { font-size: 14px; }
+                    .item-detalhes { padding-left: 10px; }
+                    .total-line { font-size: 14px; font-weight: bold; text-align: right; margin-top: 10px; }
+                    .info-line { display: flex; justify-content: space-between; }
+                </style>
+            </head>
+            <body>
+                <h1>Dona Baguete</h1>
+                <div class="section">
+                    <div class="info-line"><span>Data:</span> <span>${new Date(pedido.hora).toLocaleDateString('pt-BR')}</span></div>
+                    <div class="info-line"><span>Hora:</span> <span>${horaFormatada}</span></div>
+                    <div class="info-line"><span>Status:</span> <span>${pedido.status}</span></div>
+                </div>
+                
+                <h2>CLIENTE: ${pedido.cliente.nome.toUpperCase()}</h2>
+                
+                <div class="section">
+                    ${pedido.entrega.tipo === 'retirada'
+                        ? '<strong>*** RETIRADA NO LOCAL ***</strong>'
+                        : `<strong>Endereço:</strong> ${pedido.entrega.endereco}`
+                    }
+                </div>
+                
+                <h2>PEDIDO</h2>
+                <div class="section">${itensHTML}</div>
+                
+                <h2>PAGAMENTO</h2>
+                <div class="section">
+                    <strong>Forma:</strong> ${pedido.pagamento}<br>
+                    <div class="total-line">TOTAL: R$ ${pedido.total.toFixed(2).replace('.', ',')}</div>
+                </div>
+            </body>
+            </html>
+        `;
+    }
+
+    // ⭐ FUNÇÃO PRINCIPAL: INICIALIZA A ESCUTA DO FIREBASE
+    function initializeKDSListeners() {
+        // --- LÓGICA DE ESCUTA (MOVEMOS PARA CÁ) ---
         onChildAdded(pedidosRef, (snapshot) => {
             const pedido = snapshot.val();
             const pedidoId = snapshot.key;
@@ -410,215 +543,71 @@
                 card.remove();
             }
         });
+        // --- FIM DA LÓGICA DE ESCUTA ---
+    }
+    
+    // VIGIA (Verifica o login)
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            console.log("Usuário logado. Iniciando KDS.");
+            // 🛑 CORREÇÃO: SÓ INICIALIZA A ESCUTA APÓS O LOGIN SER CONFIRMADO
+            initializeKDSListeners(); 
+        } else {
+            console.log("Usuário não logado. Redirecionando...");
+            window.location.href = 'login.html';
+        }
+    });
 
-        function moverPedido(pedidoId, novoStatus) {
-            const pedidoParaAtualizar = ref(database, 'pedidos/' + pedidoId);
-            update(pedidoParaAtualizar, {
-                status: novoStatus
-            });
+
+    // ⭐ LISTENER DE CLIQUE (AÇÕES)
+    document.addEventListener('click', (e) => {
+        const button = e.target.closest('.btn-kds');
+        if (!button) return;
+
+        const pedidoId = button.dataset.id;
+        
+        // Ação de Mover
+        if (button.matches('.btn-kds.preparo') || button.matches('.btn-kds.pronto')) {
+            const card = button.closest('.pedido-card');
+            const novoStatus = button.dataset.status;
+            const clienteNome = card.dataset.clienteNome;
+            const clienteWa = card.dataset.clienteWa;
+            const tipoEntrega = card.dataset.entregaTipo;
+
+            let mensagem = "";
+
+            if (novoStatus === 'Em Preparo') {
+                mensagem = `Olá, ${clienteNome}! 👋 Seu pedido na Dona Baguete foi confirmado e já está *em preparo*! 🍳`;
+            } else if (novoStatus === 'Pronto') {
+                if (tipoEntrega === 'retirada') {
+                    mensagem = `Olá, ${clienteNome}! 👋 Boas notícias! Seu pedido na Dona Baguete está *pronto para retirada*! 📍\n\nNosso endereço: Rua Romualdo Albino Balestrin, 35 - COHAB III`;
+                } else {
+                    mensagem = `Olá, ${clienteNome}! 👋 Boas notícias! Seu pedido na Dona Baguete está *pronto* e já está saindo para entrega! 🛵`;
+                }
+            }
+
+            if (mensagem) {
+                const notificar = confirm(`Deseja NOTIFICAR o cliente "${clienteNome}" no WhatsApp sobre essa mudança?`);
+                if (notificar) {
+                    const whatsappUrl = `https://wa.me/${clienteWa}?text=${encodeURIComponent(mensagem)}`;
+                    window.open(whatsappUrl, '_blank');
+                }
+            }
+            moverPedido(pedidoId, novoStatus);
         }
         
-        function finalizarPedido(pedidoId) {
-            if (confirm('Tem certeza que deseja finalizar e ARQUIVAR este pedido?')) {
-                const pedidoParaRemoverRef = ref(database, 'pedidos/' + pedidoId);
-                
-                get(pedidoParaRemoverRef).then((snapshot) => {
-                    if (snapshot.exists()) {
-                        const pedidoData = snapshot.val();
-                        const destinoRef = ref(database, 'pedidos_concluidos/' + pedidoId);
-                        
-                        set(destinoRef, pedidoData).then(() => {
-                            remove(pedidoParaRemoverRef);
-                        }).catch((error) => {
-                            console.error("Erro ao MOVER o pedido (escrita no histórico): ", error);
-                            alert("Erro ao arquivar o pedido.");
-                        });
-                    } else {
-                        console.log("Pedido não encontrado, talvez já tenha sido removido.");
-                        remove(pedidoParaRemoverRef);
-                    }
-                }).catch((error) => {
-                    console.error("Erro ao MOVER o pedido (leitura): ", error);
-                    alert("Erro ao ler o pedido para arquivar.");
-                });
-            }
+        // Ação de Finalizar
+        if (button.matches('.btn-kds.finalizar')) {
+            finalizarPedido(pedidoId);
         }
-
-        // --- ⭐ LÓGICA DE IMPRESSÃO (NOVO) ⭐ ---
-
-        /**
-         * Busca o pedido no Firebase e abre a janela de impressão
-         */
-        async function handlePrint(pedidoId) {
-            const pedidoParaImprimirRef = ref(database, 'pedidos/' + pedidoId);
-            try {
-                const snapshot = await get(pedidoParaImprimirRef);
-                if (!snapshot.exists()) {
-                    alert("Erro: Pedido não encontrado para impressão.");
-                    return;
-                }
-                const pedido = snapshot.val();
-                
-                // 1. Constrói o HTML da comanda
-                const printHTML = buildPrintHTML(pedido);
-                
-                // 2. Abre uma nova janela pop-up
-                // Largura de 300px é boa para impressoras térmicas de 80mm
-                const printWindow = window.open('', '_blank', 'width=300,height=600');
-                
-                // 3. Escreve o HTML na nova janela
-                printWindow.document.write(printHTML);
-                printWindow.document.close();
-                
-                // 4. Aciona a impressão
-                printWindow.focus();
-                
-                // Espera um pouco para o conteúdo carregar antes de imprimir
-                setTimeout(() => {
-                    printWindow.print();
-                    // printWindow.close(); // Deixe comentado, é melhor o usuário fechar
-                }, 500); 
-
-            } catch (error) {
-                console.error("Erro ao buscar pedido para impressão:", error);
-                alert("Erro ao gerar comanda.");
-            }
-        }
-
-        /**
-         * Cria o HTML formatado para uma comanda de impressora térmica
-         */
-        function buildPrintHTML(pedido) {
-            const horaFormatada = new Date(pedido.hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-            
-            let itensHTML = '';
-            pedido.itens.forEach(item => {
-                itensHTML += `
-                    <div class="item">
-                        <div class="item-header"><strong>${item.quantidade}x ${item.nome}</strong></div>
-                        <div class="item-detalhes">
-                `;
-                if (item.queijo) itensHTML += `&nbsp; &nbsp; 🧀 ${item.queijo}<br>`;
-                if (item.sabor) itensHTML += `&nbsp; &nbsp; 🥤 ${item.sabor}<br>`;
-                if (item.adicionais && item.adicionais.length > 0) {
-                    itensHTML += `&nbsp; &nbsp; ➕ ${item.adicionais.map(ad => ad.nome).join(', ')}<br>`;
-                }
-                if (item.remocoes && item.remocoes.length > 0) {
-                    itensHTML += `&nbsp; &nbsp; ➖ ${item.remocoes.map(rem => rem.nome).join(', ')}<br>`;
-                }
-                if (item.observacao) {
-                    itensHTML += `&nbsp; &nbsp; 📝 ${item.observacao}<br>`;
-                }
-                itensHTML += `</div></div>`;
-            });
-
-            // Este é o HTML que será impresso
-            return `
-                <html>
-                <head>
-                    <title>Comanda ${pedido.cliente.nome}</title>
-                    <style>
-                        body {
-                            width: 280px; /* Largura da impressora térmica (aprox 80mm) */
-                            font-family: 'Courier New', Courier, monospace;
-                            font-size: 12px;
-                            line-height: 1.4;
-                            margin: 0;
-                            padding: 10px;
-                            color: #000; /* Garante que a impressão seja preta */
-                        }
-                        h1 { font-size: 16px; text-align: center; margin: 0 0 10px 0; }
-                        h2 { font-size: 14px; margin: 10px 0 5px 0; border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 5px 0; }
-                        .section { margin-bottom: 10px; }
-                        .item { margin-bottom: 5px; }
-                        .item-header { font-size: 14px; }
-                        .item-detalhes { padding-left: 10px; }
-                        .total-line { font-size: 14px; font-weight: bold; text-align: right; margin-top: 10px; }
-                        .info-line { display: flex; justify-content: space-between; }
-                    </style>
-                </head>
-                <body>
-                    <h1>Dona Baguete</h1>
-                    <div class="section">
-                        <div class="info-line"><span>Data:</span> <span>${new Date(pedido.hora).toLocaleDateString('pt-BR')}</span></div>
-                        <div class="info-line"><span>Hora:</span> <span>${horaFormatada}</span></div>
-                        <div class="info-line"><span>Status:</span> <span>${pedido.status}</span></div>
-                    </div>
-                    
-                    <h2>CLIENTE: ${pedido.cliente.nome.toUpperCase()}</h2>
-                    
-                    <div class="section">
-                        ${pedido.entrega.tipo === 'retirada'
-                            ? '<strong>*** RETIRADA NO LOCAL ***</strong>'
-                            : `<strong>Endereço:</strong> ${pedido.entrega.endereco}`
-                        }
-                    </div>
-                    
-                    <h2>PEDIDO</h2>
-                    <div class="section">${itensHTML}</div>
-                    
-                    <h2>PAGAMENTO</h2>
-                    <div class="section">
-                        <strong>Forma:</strong> ${pedido.pagamento}<br>
-                        <div class="total-line">TOTAL: R$ ${pedido.total.toFixed(2).replace('.', ',')}</div>
-                    </div>
-                </body>
-                </html>
-            `;
-        }
-
-        // --- FIM DA LÓGICA DE IMPRESSÃO ---
-
         
-        // ⭐ LISTENER DE CLIQUE ATUALIZADO ⭐
-        document.addEventListener('click', (e) => {
-            // Usa .closest() para pegar o botão mesmo se o clique for no ícone dentro dele
-            const button = e.target.closest('.btn-kds');
-            if (!button) return; // Se não clicou em um .btn-kds, ignora
+        // Ação de Imprimir
+        if (button.matches('.btn-kds.btn-print')) {
+            handlePrint(pedidoId);
+        }
+    });
 
-            const pedidoId = button.dataset.id;
-            
-            // Ação de Mover
-            if (button.matches('.btn-kds.preparo') || button.matches('.btn-kds.pronto')) {
-                const card = button.closest('.pedido-card');
-                const novoStatus = button.dataset.status;
-                const clienteNome = card.dataset.clienteNome;
-                const clienteWa = card.dataset.clienteWa;
-                const tipoEntrega = card.dataset.entregaTipo;
-
-                let mensagem = "";
-
-                if (novoStatus === 'Em Preparo') {
-                    mensagem = `Olá, ${clienteNome}! 👋 Seu pedido na Dona Baguete foi confirmado e já está *em preparo*! 🍳`;
-                } else if (novoStatus === 'Pronto') {
-                    if (tipoEntrega === 'retirada') {
-                        mensagem = `Olá, ${clienteNome}! 👋 Boas notícias! Seu pedido na Dona Baguete está *pronto para retirada*! 📍\n\nNosso endereço: Rua Romualdo Albino Balestrin, 35 - COHAB III`;
-                    } else {
-                        mensagem = `Olá, ${clienteNome}! 👋 Boas notícias! Seu pedido na Dona Baguete está *pronto* e já está saindo para entrega! 🛵`;
-                    }
-                }
-
-                if (mensagem) {
-                    const notificar = confirm(`Deseja NOTIFICAR o cliente "${clienteNome}" no WhatsApp sobre essa mudança?`);
-                    if (notificar) {
-                        const whatsappUrl = `https://wa.me/${clienteWa}?text=${encodeURIComponent(mensagem)}`;
-                        window.open(whatsappUrl, '_blank');
-                    }
-                }
-                moverPedido(pedidoId, novoStatus);
-            }
-            
-            // Ação de Finalizar
-            if (button.matches('.btn-kds.finalizar')) {
-                finalizarPedido(pedidoId);
-            }
-            
-            // ⭐ Ação de Imprimir (NOVO) ⭐
-            if (button.matches('.btn-kds.btn-print')) {
-                handlePrint(pedidoId);
-            }
-        });
-
-    </script>
+</script>
 </body>
+
 </html>
