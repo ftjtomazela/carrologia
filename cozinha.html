@@ -239,7 +239,7 @@
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
 
 
-    // Sua configuração do Firebase
+    // Sua configuração do Firebase (Mantenha sua API Key correta)
     const firebaseConfig = {
         apiKey: "AIzaSyAQTm3cL26REQloN8AFP28gwsIUzYz73og",
         authDomain: "dona-baguete-kds.firebaseapp.com",
@@ -515,46 +515,43 @@
         `;
     }
 
-    // ⭐ FUNÇÃO PRINCIPAL: INICIALIZA A ESCUTA DO FIREBASE
-    function initializeKDSListeners() {
-        // --- LÓGICA DE ESCUTA (MOVEMOS PARA CÁ) ---
-        onChildAdded(pedidosRef, (snapshot) => {
-            const pedido = snapshot.val();
-            const pedidoId = snapshot.key;
-            
-            if(pedido.status === 'Pendente') {
-                tocarNotificacao();
-                renderizarPedido(pedido, pedidoId, true);
-            } else {
-                renderizarPedido(pedido, pedidoId, false);
-            }
-        });
-
-        onChildChanged(pedidosRef, (snapshot) => {
-            const pedido = snapshot.val();
-            const pedidoId = snapshot.key;
-            renderizarPedido(pedido, pedidoId, false);
-        });
-
-        onChildRemoved(pedidosRef, (snapshot) => {
-            const pedidoId = snapshot.key;
-            const card = document.getElementById(pedidoId);
-            if (card) {
-                card.remove();
-            }
-        });
-        // --- FIM DA LÓGICA DE ESCUTA ---
-    }
-    
-    // VIGIA (Verifica o login)
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            console.log("Usuário logado. Iniciando KDS.");
-            // 🛑 CORREÇÃO: SÓ INICIALIZA A ESCUTA APÓS O LOGIN SER CONFIRMADO
-            initializeKDSListeners(); 
+    // ⭐ AQUI O KDS COMEÇA A FUNCIONAR (Listener) ⭐
+    // Movemos o KDS Listener para fora do onAuthStateChanged para garantir que ele inicie a leitura imediatamente.
+    // Isso deve resolver o problema de carregamento que você está tendo.
+    onChildAdded(pedidosRef, (snapshot) => {
+        const pedido = snapshot.val();
+        const pedidoId = snapshot.key;
+        
+        if(pedido.status === 'Pendente') {
+            tocarNotificacao();
+            renderizarPedido(pedido, pedidoId, true);
         } else {
+            renderizarPedido(pedido, pedidoId, false);
+        }
+    });
+
+    onChildChanged(pedidosRef, (snapshot) => {
+        const pedido = snapshot.val();
+        const pedidoId = snapshot.key;
+        renderizarPedido(pedido, pedidoId, false);
+    });
+
+    onChildRemoved(pedidosRef, (snapshot) => {
+        const pedidoId = snapshot.key;
+        const card = document.getElementById(pedidoId);
+        if (card) {
+            card.remove();
+        }
+    });
+    
+    
+    // VIGIA (Agora a verificação de login é APENAS para redirecionar se o usuário sair)
+    onAuthStateChanged(auth, (user) => {
+        if (!user) {
             console.log("Usuário não logado. Redirecionando...");
             window.location.href = 'login.html';
+        } else {
+            console.log("Usuário logado. KDS em funcionamento.");
         }
     });
 
@@ -611,3 +608,4 @@
 </body>
 
 </html>
+
