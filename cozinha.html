@@ -236,10 +236,10 @@
     // Importações
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
     import { getDatabase, ref, onChildAdded, onChildChanged, onChildRemoved, update, remove, get, set } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+    // REMOVEMOS: import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
 
 
-    // Sua configuração do Firebase (Mantenha sua API Key correta)
+    // Sua configuração do Firebase (VERIFIQUE NOVAMENTE ESTA CHAVE)
     const firebaseConfig = {
         apiKey: "AIzaSyAQTm3cL26REQloN8AFP28gwsIUzYz73og",
         authDomain: "dona-baguete-kds.firebaseapp.com",
@@ -254,25 +254,12 @@
     // Inicializa o Firebase
     const app = initializeApp(firebaseConfig);
     const database = getDatabase(app); 
-    const auth = getAuth(app); 
+    // REMOVEMOS: const auth = getAuth(app); 
     const pedidosRef = ref(database, 'pedidos'); 
     const historicoRef = ref(database, 'pedidos_concluidos');
 
 
-    // LÓGICA DO LOGOUT (Botão Sair)
-    const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', () => {
-            if (confirm("Tem certeza que deseja sair?")) {
-                signOut(auth).then(() => {
-                    window.location.href = 'login.html';
-                }).catch((error) => {
-                    console.error("Erro ao sair: ", error);
-                    alert("Não foi possível sair. Tente novamente.");
-                });
-            }
-        });
-    }
+    // REMOVEMOS TODA A LÓGICA DE LOGIN E REDIRECIONAMENTO
 
     // --- FUNÇÕES DE AUXÍLIO (Mantidas) ---
     function tocarNotificacao() {
@@ -515,9 +502,7 @@
         `;
     }
 
-    // ⭐ AQUI O KDS COMEÇA A FUNCIONAR (Listener) ⭐
-    // Movemos o KDS Listener para fora do onAuthStateChanged para garantir que ele inicie a leitura imediatamente.
-    // Isso deve resolver o problema de carregamento que você está tendo.
+    // ⭐ KDS LISTENER: DEVE CARREGAR SE A REGRA FOR PÚBLICA ⭐
     onChildAdded(pedidosRef, (snapshot) => {
         const pedido = snapshot.val();
         const pedidoId = snapshot.key;
@@ -544,68 +529,9 @@
         }
     });
     
-    
-    // VIGIA (Agora a verificação de login é APENAS para redirecionar se o usuário sair)
-    onAuthStateChanged(auth, (user) => {
-        if (!user) {
-            console.log("Usuário não logado. Redirecionando...");
-            window.location.href = 'login.html';
-        } else {
-            console.log("Usuário logado. KDS em funcionamento.");
-        }
-    });
-
-
-    // ⭐ LISTENER DE CLIQUE (AÇÕES)
-    document.addEventListener('click', (e) => {
-        const button = e.target.closest('.btn-kds');
-        if (!button) return;
-
-        const pedidoId = button.dataset.id;
-        
-        // Ação de Mover
-        if (button.matches('.btn-kds.preparo') || button.matches('.btn-kds.pronto')) {
-            const card = button.closest('.pedido-card');
-            const novoStatus = button.dataset.status;
-            const clienteNome = card.dataset.clienteNome;
-            const clienteWa = card.dataset.clienteWa;
-            const tipoEntrega = card.dataset.entregaTipo;
-
-            let mensagem = "";
-
-            if (novoStatus === 'Em Preparo') {
-                mensagem = `Olá, ${clienteNome}! 👋 Seu pedido na Dona Baguete foi confirmado e já está *em preparo*! 🍳`;
-            } else if (novoStatus === 'Pronto') {
-                if (tipoEntrega === 'retirada') {
-                    mensagem = `Olá, ${clienteNome}! 👋 Boas notícias! Seu pedido na Dona Baguete está *pronto para retirada*! 📍\n\nNosso endereço: Rua Romualdo Albino Balestrin, 35 - COHAB III`;
-                } else {
-                    mensagem = `Olá, ${clienteNome}! 👋 Boas notícias! Seu pedido na Dona Baguete está *pronto* e já está saindo para entrega! 🛵`;
-                }
-            }
-
-            if (mensagem) {
-                const notificar = confirm(`Deseja NOTIFICAR o cliente "${clienteNome}" no WhatsApp sobre essa mudança?`);
-                if (notificar) {
-                    const whatsappUrl = `https://wa.me/${clienteWa}?text=${encodeURIComponent(mensagem)}`;
-                    window.open(whatsappUrl, '_blank');
-                }
-            }
-            moverPedido(pedidoId, novoStatus);
-        }
-        
-        // Ação de Finalizar
-        if (button.matches('.btn-kds.finalizar')) {
-            finalizarPedido(pedidoId);
-        }
-        
-        // Ação de Imprimir
-        if (button.matches('.btn-kds.btn-print')) {
-            handlePrint(pedidoId);
-        }
-    });
-
 </script>
 </body>
 
 </html>
+
 
