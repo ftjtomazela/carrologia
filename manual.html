@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDV - Pedido Manual</title>
     <style>
+        /* --- ESTILOS GERAIS --- */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -23,6 +24,9 @@
             gap: 10px;
             align-items: center;
             flex-wrap: wrap;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
         .nav-btn {
             background: #374151;
@@ -37,23 +41,12 @@
             transition: all 0.3s;
             font-family: inherit; 
         }
-        .nav-btn:hover {
-            background: #4b5563;
-        }
-        .nav-btn.active {
-            background: #d4a021;
-            color: #000;
-        }
-        .nav-btn.logout {
-            background: #dc2626; 
-            color: #fff;
-            margin-left: auto; 
-        }
-        .nav-btn.logout:hover {
-            background: #ef4444;
-        }
-        /* --- FIM DA NAV --- */
+        .nav-btn:hover { background: #4b5563; }
+        .nav-btn.active { background: #d4a021; color: #000; }
+        .nav-btn.logout { background: #dc2626; color: #fff; margin-left: auto; }
+        .nav-btn.logout:hover { background: #ef4444; }
 
+        /* --- GRID PDV --- */
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -67,14 +60,11 @@
         }
         .pdv-grid {
             display: grid;
-            grid-template-columns: 1fr; /* 1 coluna em telas pequenas */
+            grid-template-columns: 1fr;
             gap: 20px;
         }
-        @media (min-width: 768px) {
-             .pdv-grid { grid-template-columns: 1fr 1fr; } /* 2 colunas em tablets */
-        }
-        @media (min-width: 1200px) {
-            .pdv-grid { grid-template-columns: 1fr 1fr 1fr; } /* 3 colunas em desktops */
+        @media (min-width: 1024px) {
+             .pdv-grid { grid-template-columns: 2fr 1.5fr 1fr; } 
         }
 
         .pdv-coluna {
@@ -82,7 +72,7 @@
             border-radius: 16px;
             padding: 20px;
             border: 2px solid #374151;
-            max-height: 80vh;
+            max-height: calc(100vh - 120px);
             display: flex;
             flex-direction: column;
         }
@@ -92,12 +82,14 @@
             margin-bottom: 15px;
             border-bottom: 1px solid #4b5563;
             padding-bottom: 10px;
+            flex-shrink: 0;
         }
         
         /* Coluna de Itens (Cardápio) */
-        .cardapio-scroll {
+        .cardapio-scroll, .carrinho-scroll, .form-scroll {
             overflow-y: auto;
             flex: 1;
+            min-height: 200px;
         }
         .item-cardapio {
             background: #374151;
@@ -110,24 +102,10 @@
             cursor: pointer;
             transition: all 0.3s;
         }
-        .item-cardapio:hover {
-            background: #4b5563;
-        }
-        .item-cardapio span {
-            font-size: 1rem;
-            font-weight: 500;
-        }
-        .item-cardapio .preco {
-            font-weight: bold;
-            color: #d4a021;
-        }
+        .item-cardapio:hover { background: #4b5563; }
+        .item-cardapio .preco { font-weight: bold; color: #d4a021; }
 
         /* Coluna do Pedido Atual (Carrinho) */
-        .carrinho-scroll {
-            overflow-y: auto;
-            flex: 1;
-            min-height: 200px;
-        }
         .carrinho-item {
             background: #374151;
             padding: 12px 15px;
@@ -135,25 +113,16 @@
             margin-bottom: 10px;
             display: flex;
             gap: 10px;
-            align-items: center;
+            align-items: flex-start;
         }
-        .carrinho-info {
-            flex: 1;
-        }
-        .carrinho-info .nome {
-            font-weight: bold;
-            font-size: 1.1rem;
-        }
-        .carrinho-info .detalhes {
+        .carrinho-info { flex: 1; }
+        .carrinho-info .nome { font-weight: bold; font-size: 1.1rem; }
+        .carrinho-info .detalhes { 
             font-size: 0.85rem;
             color: #9ca3af;
+            white-space: pre-wrap; 
         }
-        .carrinho-preco {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #d4a021;
-        }
-        /* ⭐ SEU BOTÃO DE EXCLUIR ⭐ */
+        .carrinho-preco { font-size: 1.1rem; font-weight: bold; color: #d4a021; }
         .btn-excluir {
             background: #dc2626;
             color: #fff;
@@ -162,6 +131,7 @@
             border-radius: 8px;
             font-weight: bold;
             cursor: pointer;
+            flex-shrink: 0;
         }
         #total-carrinho {
             margin-top: 15px;
@@ -170,20 +140,16 @@
             font-size: 1.5rem;
             font-weight: bold;
             text-align: right;
+            flex-shrink: 0;
         }
         
         /* Coluna do Formulário */
-        .form-scroll {
-            overflow-y: auto;
-            flex: 1;
-        }
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .input-group { display: flex; flex-direction: column; }
         .full-width { grid-column: 1 / -1; }
         .input-group label { margin-bottom: 8px; color: #9ca3af; font-weight: bold; }
         .input-field { background: #374151; color: #fff; border: 2px solid #4b5563; border-radius: 8px; padding: 12px; font-size: 1rem; font-family: inherit; }
         .input-field:focus { outline: none; border-color: #d4a021; }
-        
         #btn-enviar-manual {
             width: 100%;
             background: #10b981;
@@ -196,11 +162,56 @@
             cursor: pointer;
             transition: all 0.3s;
             margin-top: 20px;
+            flex-shrink: 0;
         }
-        #btn-enviar-manual:disabled {
-            background: #4b5563; color: #9ca3af; cursor: not-allowed;
-        }
+        #btn-enviar-manual:disabled { background: #4b5563; color: #9ca3af; cursor: not-allowed; }
 
+        /* --- ESTILOS DO MODAL --- */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; overflow-y: auto; }
+        .modal.active { display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .modal-content { 
+            background: linear-gradient(145deg, #2d3748, #1a202c); 
+            border-radius: 20px; 
+            max-width: 600px; 
+            width: 100%; 
+            max-height: 90vh; 
+            overflow-y: auto; 
+            border: 2px solid #d4a021; 
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-header { background: #000; padding: 20px; border-bottom: 2px solid #d4a021; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+        .modal-title { font-size: 1.5rem; font-weight: bold; color: #d4a021; }
+        .close-btn { background: #dc2626; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
+        .modal-body { padding: 25px; flex-grow: 1; }
+        .modal-footer { 
+            background: #1a202c; 
+            padding: 20px; 
+            border-top: 1px solid #374151; 
+            display: flex; 
+            gap: 10px; 
+            position: sticky; 
+            bottom: 0; 
+            z-index: 10;
+        }
+        .options-section { margin-bottom: 25px; }
+        .options-title { font-size: 1.1rem; font-weight: bold; color: #d4a021; margin-bottom: 15px; }
+        .option-item { background: #374151; padding: 15px; border-radius: 10px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: all 0.3s; }
+        .option-item:hover { background: #4b5563; }
+        .option-item label { cursor: pointer; width: 100%; }
+        .option-item input[type="radio"], .option-item input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; }
+        .option-label { flex: 1; }
+        .option-price { color: #d4a021; font-weight: bold; }
+        textarea { width: 100%; background: #374151; color: #fff; border: 2px solid #4b5563; border-radius: 8px; padding: 12px; font-size: 1rem; resize: vertical; font-family: inherit; }
+        textarea:focus { outline: none; border-color: #d4a021; }
+        .modal-total { background: #374151; padding: 15px; border-radius: 10px; margin: 20px 0; display: flex; justify-content: space-between; align-items: center; font-size: 1.3rem; }
+        .modal-total-price { color: #d4a021; font-weight: bold; }
+        .modal-actions button { flex: 1; padding: 15px; border: none; border-radius: 10px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: all 0.3s; }
+        .cancel-btn { background: #4b5563; color: #fff; }
+        .confirm-btn { background: #d4a021; color: #000; }
+        #bebida-modal .modal-footer { justify-content: flex-end; }
+        #bebida-modal .modal-footer button { flex-grow: 0; width: auto; }
+        
     </style>
 </head>
 <body>
@@ -224,17 +235,18 @@
                 <div class="cardapio-scroll">
                     <h3 style="color:#d4a021; margin: 15px 0 10px 0;">🔥 Lanches</h3>
                     <div id="lanches-container">
-                        <p>Carregando lanches...</p>
+                        <p style="color: #9ca3af;">Carregando lanches...</p>
                     </div>
                     
                     <h3 style="color:#d4a021; margin: 15px 0 10px 0;">🥤 Bebidas</h3>
                     <div id="bebidas-container">
-                        <p>Carregando bebidas...</p>
+                        <p style="color: #9ca3af;">Carregando bebidas...</p>
                     </div>
                     
-                    <h3 style="color:#d4a021; margin: 15px 0 10px 0;">➕ Adicionais</h3>
+                    <h3 style="color:#d4a021; margin: 15px 0 10px 0;">➕ Adicionais Avulsos</h3>
                     <div id="adicionais-container">
-                        </div>
+                        <p style="color: #9ca3af;">Carregando adicionais...</p>
+                    </div>
                 </div>
             </div>
 
@@ -267,8 +279,8 @@
                                 <label for="localidade">Tipo</label>
                                 <select id="localidade" class="input-field" onchange="toggleEndereco(this.value)">
                                     <option value="retirada">Retirada no Local</option>
-                                    <option value="dentro">Entrega em Conchas</option>
-                                    <option value="fora">Entrega Fora de Conchas</option>
+                                    <option value="dentro">Entrega em Conchas (R$ 4,00)</option>
+                                    <option value="fora">Entrega Fora de Conchas (R$ 10,00)</option>
                                 </select>
                             </div>
                         </div>
@@ -290,18 +302,18 @@
                         <h3 style="color:#d4a021; margin: 20px 0 10px 0;">Pagamento</h3>
                         <div class="form-grid">
                              <div class="input-group full-width">
-                                <label for="pagamento">Forma</label>
-                                <select id="pagamento" class="input-field" onchange="toggleTroco(this.value)">
-                                    <option value="pix">PIX</option>
-                                    <option value="credito">Crédito</option>
-                                    <option value="debito">Débito</option>
-                                    <option value="dinheiro">Dinheiro</option>
-                                </select>
-                            </div>
-                            <div class="input-group" id="troco-section" style="display: none;">
-                                <label for="troco-valor">Troco para?</label>
-                                <input type="text" id="troco-valor" class="input-field" placeholder="Ex: 50">
-                            </div>
+                                 <label for="pagamento">Forma</label>
+                                 <select id="pagamento" class="input-field" onchange="toggleTroco(this.value)">
+                                     <option value="pix">PIX</option>
+                                     <option value="credito">Crédito</option>
+                                     <option value="debito">Débito</option>
+                                     <option value="dinheiro">Dinheiro</option>
+                                 </select>
+                             </div>
+                             <div class="input-group" id="troco-section" style="display: none;">
+                                 <label for="troco-valor">Troco para?</label>
+                                 <input type="text" id="troco-valor" class="input-field" placeholder="Ex: 50">
+                             </div>
                         </div>
                         
                         <button type="submit" id="btn-enviar-manual">Lançar Pedido na Cozinha</button>
@@ -311,6 +323,67 @@
 
         </div>
     </div>
+    
+    <div class="modal" id="lanche-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="lanche-modal-title"></div>
+                <button class="close-btn" onclick="closeModal('lanche-modal')">✕ Fechar</button>
+            </div>
+            <div class="modal-body">
+                <div id="tipo-queijo-section" class="options-section" style="display: none;">
+                    <div class="options-title">🧀 Escolha o Queijo</div>
+                    <div id="tipo-queijo-container"></div>
+                </div>
+                <div class="options-section">
+                    <div class="options-title">➕ Adicionais</div>
+                    <div id="adicionais-container-modal"></div>
+                </div>
+                <div class="options-section" id="remocoes-section">
+                    <div class="options-title">➖ Remover Ingredientes</div>
+                    <div id="remocoes-container"></div>
+                </div>
+                <div class="options-section">
+                    <div class="options-title">📝 Observações</div>
+                    <textarea id="observacao-lanche" rows="3" placeholder="Alguma observação especial?"></textarea>
+                </div>
+                <div class="modal-total">
+                    <span>Total do Item:</span>
+                    <span class="modal-total-price" id="modal-total-lanche">R$ 0,00</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="cancel-btn" onclick="closeModal('lanche-modal')">Cancelar</button>
+                <button class="confirm-btn" onclick="adicionarLancheDoModal()">Adicionar ao Pedido</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="bebida-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="bebida-modal-title">Escolha o Sabor</div>
+                <button class="close-btn" onclick="closeModal('bebida-modal')">✕ Fechar</button>
+            </div>
+            <div class="modal-body">
+                <div class="options-section">
+                    <div class="options-title">🥤 Sabores Disponíveis</div>
+                    <div id="sabores-container-modal"></div>
+                </div>
+                <div class="options-section">
+                    <div class="options-title">📝 Observações</div>
+                    <textarea id="observacao-bebida" rows="3" placeholder="Observações para a bebida"></textarea>
+                </div>
+                 <div class="modal-total">
+                    <span>Preço:</span>
+                    <span class="modal-total-price" id="modal-total-bebida">R$ 0,00</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="confirm-btn" onclick="adicionarBebidaDoModal()">Adicionar ao Pedido</button>
+            </div>
+        </div>
+    </div>
 
 
     <script type="module">
@@ -318,7 +391,7 @@
         import { getDatabase, ref, push, get } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
 
-        // SUA MESMA CONFIGURAÇÃO
+        // --- SUA CONFIGURAÇÃO FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyAQTm3cL26REQloN8AFP28gwsIUzYz73og",
             authDomain: "dona-baguete-kds.firebaseapp.com",
@@ -330,39 +403,49 @@
             measurementId: "G-NY4NTLFLCG"
         };
         
-        // Inicializa o App e o Database
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
         const auth = getAuth(app);
         const pedidosRef = ref(database, 'pedidos');
         
-        // ⭐ ESTA É A GRANDE MUDANÇA: LER O CARDÁPIO DO FIREBASE
+        // Caminhos
         const lanchesRef = ref(database, 'cardapio/lanches');
         const bebidasRef = ref(database, 'cardapio/bebidas');
 
-        // Adicionais (por enquanto, hardcoded)
+        // Adicionais e Remoções (Hardcoded para PDV)
         const adicionais = [
             { id: 'bacon', nome: 'Bacon Extra', preco: 5.00 }, 
             { id: 'queijo-prato', nome: 'Queijo Prato Extra', preco: 4.00 }, 
             { id: 'queijo-mussarela', nome: 'Queijo Mussarela Extra', preco: 4.00 }, 
-            { id: 'catupiry', nome: 'Catupiry Extra', preco: 5.00 },  
-            { id: 'repolho-maionese', nome: 'Repolho com Maionese', preco: 2.00 }
+            { id: 'catupiry', nome: 'Catupiry Extra', preco: 5.00 }, 
+            { id: 'repolho-maionese', nome: 'Repolho c/ Maionese', preco: 2.00 }
+        ];
+        const remocoes = [
+             { id: 'sem-bacon', nome: 'Sem Bacon', ingredienteId: 'bacon' }, 
+             { id: 'sem-queijo', nome: 'Sem Queijo', ingredienteId: 'queijo' }, 
+             { id: 'sem-catupiry', nome: 'Sem Catupiry', ingredienteId: 'catupiry' },
+             { id: 'sem-tomate', nome: 'Sem Vinagrete (Tomate e Cebola)', ingredienteId: 'tomate' }, 
+             { id: 'sem-maionese', nome: 'Sem Maionese', ingredienteId: 'maionese' }, 
+             { id: 'sem-repolho-maionese', nome: 'Sem Repolho c/ Maionese', ingredienteId: 'repolho-maionese' },
+             { id: 'sem-rucula', nome: 'Sem Rúcula', ingredienteId: 'rucula' }
         ];
 
         // --- VARIÁVEIS GLOBAIS ---
         var carrinho = [];
         var freteAtual = 0;
-        var lanches_db = []; // Guarda os lanches do DB
-        var bebidas_db = []; // Guarda as bebidas do DB
+        var lanches_db = []; 
+        var bebidas_db = [];
+        var currentLanche = null; 
+        var currentBebida = null; 
         
         
         // --- VIGIA E LOGOUT ---
         onAuthStateChanged(auth, (user) => {
             if (!user) {
-                console.log("Usuário não logado. Redirecionando...");
+                // Se não estiver logado, redireciona
                 window.location.href = 'login.html';
             } else {
-                // Se está logado, carrega o cardápio
+                // Se estiver logado, tenta carregar o cardápio
                 carregarCardapioDoFirebase();
             }
         });
@@ -374,59 +457,43 @@
             }
         });
 
-        // --- CARREGAR O CARDÁPIO (NOVO) ---
+        // --- 1. CARREGAR CARDÁPIO (SIMPLIFICADO E ROBUSTO) ---
         
         async function carregarCardapioDoFirebase() {
-            try {
-                const [lanchesSnap, bebidasSnap] = await Promise.all([
-                    get(lanchesRef),
-                    get(bebidasRef)
-                ]);
-                
-                const hoje = new Date().getDay(); // Pega o dia de hoje
+            const lanchesContainer = document.getElementById('lanches-container');
+            const bebidasContainer = document.getElementById('bebidas-container');
+            const adicionaisContainer = document.getElementById('adicionais-container');
 
-                // Processa Lanches
+            try {
+                const lanchesSnap = await get(lanchesRef);
+                const bebidasSnap = await get(bebidasRef);
+                
                 lanches_db = [];
                 if (lanchesSnap.exists()) {
                     lanchesSnap.forEach(child => {
                         const item = child.val();
-                        
-                        // NÃO mostra lanches pausados
-                        if (item.pausado) return; 
-                        
-                        // ⭐ AQUI ESTÁ A LÓGICA DO DIA ESPECIAL
-                        // Se o lanche tem dias especiais...
-                        if (item.diasEspeciais && item.diasEspeciais.length > 0) {
-                            // E o dia de hoje NÃO está na lista, pula o lanche
-                            if (!item.diasEspeciais.includes(hoje)) {
-                                return; 
-                            }
-                        }
-                        
-                        // Se passou, adiciona o lanche
                         item.id = child.key; 
                         lanches_db.push(item);
                     });
                 }
                 
-                // Processa Bebidas
                 bebidas_db = [];
                 if (bebidasSnap.exists()) {
                     bebidasSnap.forEach(child => {
                         const item = child.val();
-                        if (!item.pausado) { // Não mostra bebidas pausadas
-                            item.id = child.key; 
-                            bebidas_db.push(item);
-                        }
+                        item.id = child.key; 
+                        bebidas_db.push(item);
                     });
                 }
                 
-                // Renderiza o cardápio na tela
                 renderizarCardapio();
 
             } catch (error) {
-                console.error("Erro ao carregar cardápio:", error);
-                alert("ERRO: Não foi possível carregar o cardápio do Firebase.");
+                // Este erro deve ser o mais simples possível para não travar
+                console.error("ERRO GRAVE NO CARREGAMENTO:", error);
+                lanchesContainer.innerHTML = '<p style="color:red;">❌ Erro ao carregar. (Verifique console/regras)</p>';
+                bebidasContainer.innerHTML = '<p style="color:red;">❌ Erro ao carregar. (Verifique console/regras)</p>';
+                adicionaisContainer.innerHTML = '<p style="color:red;">❌ Erro ao carregar.</p>';
             }
         }
         
@@ -437,47 +504,55 @@
             
             lanchesContainer.innerHTML = '';
             bebidasContainer.innerHTML = '';
-            adicionaisContainer.innerHTML = '';
+            adicionaisContainer.innerHTML = ''; 
             
             // Lanches
             lanches_db.forEach(item => {
+                // Ignora lanches pausados ou fora do dia, se o PDV preferir ver apenas os ativos.
+                if (item.pausado || (item.diasEspeciais && item.diasEspeciais.length > 0 && !item.diasEspeciais.includes(new Date().getDay()))) return;
+
                 lanchesContainer.innerHTML += `
-                    <div class="item-cardapio" onclick="adicionarLanche('${item.id}')">
-                        <span>${item.nome}</span>
-                        <span class="preco">R$ ${Number(item.preco).toFixed(2)}</span>
+                    <div class="item-cardapio" onclick="openLancheModal('${item.id}')">
+                        <span>${item.nome || 'Lanche sem nome'}</span>
+                        <span class="preco">R$ ${Number(item.preco || 0).toFixed(2).replace('.', ',')}</span>
                     </div>
                 `;
             });
-            // Mensagem se não houver lanches
             if (lanches_db.length === 0) {
-                lanchesContainer.innerHTML = '<p style="color:#9ca3af;">Nenhum lanche disponível para hoje.</p>';
+                lanchesContainer.innerHTML = '<p style="color:#9ca3af;">Nenhum lanche disponível.</p>';
             }
             
             // Bebidas
             bebidas_db.forEach(item => {
+                 if (item.pausado) return;
+                 const onClickAction = (item.sabores && item.sabores.length > 0) ? `openBebidaModal('${item.id}')` : `adicionarBebidaDireto('${item.id}')`;
+
                 bebidasContainer.innerHTML += `
-                    <div class="item-cardapio" onclick="adicionarBebida('${item.id}')">
-                        <span>${item.nome}</span>
-                        <span class="preco">R$ ${Number(item.preco).toFixed(2)}</span>
+                    <div class="item-cardapio" onclick="${onClickAction}">
+                        <span>${item.nome || 'Bebida sem nome'}</span>
+                        <span class="preco">R$ ${Number(item.preco || 0).toFixed(2).replace('.', ',')}</span>
                     </div>
                 `;
             });
             if (bebidas_db.length === 0) {
                 bebidasContainer.innerHTML = '<p style="color:#9ca3af;">Nenhuma bebida disponível.</p>';
             }
-            
-            // Adicionais
+
+            // Adicionais Avulsos
             adicionais.forEach(item => {
-                adicionaisContainer.innerHTML += `
-                    <div class="item-cardapio" onclick="adicionarAdicional('${item.id}')">
-                        <span>${item.nome}</span>
-                        <span class="preco">R$ ${Number(item.preco).toFixed(2)}</span>
-                    </div>
-                `;
+                 adicionaisContainer.innerHTML += `
+                     <div class="item-cardapio" onclick="adicionarAdicional('${item.id}')">
+                         <span>${item.nome}</span>
+                         <span class="preco">R$ ${Number(item.preco).toFixed(2).replace('.', ',')}</span>
+                     </div>
+                 `;
             });
+             if (adicionais.length === 0) {
+                 adicionaisContainer.innerHTML = '<p style="color:#9ca3af;">Nenhum adicional cadastrado.</p>';
+            }
         }
         
-        // --- LÓGICA DO CARRINHO (NOVO) ---
+        // --- 2. LÓGICA DO CARRINHO ---
         
         function renderizarCarrinho() {
             const container = document.getElementById('pedido-atual-container');
@@ -491,8 +566,21 @@
                     subtotal += item.precoTotal;
                     
                     let detalhes = '';
-                    if (item.tipo === 'lanche' && item.queijo) detalhes += ` (Queijo: ${item.queijo})`;
-                    if (item.tipo === 'bebida' && item.sabor) detalhes += ` (Sabor: ${item.sabor})`;
+                    if (item.tipo === 'lanche') {
+                        if (item.queijo) detalhes += `\n🧀 Queijo: ${item.queijo}`;
+                        if (item.adicionais && item.adicionais.length > 0) detalhes += `\n➕ Adicionais: ${item.adicionais.map(ad => ad.nome).join(', ')}`;
+                        if (item.remocoes && item.remocoes.length > 0) detalhes += `\n➖ Sem: ${item.remocoes.map(rem => rem.nome).join(', ')}`;
+                        if (item.observacao) detalhes += `\n📝 Obs: ${item.observacao}`;
+                    }
+                    
+                    if (item.tipo === 'bebida') {
+                        if (item.sabor) detalhes += `\n🥤 Sabor: ${item.sabor}`;
+                        if (item.observacao) detalhes += `\n📝 Obs: ${item.observacao}`;
+                    }
+                    
+                    if (item.tipo === 'adicional') {
+                        detalhes = `\n➕ Adicional Avulso`;
+                    }
 
                     container.innerHTML += `
                         <div class="carrinho-item">
@@ -500,71 +588,194 @@
                                 <div class="nome">${item.quantidade}x ${item.nome}</div>
                                 <div class="detalhes">${detalhes}</div>
                             </div>
-                            <span class="carrinho-preco">R$ ${item.precoTotal.toFixed(2)}</span>
-                            <button type="button" class="btn-excluir" onclick="removerDoCarrinho(${index})">Excluir</button>
+                            <span class="carrinho-preco">R$ ${item.precoTotal.toFixed(2).replace('.', ',')}</span>
+                            <button type="button" class="btn-excluir" onclick="removerDoCarrinho(${index})">✕</button>
                         </div>
                     `;
                 });
             }
             
-            // Atualiza total (Subtotal + Frete)
             let total = subtotal + freteAtual;
-            document.getElementById('total-carrinho').textContent = `Total: R$ ${total.toFixed(2)}`;
+            document.getElementById('total-carrinho').textContent = `Total: R$ ${total.toFixed(2).replace('.', ',')}`;
         }
         
         window.removerDoCarrinho = (index) => {
-            carrinho.splice(index, 1); // Remove o item do array
-            renderizarCarrinho(); // Re-desenha o carrinho
-        }
-
-        // Funções de ADICIONAR
-        window.adicionarLanche = (id) => {
-            const lanche = lanches_db.find(l => l.id === id);
-            
-            // Pergunta o queijo, se o lanche tiver queijo
-            let queijoSelecionado = null;
-            if (lanche.ingredientesBase && lanche.ingredientesBase.includes('queijo')) {
-                queijoSelecionado = prompt("Qual queijo? (1 - Prato, 2 - Mussarela)", "1");
-                queijoSelecionado = (queijoSelecionado === '2') ? 'Mussarela' : 'Prato';
-            }
-            
-            carrinho.push({
-                cartId: Date.now(),
-                tipo: 'lanche',
-                nome: lanche.nome,
-                preco: lanche.preco,
-                precoTotal: lanche.preco,
-                queijo: queijoSelecionado,
-                adicionais: [], // No PDV, adicionais são itens separados
-                remocoes: [],
-                quantidade: 1
-            });
+            carrinho.splice(index, 1);
             renderizarCarrinho();
         }
 
-        window.adicionarBebida = (id) => {
-            const bebida = bebidas_db.find(b => b.id === id);
+        // --- 3. LÓGICA DO MODAL (LANCHE E BEBIDA) ---
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function updateLancheModalTotal() {
+            if (!currentLanche) return;
+            var total = Number(currentLanche.preco);
             
-            let saborSelecionado = null;
-            if (bebida.sabores && bebida.sabores.length > 0) {
-                saborSelecionado = prompt(`Qual sabor? (${bebida.sabores.join(', ')})`, bebida.sabores[0]);
+            document.querySelectorAll('#lanche-modal .adicional-check:checked').forEach(check => {
+                total += parseFloat(check.dataset.preco);
+            });
+
+            document.getElementById('modal-total-lanche').textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
+        }
+
+        window.openLancheModal = (lancheId) => {
+            currentLanche = lanches_db.find(l => l.id === lancheId);
+            if (!currentLanche) return;
+
+            document.getElementById('lanche-modal-title').textContent = currentLanche.nome;
+            document.getElementById('observacao-lanche').value = '';
+
+            // 1. Queijo
+            const queijoSection = document.getElementById('tipo-queijo-section');
+            const lancheTemQueijo = currentLanche.ingredientesBase && currentLanche.ingredientesBase.includes('queijo');
+            if (lancheTemQueijo) {
+                document.getElementById('tipo-queijo-container').innerHTML = `
+                    <div class="option-item"><input type="radio" name="tipo-queijo" value="Prato" id="queijo-prato" checked onchange="updateLancheModalTotal()"><label for="queijo-prato" class="option-label">Queijo Prato</label></div>
+                    <div class="option-item"><input type="radio" name="tipo-queijo" value="Mussarela" id="queijo-mussarela" onchange="updateLancheModalTotal()"><label for="queijo-mussarela" class="option-label">Queijo Mussarela</label></div>
+                `;
+                queijoSection.style.display = 'block';
+            } else {
+                queijoSection.style.display = 'none';
             }
             
+            // 2. Adicionais
+            var adicionaisHTML = adicionais.map(ad => `
+                <div class="option-item">
+                    <input type="checkbox" class="adicional-check" onchange="updateLancheModalTotal()" data-preco="${ad.preco}" data-nome="${ad.nome}" id="add-${ad.id}">
+                    <label for="add-${ad.id}" class="option-label">${ad.nome}</label>
+                    <span class="option-price">+ R$ ${ad.preco.toFixed(2).replace('.', ',')}</span>
+                </div>
+            `).join('');
+            document.getElementById('adicionais-container-modal').innerHTML = adicionaisHTML;
+
+            // 3. Remoções
+            const ingredientesLanche = currentLanche.ingredientesBase || [];
+            const remocoesDisponiveis = remocoes.filter(rem => ingredientesLanche.includes(rem.ingredienteId));
+            const remocoesSection = document.getElementById('remocoes-section');
+            
+            if (remocoesDisponiveis.length > 0) {
+                var removesHTML = remocoesDisponiveis.map(rem => `
+                    <div class="option-item">
+                        <input type="checkbox" class="remocao-check" data-nome="${rem.nome}" id="rem-${rem.id}">
+                        <label for="rem-${rem.id}" class="option-label">${rem.nome}</label>
+                    </div>
+                `).join('');
+                document.getElementById('remocoes-container').innerHTML = removesHTML;
+                remocoesSection.style.display = 'block';
+            } else {
+                remocoesSection.style.display = 'none';
+            }
+
+            updateLancheModalTotal();
+            document.getElementById('lanche-modal').classList.add('active');
+        }
+
+        window.adicionarLancheDoModal = () => {
+            if (!currentLanche) return;
+
+            const selectedAdicionais = Array.from(document.querySelectorAll('#lanche-modal .adicional-check:checked')).map(check => ({ 
+                nome: check.dataset.nome, 
+                preco: parseFloat(check.dataset.preco) 
+            }));
+            const selectedRemocoes = Array.from(document.querySelectorAll('#lanche-modal .remocao-check:checked')).map(check => ({ 
+                nome: check.dataset.nome 
+            }));
+            const observacao = document.getElementById('observacao-lanche').value;
+            const precoTotal = Number(currentLanche.preco) + selectedAdicionais.reduce((sum, ad) => sum + ad.preco, 0);
+
+            let queijoSelecionado = null;
+            if (document.querySelector('#lanche-modal input[name="tipo-queijo"]:checked')) {
+                queijoSelecionado = document.querySelector('#lanche-modal input[name="tipo-queijo"]:checked').value;
+            }
+
             carrinho.push({
+                cartId: Date.now(),
+                tipo: 'lanche',
+                nome: currentLanche.nome,
+                preco: currentLanche.preco,
+                precoTotal,
+                queijo: queijoSelecionado,
+                adicionais: selectedAdicionais,
+                remocoes: selectedRemocoes,
+                observacao: observacao,
+                quantidade: 1
+            });
+            
+            closeModal('lanche-modal');
+            currentLanche = null;
+            renderizarCarrinho();
+        }
+        
+        // Bebidas
+        window.adicionarBebidaDireto = (bebidaId) => {
+             const bebida = bebidas_db.find(b => b.id === bebidaId);
+             carrinho.push({
                 cartId: Date.now(),
                 tipo: 'bebida',
                 nome: bebida.nome,
                 preco: bebida.preco,
                 precoTotal: bebida.preco,
-                sabor: saborSelecionado,
+                sabor: null, 
+                observacao: null,
                 quantidade: 1
             });
             renderizarCarrinho();
         }
 
-        window.adicionarAdicional = (id) => {
-            const adicional = adicionais.find(a => a.id === id);
+        window.openBebidaModal = (bebidaId) => {
+            currentBebida = bebidas_db.find(b => b.id === bebidaId);
+            if (!currentBebida || !currentBebida.sabores || currentBebida.sabores.length === 0) {
+                 return;
+            }
+            
+            document.getElementById('bebida-modal-title').textContent = currentBebida.nome;
+            document.getElementById('observacao-bebida').value = '';
+            document.getElementById('modal-total-bebida').textContent = 'R$ ' + Number(currentBebida.preco).toFixed(2).replace('.', ',');
+            
+            const saboresContainer = document.getElementById('sabores-container-modal');
+            saboresContainer.innerHTML = currentBebida.sabores.map((sabor, index) => `
+                <div class="option-item">
+                    <input type="radio" name="sabor-bebida" value="${sabor}" id="sabor-${index}" ${index === 0 ? 'checked' : ''}>
+                    <label for="sabor-${index}" class="option-label">${sabor}</label>
+                </div>
+            `).join('');
+            
+            document.getElementById('bebida-modal').classList.add('active');
+        }
+
+        window.adicionarBebidaDoModal = () => {
+            if (!currentBebida) return;
+            
+            const saborSelecionado = document.querySelector('#bebida-modal input[name="sabor-bebida"]:checked');
+            
+            const sabor = saborSelecionado ? saborSelecionado.value : null;
+            const observacao = document.getElementById('observacao-bebida').value;
+
             carrinho.push({
+                cartId: Date.now(),
+                tipo: 'bebida',
+                nome: currentBebida.nome,
+                preco: currentBebida.preco,
+                precoTotal: currentBebida.preco,
+                sabor: sabor,
+                observacao: observacao,
+                quantidade: 1
+            });
+            
+            closeModal('bebida-modal');
+            currentBebida = null;
+            renderizarCarrinho();
+        }
+
+        // Adiciona Adicional Avulso
+        window.adicionarAdicional = (id) => {
+             const adicional = adicionais.find(a => a.id === id);
+             if (!adicional) return;
+
+             carrinho.push({
                 cartId: Date.now(),
                 tipo: 'adicional',
                 nome: adicional.nome,
@@ -575,7 +786,8 @@
             renderizarCarrinho();
         }
 
-        // --- LÓGICA DO FORMULÁRIO ---
+
+        // --- 4. LÓGICA DO FORMULÁRIO E ENVIO ---
         
         window.toggleEndereco = (valor) => {
             const enderecoDiv = document.getElementById('endereco-inputs');
@@ -583,17 +795,15 @@
                 freteAtual = 0.00;
                 enderecoDiv.style.display = 'none';
             } else {
-                freteAtual = (valor === 'dentro') ? 4.00 : 10.00; // Taxa do PDV (pode ser diferente do site)
+                freteAtual = (valor === 'dentro') ? 4.00 : 10.00; // Frete R$ 4,00 em Conchas
                 enderecoDiv.style.display = 'grid';
             }
-            renderizarCarrinho(); // Atualiza o total com o novo frete
+            renderizarCarrinho(); 
         }
         
         window.toggleTroco = (valor) => {
             document.getElementById('troco-section').style.display = (valor === 'dinheiro') ? 'block' : 'none';
         }
-        
-        // --- ENVIO DO PEDIDO MANUAL ---
         
         const form = document.getElementById('form-manual');
         form.addEventListener('submit', (e) => {
@@ -609,7 +819,6 @@
                 return;
             }
             
-            // Coleta dados
             const clienteNome = document.getElementById('cliente-nome').value;
             let clienteWhatsApp = document.getElementById('cliente-whatsapp').value.replace(/\D/g, '');
             if (clienteWhatsApp.length > 0 && clienteWhatsApp.length < 12) {
@@ -622,26 +831,32 @@
                 const rua = document.getElementById('endereco-rua').value;
                 const numero = document.getElementById('endereco-numero').value;
                 const bairro = document.getElementById('endereco-bairro').value;
+                
+                // Validação simples para entrega
+                if (!rua || !numero || !bairro) {
+                     alert('Preencha o endereço completo para entrega!');
+                     submitBtn.disabled = false;
+                     submitBtn.textContent = 'Lançar Pedido na Cozinha';
+                     return;
+                }
                 enderecoCompleto = `${rua}, ${numero} - ${bairro}`;
             }
 
             const pagamentoSelect = document.getElementById('pagamento');
             let metodoPagamento = pagamentoSelect.options[pagamentoSelect.selectedIndex].text;
             if (pagamentoSelect.value === 'dinheiro' && document.getElementById('troco-valor').value) {
-                metodoPagamento += ` (Troco para: R$ ${document.getElementById('troco-valor').value})`;
+                metodoPagamento += ` (Troco para: R$ ${document.getElementById('troco-valor').value.replace('.', ',')})`;
             }
 
-            // Calcula Totais
             var subtotal = carrinho.reduce((sum, item) => sum + item.precoTotal, 0);
             var total = subtotal + freteAtual;
             
-            // Monta Objeto
             const pedidoCompleto = {
                 cliente: {
                     nome: clienteNome,
                     whatsapp: clienteWhatsApp 
                 },
-                itens: carrinho, // O carrinho já está no formato correto
+                itens: carrinho,
                 entrega: {
                     tipo: localidade, 
                     endereco: enderecoCompleto,
@@ -651,10 +866,11 @@
                 subtotal: subtotal,
                 total: total,
                 status: 'Pendente', 
-                hora: new Date().toISOString() 
+                hora: new Date().toISOString(),
+                // Identificador para cozinha/caixa:
+                origem: 'PDV Manual'
             };
             
-            // Envia para o Firebase
             push(pedidosRef, pedidoCompleto)
                 .then(() => {
                     alert('Pedido enviado para a cozinha com sucesso!');
@@ -662,7 +878,7 @@
                     carrinho = [];
                     form.reset();
                     freteAtual = 0;
-                    toggleEndereco('retirada'); // Reseta o frete
+                    toggleEndereco('retirada'); 
                     renderizarCarrinho();
                     
                     submitBtn.disabled = false;
@@ -677,14 +893,17 @@
         });
         
         // --- INICIALIZAÇÃO ---
-        // Expõe funções para o escopo global (para os botões 'onclick')
+        window.closeModal = closeModal;
+        window.updateLancheModalTotal = updateLancheModalTotal;
+        window.openLancheModal = openLancheModal;
+        window.adicionarLancheDoModal = adicionarLancheDoModal;
+        window.openBebidaModal = openBebidaModal;
+        window.adicionarBebidaDoModal = adicionarBebidaDoModal;
+        window.adicionarBebidaDireto = adicionarBebidaDireto;
+        window.adicionarAdicional = adicionarAdicional;
         window.toggleEndereco = toggleEndereco;
         window.toggleTroco = toggleTroco;
-        window.adicionarLanche = adicionarLanche;
-        window.adicionarBebida = adicionarBebida;
-        window.adicionarAdicional = adicionarAdicional;
         window.removerDoCarrinho = removerDoCarrinho;
-
     </script>
 </body>
 </html>
