@@ -166,7 +166,18 @@
         }
         #btn-enviar-manual:disabled { background: #4b5563; color: #9ca3af; cursor: not-allowed; }
 
-        /* --- ESTILOS DO MODAL --- */
+        /* Estilo para a mensagem de Frete/Maps */
+        #maps-feedback {
+            margin-top: 10px;
+            padding: 10px;
+            background: #1a202c;
+            border-radius: 8px;
+            color: #10b981;
+            font-size: 0.9rem;
+            grid-column: 1 / -1;
+        }
+
+        /* --- ESTILOS DO MODAL (Não Alterados) --- */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; overflow-y: auto; }
         .modal.active { display: flex; justify-content: center; align-items: center; padding: 20px; }
         .modal-content { 
@@ -213,6 +224,7 @@
         #bebida-modal .modal-footer button { flex-grow: 0; width: auto; }
         
     </style>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAQTm3cL26REQloN8AFP28gwsIUzYz73og&&libraries=places&callback=initMapsService" async defer></script>
 </head>
 <body>
 
@@ -279,41 +291,44 @@
                                 <label for="localidade">Tipo</label>
                                 <select id="localidade" class="input-field" onchange="toggleEndereco(this.value)">
                                     <option value="retirada">Retirada no Local</option>
-                                    <option value="dentro">Entrega em Conchas (R$ 4,00)</option>
-                                    <option value="fora">Entrega Fora de Conchas (R$ 10,00)</option>
+                                    <option value="entrega">Entrega (Calcular Frete)</option>
                                 </select>
                             </div>
                         </div>
+                        
                         <div class="form-grid" id="endereco-inputs" style="display: none; margin-top: 15px;">
-                            <div class="input-group">
+                            <div class="input-group full-width">
                                 <label for="endereco-rua">Rua</label>
-                                <input type="text" id="endereco-rua" class="input-field">
+                                <input type="text" id="endereco-rua" class="input-field" onkeyup="calcularFrete()">
                             </div>
                             <div class="input-group">
                                 <label for="endereco-numero">Nº</label>
-                                <input type="text" id="endereco-numero" class="input-field">
+                                <input type="text" id="endereco-numero" class="input-field" onkeyup="calcularFrete()">
                             </div>
-                            <div class="input-group full-width">
+                            <div class="input-group">
                                 <label for="endereco-bairro">Bairro</label>
-                                <input type="text" id="endereco-bairro" class="input-field">
+                                <input type="text" id="endereco-bairro" class="input-field" onkeyup="calcularFrete()">
+                            </div>
+                            <div id="maps-feedback">
+                                <span style="color:#9ca3af;">Insira o endereço para calcular o frete...</span>
                             </div>
                         </div>
                         
                         <h3 style="color:#d4a021; margin: 20px 0 10px 0;">Pagamento</h3>
                         <div class="form-grid">
-                             <div class="input-group full-width">
-                                 <label for="pagamento">Forma</label>
-                                 <select id="pagamento" class="input-field" onchange="toggleTroco(this.value)">
-                                     <option value="pix">PIX</option>
-                                     <option value="credito">Crédito</option>
-                                     <option value="debito">Débito</option>
-                                     <option value="dinheiro">Dinheiro</option>
-                                 </select>
-                             </div>
-                             <div class="input-group" id="troco-section" style="display: none;">
-                                 <label for="troco-valor">Troco para?</label>
-                                 <input type="text" id="troco-valor" class="input-field" placeholder="Ex: 50">
-                             </div>
+                            <div class="input-group full-width">
+                                <label for="pagamento">Forma</label>
+                                <select id="pagamento" class="input-field" onchange="toggleTroco(this.value)">
+                                    <option value="pix">PIX</option>
+                                    <option value="credito">Crédito</option>
+                                    <option value="debito">Débito</option>
+                                    <option value="dinheiro">Dinheiro</option>
+                                </select>
+                            </div>
+                            <div class="input-group" id="troco-section" style="display: none;">
+                                <label for="troco-valor">Troco para?</label>
+                                <input type="text" id="troco-valor" class="input-field" placeholder="Ex: 50">
+                            </div>
                         </div>
                         
                         <button type="submit" id="btn-enviar-manual">Lançar Pedido na Cozinha</button>
@@ -432,20 +447,24 @@
 
         // --- VARIÁVEIS GLOBAIS ---
         var carrinho = [];
-        var freteAtual = 0;
+        var freteAtual = 0; // Taxa de entrega calculada
         var lanches_db = []; 
         var bebidas_db = [];
         var currentLanche = null; 
         var currentBebida = null; 
         
+        // NOVO: Variável para armazenar a estimativa do Maps (tempo e distância)
+        var estimativaMaps = { distanciaKm: null, tempo: null };
+
+        // NOVO: Endereço de Origem (A Dona Baguete está em Conchas)
+        const RESTAURANT_ORIGIN = "Rua Capitão João, 137, Conchas, SP"; // Recomenda-se um endereço completo para maior precisão
+        
         
         // --- VIGIA E LOGOUT ---
         onAuthStateChanged(auth, (user) => {
             if (!user) {
-                // Se não estiver logado, redireciona
                 window.location.href = 'login.html';
             } else {
-                // Se estiver logado, tenta carregar o cardápio
                 carregarCardapioDoFirebase();
             }
         });
@@ -457,7 +476,7 @@
             }
         });
 
-        // --- 1. CARREGAR CARDÁPIO (SIMPLIFICADO E ROBUSTO) ---
+        // --- [LÓGICA DO CARDÁPIO, CARRINHO, MODAIS] (PERMANECE IGUAL) ---
         
         async function carregarCardapioDoFirebase() {
             const lanchesContainer = document.getElementById('lanches-container');
@@ -489,7 +508,6 @@
                 renderizarCardapio();
 
             } catch (error) {
-                // Este erro deve ser o mais simples possível para não travar
                 console.error("ERRO GRAVE NO CARREGAMENTO:", error);
                 lanchesContainer.innerHTML = '<p style="color:red;">❌ Erro ao carregar. (Verifique console/regras)</p>';
                 bebidasContainer.innerHTML = '<p style="color:red;">❌ Erro ao carregar. (Verifique console/regras)</p>';
@@ -508,7 +526,6 @@
             
             // Lanches
             lanches_db.forEach(item => {
-                // Ignora lanches pausados ou fora do dia, se o PDV preferir ver apenas os ativos.
                 if (item.pausado || (item.diasEspeciais && item.diasEspeciais.length > 0 && !item.diasEspeciais.includes(new Date().getDay()))) return;
 
                 lanchesContainer.innerHTML += `
@@ -549,10 +566,8 @@
             });
              if (adicionais.length === 0) {
                  adicionaisContainer.innerHTML = '<p style="color:#9ca3af;">Nenhum adicional cadastrado.</p>';
-            }
+             }
         }
-        
-        // --- 2. LÓGICA DO CARRINHO ---
         
         function renderizarCarrinho() {
             const container = document.getElementById('pedido-atual-container');
@@ -603,8 +618,8 @@
             carrinho.splice(index, 1);
             renderizarCarrinho();
         }
-
-        // --- 3. LÓGICA DO MODAL (LANCHE E BEBIDA) ---
+        
+        // --- [MODAIS] (Mantido inalterado) ---
 
         function closeModal(id) {
             document.getElementById(id).classList.remove('active');
@@ -713,16 +728,16 @@
         window.adicionarBebidaDireto = (bebidaId) => {
              const bebida = bebidas_db.find(b => b.id === bebidaId);
              carrinho.push({
-                cartId: Date.now(),
-                tipo: 'bebida',
-                nome: bebida.nome,
-                preco: bebida.preco,
-                precoTotal: bebida.preco,
-                sabor: null, 
-                observacao: null,
-                quantidade: 1
-            });
-            renderizarCarrinho();
+                 cartId: Date.now(),
+                 tipo: 'bebida',
+                 nome: bebida.nome,
+                 preco: bebida.preco,
+                 precoTotal: bebida.preco,
+                 sabor: null, 
+                 observacao: null,
+                 quantidade: 1
+             });
+             renderizarCarrinho();
         }
 
         window.openBebidaModal = (bebidaId) => {
@@ -776,18 +791,18 @@
              if (!adicional) return;
 
              carrinho.push({
-                cartId: Date.now(),
-                tipo: 'adicional',
-                nome: adicional.nome,
-                preco: adicional.preco,
-                precoTotal: adicional.preco,
-                quantidade: 1
-            });
-            renderizarCarrinho();
+                 cartId: Date.now(),
+                 tipo: 'adicional',
+                 nome: adicional.nome,
+                 preco: adicional.preco,
+                 precoTotal: adicional.preco,
+                 quantidade: 1
+             });
+             renderizarCarrinho();
         }
 
 
-        // --- 4. LÓGICA DO FORMULÁRIO E ENVIO ---
+        // --- 4. LÓGICA DO FORMULÁRIO E ENVIO COM MAPS (ATUALIZADA) ---
         
         window.toggleEndereco = (valor) => {
             const enderecoDiv = document.getElementById('endereco-inputs');
@@ -795,8 +810,9 @@
                 freteAtual = 0.00;
                 enderecoDiv.style.display = 'none';
             } else {
-                freteAtual = (valor === 'dentro') ? 4.00 : 10.00; // Frete R$ 4,00 em Conchas
                 enderecoDiv.style.display = 'grid';
+                freteAtual = 0.00; // Limpa o frete anterior, o cálculo fará a nova cobrança
+                calcularFrete(); 
             }
             renderizarCarrinho(); 
         }
@@ -804,7 +820,100 @@
         window.toggleTroco = (valor) => {
             document.getElementById('troco-section').style.display = (valor === 'dinheiro') ? 'block' : 'none';
         }
-        
+
+        // NOVO: Função Global para calcular distância via Maps e definir a taxa
+        window.calcularFrete = () => {
+            const rua = document.getElementById('endereco-rua').value.trim();
+            const numero = document.getElementById('endereco-numero').value.trim();
+            const bairro = document.getElementById('endereco-bairro').value.trim();
+            const tipoEntrega = document.getElementById('localidade').value;
+            const feedbackDiv = document.getElementById('maps-feedback');
+
+            // Se for retirada, não faz nada
+            if (tipoEntrega === 'retirada') {
+                freteAtual = 0.00;
+                renderizarCarrinho();
+                return;
+            }
+
+            // Validação mínima para chamada do Maps
+            if (!rua || !numero) {
+                feedbackDiv.innerHTML = `<span style="color:#9ca3af;">Insira **Rua e Número** para calcular o frete.</span>`;
+                freteAtual = 0.00;
+                renderizarCarrinho();
+                return;
+            }
+
+            const destino = `${rua}, ${numero}, ${bairro}, Conchas, SP`;
+            feedbackDiv.innerHTML = `<span>Buscando taxa e tempo para **${rua}, ${numero}**...</span>`;
+            
+            // Verifica se o serviço do Maps está carregado
+            if (typeof google === 'undefined' || typeof google.maps.DistanceMatrixService === 'undefined') {
+                feedbackDiv.innerHTML = `<span style="color:red;">⚠️ Serviço Maps não carregado. Verifique sua chave de API.</span>`;
+                return;
+            }
+
+            const service = new google.maps.DistanceMatrixService();
+            service.getDistanceMatrix({
+                origins: [RESTAURANT_ORIGIN],
+                destinations: [destino],
+                travelMode: google.maps.TravelMode.DRIVING,
+                unitSystem: google.maps.UnitSystem.METRIC,
+            }, (response, status) => {
+                if (status === 'OK' && response.rows[0].elements[0].status === 'OK') {
+                    const element = response.rows[0].elements[0];
+                    const distanceMeters = element.distance.value;
+                    const distanceKm = distanceMeters / 1000;
+                    const tempoEstimado = element.duration.text;
+                    
+                    let taxa = 0.00;
+                    let mensagemTaxa = "";
+
+                    // LÓGICA DE COBRANÇA BASEADA NA DISTÂNCIA (KM)
+                    if (distanceKm <= 3) {
+                        taxa = 4.00;
+                        mensagemTaxa = `R$ ${taxa.toFixed(2).replace('.', ',')} (Até 3km)`;
+                    } else if (distanceKm > 3 && distanceKm <= 7) {
+                        taxa = 5.00;
+                        mensagemTaxa = `R$ ${taxa.toFixed(2).replace('.', ',')} (3km a 7km)`;
+                    } else if (distanceKm > 7 && distanceKm <= 16) {
+                        taxa = 10.00;
+                        mensagemTaxa = `R$ ${taxa.toFixed(2).replace('.', ',')} (7km a 16km)`;
+                    } else {
+                        // Excedeu o limite de 16km
+                        taxa = 0.00; 
+                        mensagemTaxa = `Distância de ${distanceKm.toFixed(1)} km excede o limite de 16km. Sem entrega.`;
+                        feedbackDiv.style.color = 'red';
+                    }
+
+                    freteAtual = taxa; // Define a taxa global
+
+                    estimativaMaps.distanciaKm = distanceKm;
+                    estimativaMaps.tempo = tempoEstimado;
+                    
+                    feedbackDiv.innerHTML = `
+                        <span>💵 Taxa de Entrega: <strong style="color:#d4a021;">${mensagemTaxa}</strong></span><br>
+                        
+                    `;
+                    feedbackDiv.style.color = '#10b981';
+                    
+                } else {
+                    // Falha na busca ou endereço inválido
+                    freteAtual = 0.00;
+                    estimativaMaps = { distanciaKm: null, tempo: null };
+                    feedbackDiv.innerHTML = `<span style="color:red;">❌ Não foi possível calcular a rota. Frete R$ 0,00.</span>`;
+                }
+
+                renderizarCarrinho(); // Atualiza o total do carrinho após o cálculo do frete
+            });
+        };
+
+        // Função vazia para inicializar o Maps (necessária pelo script tag)
+        window.initMapsService = () => {
+            console.log("Serviço Google Maps carregado.");
+        };
+
+
         const form = document.getElementById('form-manual');
         form.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -827,19 +936,27 @@
 
             const localidade = document.getElementById('localidade').value;
             let enderecoCompleto = "Retirada no Local";
-            if (localidade !== 'retirada') {
+
+            if (localidade === 'entrega') {
                 const rua = document.getElementById('endereco-rua').value;
                 const numero = document.getElementById('endereco-numero').value;
                 const bairro = document.getElementById('endereco-bairro').value;
                 
-                // Validação simples para entrega
-                if (!rua || !numero || !bairro) {
-                     alert('Preencha o endereço completo para entrega!');
+                if (!rua || !numero) {
+                     alert('Preencha a Rua e o Número para entrega!');
                      submitBtn.disabled = false;
                      submitBtn.textContent = 'Lançar Pedido na Cozinha';
                      return;
                 }
-                enderecoCompleto = `${rua}, ${numero} - ${bairro}`;
+                
+                if (freteAtual === 0.00 && estimativaMaps.distanciaKm > 16) {
+                     alert(`A entrega excede o limite de 16km (${estimativaMaps.distanciaKm.toFixed(1)} km). O pedido deve ser negado.`);
+                     submitBtn.disabled = false;
+                     submitBtn.textContent = 'Lançar Pedido na Cozinha';
+                     return;
+                }
+                
+                enderecoCompleto = `${rua}, ${numero}${bairro ? ' - ' + bairro : ''}`;
             }
 
             const pagamentoSelect = document.getElementById('pagamento');
@@ -860,14 +977,16 @@
                 entrega: {
                     tipo: localidade, 
                     endereco: enderecoCompleto,
-                    taxa: freteAtual
+                    taxa: freteAtual,
+                    // Dados do Maps, mesmo que não seja entrega (serão nulos)
+                    estimativa_distancia: estimativaMaps.distanciaKm ? `${estimativaMaps.distanciaKm.toFixed(1)} km` : null,
+                    estimativa_tempo: estimativaMaps.tempo || null
                 },
                 pagamento: metodoPagamento,
                 subtotal: subtotal,
                 total: total,
                 status: 'Pendente', 
                 hora: new Date().toISOString(),
-                // Identificador para cozinha/caixa:
                 origem: 'PDV Manual'
             };
             
@@ -892,7 +1011,7 @@
                 });
         });
         
-        // --- INICIALIZAÇÃO ---
+        // --- INICIALIZAÇÃO E EXPOSIÇÃO DE FUNÇÕES GLOBAIS ---
         window.closeModal = closeModal;
         window.updateLancheModalTotal = updateLancheModalTotal;
         window.openLancheModal = openLancheModal;
@@ -904,6 +1023,8 @@
         window.toggleEndereco = toggleEndereco;
         window.toggleTroco = toggleTroco;
         window.removerDoCarrinho = removerDoCarrinho;
+        window.calcularFrete = calcularFrete; // EXPOSTA
+        window.initMapsService = initMapsService; // EXPOSTA
     </script>
 </body>
 </html>
