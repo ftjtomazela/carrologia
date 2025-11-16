@@ -472,7 +472,7 @@
         const logoutBtn = document.getElementById('logout-btn');
         logoutBtn.addEventListener('click', () => {
             if (confirm("Tem certeza que deseja sair?")) {
-                signOut(auth).then(() => { window.location.href = 'login.html'; });
+                signOut(auth).then(() => { window.location.href = 'index.html'; });
             }
         });
 
