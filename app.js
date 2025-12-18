@@ -531,11 +531,26 @@ window.gerarRelatorio = async () => {
     } catch (e) { console.error(e); }
 }
 
+// === NOVA FUNÇÃO PARA ALTERNAR STATUS DE PAGAMENTO DA COMISSÃO ===
+window.alternarStatusComissao = async (id, statusAtual) => {
+    try {
+        const novoStatus = !statusAtual;
+        // Atualiza no banco
+        await updateDoc(doc(db, "vendas", id), {
+            comissao_paga: novoStatus
+        });
+        // Atualiza a tela (recarrega o relatório)
+        window.gerarRelatorioComissoes();
+    } catch(e) {
+        alert("Erro ao atualizar: " + e.message);
+    }
+}
+
 window.gerarRelatorioComissoes = async () => {
     const tbody = document.querySelector('#tabela-relatorio tbody');
     const header = document.querySelector('#tabela-relatorio thead');
     
-    tbody.innerHTML = "<tr><td colspan='7'>Carregando vendas dos últimos 30 dias...</td></tr>";
+    tbody.innerHTML = "<tr><td colspan='8'>Carregando vendas dos últimos 30 dias...</td></tr>";
     
     try {
         // FILTRO: ÚLTIMOS 30 DIAS
@@ -549,9 +564,10 @@ window.gerarRelatorioComissoes = async () => {
         
         let totalEvandro = 0, totalTico = 0, totalGustavo = 0, totalEmpresa = 0;
         
-        // Atualiza cabeçalho para a visão detalhada
+        // Atualiza cabeçalho para a visão detalhada COM COLUNA DE CHECK
         header.innerHTML = `
             <tr style="background:#1e293b; color:white;">
+                <th>Status</th>
                 <th>Data / Hora</th>
                 <th>Cliente</th>
                 <th>Total Venda</th>
@@ -564,8 +580,9 @@ window.gerarRelatorioComissoes = async () => {
         
         tbody.innerHTML = ""; // Limpa carregando
 
-        snapshot.forEach(doc => {
-            const v = doc.data();
+        snapshot.forEach(docSnap => {
+            const v = docSnap.data();
+            const idVenda = docSnap.id;
             const dataVenda = v.data?.toDate ? v.data.toDate().toLocaleString('pt-BR') : "--";
             
             // Pega valores ou 0 se não existir
@@ -577,16 +594,32 @@ window.gerarRelatorioComissoes = async () => {
             totalGustavo += comissao.gustavo || 0;
             totalEmpresa += comissao.empresa || 0;
 
+            // VERIFICA SE ESTÁ PAGO
+            const isPago = v.comissao_paga === true;
+            
+            // Define o estilo (riscado se pago)
+            const estiloLinha = isPago ? "text-decoration: line-through; color: #9ca3af; background-color: #f3f4f6;" : "border-bottom: 1px solid #eee;";
+            const iconeBtn = isPago ? "undo" : "check";
+            const corBtn = isPago ? "#9ca3af" : "#22c55e";
+            const titleBtn = isPago ? "Desfazer Pagamento" : "Marcar como Pago";
+
             // Adiciona Linha da Venda
             tbody.innerHTML += `
-                <tr style="border-bottom: 1px solid #eee;">
+                <tr style="${estiloLinha}">
+                    <td style="text-align:center;">
+                        <button onclick="alternarStatusComissao('${idVenda}', ${isPago})" 
+                                style="border:none; background:transparent; cursor:pointer; color:${corBtn};" 
+                                title="${titleBtn}">
+                            <span class="material-icons">${iconeBtn}</span>
+                        </button>
+                    </td>
                     <td style="font-size:12px;">${dataVenda}</td>
                     <td>${v.cliente}</td>
                     <td>R$ ${v.total.toFixed(2)}</td>
-                    <td style="color:#16a34a;">R$ ${(comissao.evandro || 0).toFixed(2)}</td>
-                    <td style="color:#16a34a;">R$ ${(comissao.tico || 0).toFixed(2)}</td>
-                    <td style="color:#16a34a;">R$ ${(comissao.gustavo || 0).toFixed(2)}</td>
-                    <td style="color:#0369a1;">R$ ${(comissao.empresa || 0).toFixed(2)}</td>
+                    <td style="color:${isPago ? 'inherit' : '#16a34a'};">R$ ${(comissao.evandro || 0).toFixed(2)}</td>
+                    <td style="color:${isPago ? 'inherit' : '#16a34a'};">R$ ${(comissao.tico || 0).toFixed(2)}</td>
+                    <td style="color:${isPago ? 'inherit' : '#16a34a'};">R$ ${(comissao.gustavo || 0).toFixed(2)}</td>
+                    <td style="color:${isPago ? 'inherit' : '#0369a1'};">R$ ${(comissao.empresa || 0).toFixed(2)}</td>
                 </tr>
             `;
         });
@@ -594,7 +627,7 @@ window.gerarRelatorioComissoes = async () => {
         // LINHA DE TOTAIS NO FINAL
         tbody.innerHTML += `
             <tr style="background:#f0f9ff; font-weight:bold; border-top: 2px solid #000;">
-                <td colspan="3" style="text-align:right;">TOTAIS (30 DIAS):</td>
+                <td colspan="4" style="text-align:right;">TOTAIS (30 DIAS):</td>
                 <td style="color:#16a34a; font-size:16px;">R$ ${totalEvandro.toFixed(2)}</td>
                 <td style="color:#16a34a; font-size:16px;">R$ ${totalTico.toFixed(2)}</td>
                 <td style="color:#16a34a; font-size:16px;">R$ ${totalGustavo.toFixed(2)}</td>
@@ -796,7 +829,8 @@ window.finalizarVenda = async () => {
             status: statusVenda, 
             vencimento: dataVencimento, 
             itens: window.carrinho,
-            valores_comissao: comissoes
+            valores_comissao: comissoes,
+            comissao_paga: false // PADRÃO: NÃO PAGO
         });
 
         for (const item of window.carrinho) {
