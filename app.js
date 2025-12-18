@@ -507,13 +507,25 @@ window.excluirEntrada = async (id) => {
     }
 }
 
+// ==========================================
+// NOVA FUNÇÃO: VER DETALHES AGORA IMPRIME
+// ==========================================
 window.verDetalhesVenda = (jsonVenda) => {
     const venda = JSON.parse(decodeURIComponent(jsonVenda));
-    let msg = `CLIENTE: ${venda.cliente}\nITENS:\n`;
-    venda.itens.forEach(i => msg += `- ${i.qtd}x ${i.nome} | R$ ${(i.preco).toFixed(2)}\n`);
-    msg += `\nTOTAL: R$ ${venda.total.toFixed(2)}`;
-    alert(msg);
+
+    // Converter datas (que vêm do banco como Timestamp ou String) para Objeto Date
+    let dataVenda = new Date();
+    if(venda.data && venda.data.seconds) dataVenda = new Date(venda.data.seconds * 1000);
+    else if(venda.data) dataVenda = new Date(venda.data);
+
+    let dataVenc = null;
+    if(venda.vencimento && venda.vencimento.seconds) dataVenc = new Date(venda.vencimento.seconds * 1000);
+    else if(venda.vencimento) dataVenc = new Date(venda.vencimento);
+
+    // Reutiliza a função de imprimir
+    window.imprimirCupom(venda.cliente, venda.itens, venda.total, venda.desconto || 0, dataVenda, dataVenc);
 }
+
 window.cobrarZap = (cliente, valor) => { window.open(`https://wa.me/?text=Olá ${cliente}, lembrete de pagamento R$ ${valor}`, '_blank'); }
 
 // RELATÓRIOS
@@ -531,7 +543,7 @@ window.gerarRelatorio = async () => {
     } catch (e) { console.error(e); }
 }
 
-// === NOVA FUNÇÃO PARA ALTERNAR STATUS DE PAGAMENTO DA COMISSÃO ===
+// === FUNÇÃO PARA ALTERNAR STATUS DE PAGAMENTO DA COMISSÃO ===
 window.alternarStatusComissao = async (id, statusAtual) => {
     try {
         const novoStatus = !statusAtual;
