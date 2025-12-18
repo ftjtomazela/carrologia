@@ -88,12 +88,8 @@ window.mostrarTela = (telaId) => {
 // ==========================================
 window.alternarCamposCadastro = () => {
     const tipo = document.querySelector('input[name="tipo_produto"]:checked').value;
-    
-    // Campos exclusivos de peça
     const camposPeca = document.querySelectorAll('.campo-peca');
     camposPeca.forEach(el => el.style.display = (tipo === 'peca') ? 'block' : 'none');
-
-    // Campos exclusivos de serviço (Código Fiscal de Serviço)
     const camposServico = document.querySelectorAll('.campo-servico');
     camposServico.forEach(el => el.style.display = (tipo === 'servico') ? 'block' : 'none');
 }
@@ -377,6 +373,8 @@ window.filtrarEstoque = () => {
         tbody.innerHTML += `<tr><td><strong>${p.nome}</strong><br><small>${isServico ? 'MÃO DE OBRA' : p.codigo_barras}</small></td><td>R$ ${p.preco.toFixed(2)}</td><td>${estoqueDisplay}</td><td><button onclick="prepararEdicao('${p.id}', '${dadosJson}')" class="btn-secondary">✏️</button><button onclick="excluirProduto('${p.id}')" class="btn-secondary" style="color:red">🗑️</button></td></tr>`;
     });
 }
+
+// 1. ATUALIZAÇÃO NO CADASTRO PARA SALVAR CATEGORIA
 window.salvarProduto = async () => {
     try {
         const tipoSelecionado = document.querySelector('input[name="tipo_produto"]:checked').value;
@@ -389,18 +387,19 @@ window.salvarProduto = async () => {
             preco_custo: parseFloat(document.getElementById('cad-custo').value) || 0,
             carros_compativeis: document.getElementById('cad-carros').value,
             
-            // Campos de Peça (vazios se for serviço)
             codigo_barras: isServico ? "SERV-" + Date.now() : (document.getElementById('cad-codigo').value || "SEM GTIN"), 
             codigo_oem: isServico ? "" : document.getElementById('cad-oem').value, 
-            ncm: isServico ? "" : document.getElementById('cad-ncm').value, // NOVO CAMPO NCM
+            ncm: isServico ? "" : document.getElementById('cad-ncm').value, 
             marca: isServico ? "" : document.getElementById('cad-marca').value,
             estoque_atual: isServico ? 9999 : (parseInt(document.getElementById('cad-estoque').value) || 0), 
             estoque_minimo: isServico ? 0 : (parseInt(document.getElementById('cad-minimo').value) || 0), 
             localizacao: isServico ? "" : document.getElementById('cad-local').value, 
             fornecedor: isServico ? "" : document.getElementById('cad-fornecedor').value,
 
-            // Campos de Serviço (vazio se for peça)
-            codigo_servico: isServico ? document.getElementById('cad-cod-servico').value : "" // NOVO CAMPO
+            codigo_servico: isServico ? document.getElementById('cad-cod-servico').value : "",
+            
+            // SALVA A CATEGORIA DE COMISSÃO
+            categoria_comissao: isServico ? document.getElementById('cad-cat-comissao').value : ""
         };
 
         if(idProdutoEditando) { await updateDoc(doc(db, "produtos", idProdutoEditando), dados); idProdutoEditando = null; } 
@@ -408,6 +407,7 @@ window.salvarProduto = async () => {
         alert("Salvo!"); document.querySelectorAll('#tela-cadastro input').forEach(i => i.value = ""); window.carregarEstoque();
     } catch(e) { alert(e.message); }
 }
+
 window.prepararEdicao = (id, dadosJson) => {
     const p = JSON.parse(decodeURIComponent(dadosJson)); idProdutoEditando = id;
     
@@ -423,18 +423,17 @@ window.prepararEdicao = (id, dadosJson) => {
     document.getElementById('cad-carros').value = p.carros_compativeis || "";
 
     if(!isServico) {
-        // Preenche campos de peça
         document.getElementById('cad-codigo').value = p.codigo_barras || ""; 
         document.getElementById('cad-oem').value = p.codigo_oem || "";
-        document.getElementById('cad-ncm').value = p.ncm || ""; // PREENCHE NCM
+        document.getElementById('cad-ncm').value = p.ncm || ""; 
         document.getElementById('cad-marca').value = p.marca || "";
         document.getElementById('cad-estoque').value = p.estoque_atual || "";
         document.getElementById('cad-minimo').value = p.estoque_minimo || "";
         document.getElementById('cad-local').value = p.localizacao || "";
         document.getElementById('cad-fornecedor').value = p.fornecedor || "";
     } else {
-        // Preenche campos de serviço
-        document.getElementById('cad-cod-servico').value = p.codigo_servico || ""; // PREENCHE CÓD SERVIÇO
+        document.getElementById('cad-cod-servico').value = p.codigo_servico || "";
+        document.getElementById('cad-cat-comissao').value = p.categoria_comissao || "outros";
     }
 
     document.querySelector('.content').scrollTop = 0;
@@ -516,12 +515,82 @@ window.verDetalhesVenda = (jsonVenda) => {
     alert(msg);
 }
 window.cobrarZap = (cliente, valor) => { window.open(`https://wa.me/?text=Olá ${cliente}, lembrete de pagamento R$ ${valor}`, '_blank'); }
+
+// RELATÓRIOS
 window.gerarRelatorio = async () => {
     const tbody = document.querySelector('#tabela-relatorio tbody'); tbody.innerHTML = "Carregando...";
     try {
         const q = await getDocs(collection(db, "produtos")); tbody.innerHTML = "";
         q.forEach((doc) => { const p = doc.data(); if (p.estoque_atual <= p.estoque_minimo && p.tipo !== 'servico') tbody.innerHTML += `<tr><td>${p.nome}</td><td>${p.localizacao||'-'}</td><td>${p.estoque_atual}</td><td>${p.estoque_minimo}</td><td style="color:red; font-weight:bold">REPOR</td></tr>`; });
     } catch (e) { console.error(e); }
+}
+
+window.gerarRelatorioComissoes = async () => {
+    const tbody = document.querySelector('#tabela-relatorio tbody');
+    const header = document.querySelector('#tabela-relatorio thead');
+    
+    tbody.innerHTML = "<tr><td colspan='5'>Calculando comissões...</td></tr>";
+    
+    try {
+        const inicioMes = new Date();
+        inicioMes.setDate(1); 
+        inicioMes.setHours(0,0,0,0);
+        
+        const q = query(collection(db, "vendas"), where("data", ">=", inicioMes));
+        const snapshot = await getDocs(q);
+        
+        let totais = { evandro: 0, tico: 0, gustavo: 0, empresa: 0 };
+        let qtdVendas = 0;
+
+        snapshot.forEach(doc => {
+            const v = doc.data();
+            if(v.valores_comissao) {
+                totais.evandro += v.valores_comissao.evandro || 0;
+                totais.tico += v.valores_comissao.tico || 0;
+                totais.gustavo += v.valores_comissao.gustavo || 0;
+                totais.empresa += v.valores_comissao.empresa || 0;
+                qtdVendas++;
+            }
+        });
+
+        header.innerHTML = `
+            <tr style="background:#1e293b; color:white;">
+                <th>Colaborador</th>
+                <th>Função</th>
+                <th>Total a Receber</th>
+                <th>Status</th>
+            </tr>
+        `;
+
+        tbody.innerHTML = `
+            <tr>
+                <td><strong>Evandro</strong></td>
+                <td>Gestor / Mecânico / Alinhamento</td>
+                <td style="color:#16a34a; font-weight:bold; font-size:18px;">R$ ${totais.evandro.toFixed(2)}</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td><strong>Tico</strong></td>
+                <td>Mecânico</td>
+                <td style="color:#16a34a; font-weight:bold; font-size:18px;">R$ ${totais.tico.toFixed(2)}</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td><strong>Gustavo</strong></td>
+                <td>Auxiliar / Pneus</td>
+                <td style="color:#16a34a; font-weight:bold; font-size:18px;">R$ ${totais.gustavo.toFixed(2)}</td>
+                <td>-</td>
+            </tr>
+            <tr style="background:#f0f9ff; border-top:2px solid #bae6fd;">
+                <td><strong>CAIXA EMPRESA</strong></td>
+                <td>Lucro Peças + Parte Serviços</td>
+                <td style="color:#0369a1; font-weight:bold; font-size:18px;">R$ ${totais.empresa.toFixed(2)}</td>
+                <td>CAIXA</td>
+            </tr>
+        `;
+        
+        alert(`Relatório gerado com base em ${qtdVendas} vendas deste mês.`);
+    } catch (e) { console.error(e); alert("Erro ao gerar relatório: " + e.message); }
 }
 
 const inputBusca = document.getElementById('pdv-busca');
@@ -635,10 +704,15 @@ window.atualizarQtd = (index, novaQtd) => {
 }
 window.removerItem = (index) => { window.carrinho.splice(index, 1); window.atualizarTabela(); }
 
+// 2. ATUALIZAÇÃO DA FINALIZAÇÃO DE VENDA (COMISSÃO INTELIGENTE)
 window.finalizarVenda = async () => {
     if(window.carrinho.length === 0) return;
     window.recalcularDescontoPeloTotal();
     const totalFinal = subtotalVenda - descontoGlobal;
+    
+    // VERIFICA SE O CHECKBOX DE AJUDA ESTÁ MARCADO
+    const houveAjudaPneu = document.getElementById('check-ajuda-pneu').checked;
+    
     if(!confirm(`Confirmar venda de R$ ${totalFinal.toFixed(2)}?`)) return;
 
     try {
@@ -656,12 +730,65 @@ window.finalizarVenda = async () => {
             dataVencimento = hoje;
         }
 
+        // --- LÓGICA INTELIGENTE DE COMISSÃO ITEM A ITEM ---
+        let comissoes = { evandro: 0, tico: 0, gustavo: 0, empresa: 0 };
+        
+        window.carrinho.forEach(item => {
+            const totalItem = item.preco * item.qtd;
+
+            if (item.tipo === 'servico') {
+                // Aplica regra baseada na CATEGORIA do item
+                const cat = item.categoria_comissao || 'outros';
+
+                if(cat === 'mecanica') {
+                    // Evandro 20%, Tico 20%, Gustavo 10% (do total)
+                    comissoes.evandro += totalItem * 0.20;
+                    comissoes.tico += totalItem * 0.20;
+                    comissoes.gustavo += totalItem * 0.10;
+                    comissoes.empresa += totalItem * 0.50; // Resto pra empresa
+                } 
+                else if (cat === 'alinhamento') {
+                    // Evandro 50%
+                    comissoes.evandro += totalItem * 0.50;
+                    comissoes.empresa += totalItem * 0.50;
+                }
+                else if (cat === 'pneu') {
+                    // Verifica o Checkbox
+                    if(houveAjudaPneu) {
+                        // Gustavo 25%, Tico 25%
+                        comissoes.gustavo += totalItem * 0.25;
+                        comissoes.tico += totalItem * 0.25;
+                    } else {
+                        // Gustavo 50%
+                        comissoes.gustavo += totalItem * 0.50;
+                    }
+                    comissoes.empresa += totalItem * 0.50;
+                }
+                else {
+                    // Sem comissão definida, vai pro caixa
+                    comissoes.empresa += totalItem;
+                }
+            } else {
+                // É PEÇA: 100% Empresa
+                comissoes.empresa += totalItem;
+            }
+        });
+        
+        // Salva a venda
         await addDoc(collection(db, "vendas"), {
-            data: new Date(), subtotal: subtotalVenda, desconto: descontoGlobal, total: totalFinal,
-            cliente: nomeCliente, forma_pagamento: formaPagamento, status: statusVenda, vencimento: dataVencimento, itens: window.carrinho
+            data: new Date(), 
+            subtotal: subtotalVenda, 
+            desconto: descontoGlobal, 
+            total: totalFinal,
+            cliente: nomeCliente, 
+            forma_pagamento: formaPagamento, 
+            status: statusVenda, 
+            vencimento: dataVencimento, 
+            itens: window.carrinho,
+            valores_comissao: comissoes
         });
 
-        // Só atualiza estoque se NÃO for serviço
+        // Atualiza estoque (apenas peças)
         for (const item of window.carrinho) {
             if(item.tipo !== 'servico') {
                 const itemRef = doc(db, "produtos", item.id);
@@ -671,7 +798,7 @@ window.finalizarVenda = async () => {
         }
 
         if(confirm("Deseja imprimir?")) window.imprimirCupom(nomeCliente, window.carrinho, totalFinal, descontoGlobal, new Date(), dataVencimento);
-        alert("Venda Sucesso!");
+        alert("Venda Realizada com Sucesso!");
         window.carrinho = []; subtotalVenda = 0; descontoGlobal = 0; window.atualizarTabela();
         document.getElementById('valor-total-input').value = "0.00";
     } catch(e) { alert("Erro: " + e.message); }
