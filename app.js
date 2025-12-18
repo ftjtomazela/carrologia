@@ -710,8 +710,8 @@ window.finalizarVenda = async () => {
     window.recalcularDescontoPeloTotal();
     const totalFinal = subtotalVenda - descontoGlobal;
     
-    // VERIFICA SE O CHECKBOX DE AJUDA ESTÁ MARCADO
-    const houveAjudaPneu = document.getElementById('check-ajuda-pneu').checked;
+    // CAPTURA A ESCOLHA DO SELETOR DE PNEUS
+    const responsavelPneu = document.getElementById('pdv-responsavel-pneu').value;
     
     if(!confirm(`Confirmar venda de R$ ${totalFinal.toFixed(2)}?`)) return;
 
@@ -737,7 +737,6 @@ window.finalizarVenda = async () => {
             const totalItem = item.preco * item.qtd;
 
             if (item.tipo === 'servico') {
-                // Aplica regra baseada na CATEGORIA do item
                 const cat = item.categoria_comissao || 'outros';
 
                 if(cat === 'mecanica') {
@@ -745,7 +744,7 @@ window.finalizarVenda = async () => {
                     comissoes.evandro += totalItem * 0.20;
                     comissoes.tico += totalItem * 0.20;
                     comissoes.gustavo += totalItem * 0.10;
-                    comissoes.empresa += totalItem * 0.50; // Resto pra empresa
+                    comissoes.empresa += totalItem * 0.50; 
                 } 
                 else if (cat === 'alinhamento') {
                     // Evandro 50%
@@ -753,28 +752,28 @@ window.finalizarVenda = async () => {
                     comissoes.empresa += totalItem * 0.50;
                 }
                 else if (cat === 'pneu') {
-                    // Verifica o Checkbox
-                    if(houveAjudaPneu) {
-                        // Gustavo 25%, Tico 25%
+                    // Verifica o Seletor (Gustavo Sozinho, Tico Sozinho ou Dupla)
+                    if(responsavelPneu === 'gustavo') {
+                        comissoes.gustavo += totalItem * 0.50;
+                    } 
+                    else if (responsavelPneu === 'tico') {
+                        comissoes.tico += totalItem * 0.50;
+                    }
+                    else if (responsavelPneu === 'dupla') {
                         comissoes.gustavo += totalItem * 0.25;
                         comissoes.tico += totalItem * 0.25;
-                    } else {
-                        // Gustavo 50%
-                        comissoes.gustavo += totalItem * 0.50;
                     }
                     comissoes.empresa += totalItem * 0.50;
                 }
                 else {
-                    // Sem comissão definida, vai pro caixa
                     comissoes.empresa += totalItem;
                 }
             } else {
-                // É PEÇA: 100% Empresa
+                // PEÇA: 100% Empresa
                 comissoes.empresa += totalItem;
             }
         });
         
-        // Salva a venda
         await addDoc(collection(db, "vendas"), {
             data: new Date(), 
             subtotal: subtotalVenda, 
@@ -788,7 +787,6 @@ window.finalizarVenda = async () => {
             valores_comissao: comissoes
         });
 
-        // Atualiza estoque (apenas peças)
         for (const item of window.carrinho) {
             if(item.tipo !== 'servico') {
                 const itemRef = doc(db, "produtos", item.id);
