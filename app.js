@@ -74,7 +74,7 @@ window.mostrarTela = (telaId) => {
     if(telaId === 'vendas') { 
         document.getElementById('pdv-busca').focus(); 
         window.carregarClientes(); 
-        window.carregarEstoque(); // Carrega produtos para a busca por nome funcionar
+        window.carregarEstoque(); 
     }
     if(telaId === 'cadastro' || telaId === 'entrada') window.carregarEstoque();
     if(telaId === 'historico') window.carregarHistorico('vendas');
@@ -82,6 +82,23 @@ window.mostrarTela = (telaId) => {
     if(telaId === 'dashboard') window.carregarDashboard();
     if(telaId === 'financeiro') window.carregarContasPagar();
 }
+
+// ==========================================
+// NOVA FUNÇÃO: Alternar Peça / Serviço
+// ==========================================
+window.alternarCamposCadastro = () => {
+    const tipo = document.querySelector('input[name="tipo_produto"]:checked').value;
+    const camposPeca = document.querySelectorAll('.campo-peca');
+    
+    camposPeca.forEach(div => {
+        if(tipo === 'servico') {
+            div.style.display = 'none';
+        } else {
+            div.style.display = 'block'; // ou 'flex' se o form-group original for flex, mas block é o padrão da div
+        }
+    });
+}
+
 
 // ==========================================
 // CONTAS A PAGAR
@@ -145,7 +162,7 @@ window.importarXML = (input) => {
             const qCom = parseFloat(prod.querySelector('qCom')?.textContent); 
             const vUnCom = parseFloat(prod.querySelector('vUnCom')?.textContent); 
             let produtoEncontrado = window.todosProdutos.find(p => p.codigo_barras === cEAN && cEAN !== "SEM GTIN") || window.todosProdutos.find(p => p.codigo_oem === cProd);
-            window.itensEntrada.push({ id: produtoEncontrado ? produtoEncontrado.id : null, codigo: cEAN !== "SEM GTIN" ? cEAN : cProd, nome: xProd, qtd: qCom, custo: vUnCom, novo: !produtoEncontrado });
+            window.itensEntrada.push({ id: produtoEncontrado ? produtoEncontrado.id : null, codigo: cEAN !== "SEM GTIN" ? cEAN : cProd, nome: xProd, qtd: qCom, custo: vUnCom, novo: !produtoEncontrado, tipo: 'peca' });
         }
         window.atualizarTabelaEntrada();
         window.boletosEntrada = [];
@@ -172,7 +189,7 @@ window.filtrarProdutosEntrada = () => {
     const divSugestao = document.getElementById('sugestoes-entrada');
     divSugestao.innerHTML = "";
     if(termo.length < 2) { divSugestao.style.display = 'none'; return; }
-    const filtrados = window.todosProdutos.filter(p => p.nome.toLowerCase().includes(termo) || p.codigo_barras.includes(termo)).slice(0, 5); 
+    const filtrados = window.todosProdutos.filter(p => p.nome.toLowerCase().includes(termo) || (p.codigo_barras && p.codigo_barras.includes(termo))).slice(0, 5); 
     if(filtrados.length > 0) {
         divSugestao.style.display = 'block';
         filtrados.forEach(p => {
@@ -197,7 +214,7 @@ window.adicionarItemEntrada = () => {
     const qtd = parseFloat(document.getElementById('ent-prod-qtd').value);
     const custo = parseFloat(document.getElementById('ent-prod-custo').value);
     if(!id || !qtd) { alert("Dados incompletos."); return; }
-    window.itensEntrada.push({ id: id, codigo: "-", nome: nome, qtd: qtd, custo: custo, novo: false });
+    window.itensEntrada.push({ id: id, codigo: "-", nome: nome, qtd: qtd, custo: custo, novo: false, tipo: 'peca' });
     window.atualizarTabelaEntrada();
 }
 window.atualizarTabelaEntrada = () => {
@@ -223,7 +240,7 @@ window.salvarEntrada = async () => {
             if(item.novo) {
                 await addDoc(collection(db, "produtos"), {
                     nome: item.nome, codigo_barras: item.codigo, preco_custo: item.custo, preco: item.custo * 1.6, 
-                    estoque_atual: item.qtd, estoque_minimo: 5, fornecedor: fornecedor
+                    estoque_atual: item.qtd, estoque_minimo: 5, fornecedor: fornecedor, tipo: 'peca'
                 });
             } else {
                 const prodRef = doc(db, "produtos", item.id);
@@ -341,36 +358,49 @@ window.carregarDashboard = async () => {
 
 window.carregarEstoque = async () => {
     const tbody = document.getElementById('lista-produtos-estoque');
-    // REMOVI O CHECK DE TBODY PARA GARANTIR QUE OS DADOS SEJAM CARREGADOS NA MEMÓRIA MESMO SEM TABELA
-    // if(tbody) tbody.innerHTML = "<tr><td colspan='6'>Carregando...</td></tr>";
     try {
         const q = query(collection(db, "produtos"), orderBy("nome"));
         const querySnapshot = await getDocs(q);
         window.todosProdutos = []; 
         querySnapshot.forEach((doc) => { window.todosProdutos.push({ id: doc.id, ...doc.data() }); });
-        // Só tenta renderizar se a tabela existir
         if(tbody) window.filtrarEstoque(); 
     } catch (e) { console.error(e); }
 }
 window.filtrarEstoque = () => {
     const termo = document.getElementById('busca-estoque').value.toLowerCase();
     const tbody = document.getElementById('lista-produtos-estoque');
-    if(!tbody) return; // Segurança extra
+    if(!tbody) return;
     tbody.innerHTML = "";
-    const filtrados = window.todosProdutos.filter(p => p.nome.toLowerCase().includes(termo) || p.codigo_barras.includes(termo));
+    const filtrados = window.todosProdutos.filter(p => p.nome.toLowerCase().includes(termo) || (p.codigo_barras && p.codigo_barras.includes(termo)));
     filtrados.forEach(p => {
         const dadosJson = encodeURIComponent(JSON.stringify(p));
-        tbody.innerHTML += `<tr><td><strong>${p.nome}</strong><br><small>${p.codigo_barras}</small></td><td>R$ ${p.preco.toFixed(2)}</td><td>${p.estoque_atual}</td><td><button onclick="prepararEdicao('${p.id}', '${dadosJson}')" class="btn-secondary">✏️</button><button onclick="excluirProduto('${p.id}')" class="btn-secondary" style="color:red">🗑️</button></td></tr>`;
+        const isServico = (p.tipo === 'servico');
+        const estoqueDisplay = isServico ? '<span class="badge badge-green">SERVIÇO</span>' : p.estoque_atual;
+        tbody.innerHTML += `<tr><td><strong>${p.nome}</strong><br><small>${isServico ? 'MÃO DE OBRA' : p.codigo_barras}</small></td><td>R$ ${p.preco.toFixed(2)}</td><td>${estoqueDisplay}</td><td><button onclick="prepararEdicao('${p.id}', '${dadosJson}')" class="btn-secondary">✏️</button><button onclick="excluirProduto('${p.id}')" class="btn-secondary" style="color:red">🗑️</button></td></tr>`;
     });
 }
 window.salvarProduto = async () => {
     try {
+        // Verifica o tipo selecionado no radio button
+        const tipoSelecionado = document.querySelector('input[name="tipo_produto"]:checked').value;
+        const isServico = (tipoSelecionado === 'servico');
+
         const dados = {
-            codigo_barras: document.getElementById('cad-codigo').value || "SEM GTIN", codigo_oem: document.getElementById('cad-oem').value, marca: document.getElementById('cad-marca').value,
-            nome: document.getElementById('cad-nome').value, preco: parseFloat(document.getElementById('cad-preco').value) || 0, preco_custo: parseFloat(document.getElementById('cad-custo').value) || 0,
-            estoque_atual: parseInt(document.getElementById('cad-estoque').value) || 0, estoque_minimo: parseInt(document.getElementById('cad-minimo').value) || 0,
-            carros_compativeis: document.getElementById('cad-carros').value, localizacao: document.getElementById('cad-local').value, fornecedor: document.getElementById('cad-fornecedor').value
+            tipo: tipoSelecionado,
+            nome: document.getElementById('cad-nome').value, 
+            preco: parseFloat(document.getElementById('cad-preco').value) || 0, 
+            preco_custo: parseFloat(document.getElementById('cad-custo').value) || 0,
+            carros_compativeis: document.getElementById('cad-carros').value, 
+            // Campos que só importam para Peças (mas salvamos vazio se for serviço)
+            codigo_barras: isServico ? "SERV-" + Date.now() : (document.getElementById('cad-codigo').value || "SEM GTIN"), 
+            codigo_oem: isServico ? "" : document.getElementById('cad-oem').value, 
+            marca: isServico ? "" : document.getElementById('cad-marca').value,
+            estoque_atual: isServico ? 9999 : (parseInt(document.getElementById('cad-estoque').value) || 0), 
+            estoque_minimo: isServico ? 0 : (parseInt(document.getElementById('cad-minimo').value) || 0), 
+            localizacao: isServico ? "" : document.getElementById('cad-local').value, 
+            fornecedor: isServico ? "" : document.getElementById('cad-fornecedor').value
         };
+
         if(idProdutoEditando) { await updateDoc(doc(db, "produtos", idProdutoEditando), dados); idProdutoEditando = null; } 
         else { await addDoc(collection(db, "produtos"), dados); }
         alert("Salvo!"); document.querySelectorAll('#tela-cadastro input').forEach(i => i.value = ""); window.carregarEstoque();
@@ -378,7 +408,28 @@ window.salvarProduto = async () => {
 }
 window.prepararEdicao = (id, dadosJson) => {
     const p = JSON.parse(decodeURIComponent(dadosJson)); idProdutoEditando = id;
-    document.getElementById('cad-codigo').value = p.codigo_barras || ""; document.getElementById('cad-nome').value = p.nome || ""; document.getElementById('cad-preco').value = p.preco || ""; document.getElementById('cad-estoque').value = p.estoque_atual || "";
+    
+    // Configura o tipo (Peça ou Serviço)
+    const isServico = (p.tipo === 'servico');
+    if(isServico) document.querySelector('input[name="tipo_produto"][value="servico"]').checked = true;
+    else document.querySelector('input[name="tipo_produto"][value="peca"]').checked = true;
+    window.alternarCamposCadastro();
+
+    document.getElementById('cad-nome').value = p.nome || ""; 
+    document.getElementById('cad-preco').value = p.preco || ""; 
+    document.getElementById('cad-custo').value = p.preco_custo || "";
+    document.getElementById('cad-carros').value = p.carros_compativeis || "";
+
+    if(!isServico) {
+        document.getElementById('cad-codigo').value = p.codigo_barras || ""; 
+        document.getElementById('cad-oem').value = p.codigo_oem || "";
+        document.getElementById('cad-marca').value = p.marca || "";
+        document.getElementById('cad-estoque').value = p.estoque_atual || "";
+        document.getElementById('cad-minimo').value = p.estoque_minimo || "";
+        document.getElementById('cad-local').value = p.localizacao || "";
+        document.getElementById('cad-fornecedor').value = p.fornecedor || "";
+    }
+
     document.querySelector('.content').scrollTop = 0;
 }
 window.excluirProduto = async(id) => { if(confirm("Excluir?")) { await deleteDoc(doc(db,"produtos",id)); window.carregarEstoque(); } }
@@ -462,7 +513,7 @@ window.gerarRelatorio = async () => {
     const tbody = document.querySelector('#tabela-relatorio tbody'); tbody.innerHTML = "Carregando...";
     try {
         const q = await getDocs(collection(db, "produtos")); tbody.innerHTML = "";
-        q.forEach((doc) => { const p = doc.data(); if (p.estoque_atual <= p.estoque_minimo) tbody.innerHTML += `<tr><td>${p.nome}</td><td>${p.localizacao||'-'}</td><td>${p.estoque_atual}</td><td>${p.estoque_minimo}</td><td style="color:red; font-weight:bold">REPOR</td></tr>`; });
+        q.forEach((doc) => { const p = doc.data(); if (p.estoque_atual <= p.estoque_minimo && p.tipo !== 'servico') tbody.innerHTML += `<tr><td>${p.nome}</td><td>${p.localizacao||'-'}</td><td>${p.estoque_atual}</td><td>${p.estoque_minimo}</td><td style="color:red; font-weight:bold">REPOR</td></tr>`; });
     } catch (e) { console.error(e); }
 }
 
@@ -499,7 +550,6 @@ if(inputBusca) {
     });
 }
 
-// NOVA FUNÇÃO: FILTRAR PRODUTOS PDV
 window.filtrarProdutosPDV = () => {
     const termo = document.getElementById('pdv-busca').value.toLowerCase();
     const divSugestao = document.getElementById('sugestoes-pdv');
@@ -513,17 +563,19 @@ window.filtrarProdutosPDV = () => {
     // Filtra no cache local (window.todosProdutos)
     const filtrados = window.todosProdutos.filter(p => 
         p.nome.toLowerCase().includes(termo) || 
-        p.codigo_barras.includes(termo) || 
+        (p.codigo_barras && p.codigo_barras.includes(termo)) || 
         (p.codigo_oem && p.codigo_oem.includes(termo))
-    ).slice(0, 8); // Mostra 8 sugestões
+    ).slice(0, 8); 
 
     if(filtrados.length > 0) {
         divSugestao.style.display = 'block';
         filtrados.forEach(p => {
+            const isServico = (p.tipo === 'servico');
             const div = document.createElement('div');
-            div.innerHTML = `<strong>${p.nome}</strong> <br> <small style="color:#666">${p.codigo_barras} | R$ ${p.preco.toFixed(2)}</small>`;
+            const subtexto = isServico ? "🔧 SERVIÇO / MÃO DE OBRA" : `${p.codigo_barras} | R$ ${p.preco.toFixed(2)}`;
+            div.innerHTML = `<strong>${p.nome}</strong> <br> <small style="color:#666">${subtexto}</small>`;
             div.onclick = () => {
-                window.adicionarAoCarrinho(p.id, p); // Adiciona direto ao clicar
+                window.adicionarAoCarrinho(p.id, p); 
                 document.getElementById('pdv-busca').value = "";
                 divSugestao.style.display = 'none';
                 document.getElementById('pdv-busca').focus();
@@ -535,9 +587,9 @@ window.filtrarProdutosPDV = () => {
     }
 }
 
-// Transformei em window. para ser acessível
 window.adicionarAoCarrinho = (id, produto) => {
-    if (produto.estoque_atual <= 0) alert("ALERTA: Produto sem estoque físico!");
+    const isServico = (produto.tipo === 'servico');
+    if (!isServico && produto.estoque_atual <= 0) alert("ALERTA: Produto sem estoque físico!");
     window.carrinho.push({ id, ...produto, qtd: 1 });
     window.atualizarTabela();
 }
@@ -551,7 +603,7 @@ window.atualizarTabela = () => {
         subtotalVenda += totalItem;
         tbody.innerHTML += `
             <tr style="display: grid; grid-template-columns: 2fr 1fr 1fr 0.5fr; align-items: center;">
-                <td><strong>${item.nome}</strong><br><small>${item.marca}</small></td>
+                <td><strong>${item.nome}</strong><br><small>${item.marca || ''}</small></td>
                 <td><input type="number" min="1" value="${item.qtd}" onchange="atualizarQtd(${index}, this.value)" style="width: 60px; padding: 5px; text-align: center;"></td>
                 <td>R$ ${totalItem.toFixed(2)}</td>
                 <td style="text-align:right;"><button onclick="removerItem(${index})" style="color:#ef4444; background:none; border:none; cursor:pointer;"><span class="material-icons">delete</span></button></td>
@@ -602,10 +654,13 @@ window.finalizarVenda = async () => {
             cliente: nomeCliente, forma_pagamento: formaPagamento, status: statusVenda, vencimento: dataVencimento, itens: window.carrinho
         });
 
+        // Só atualiza estoque se NÃO for serviço
         for (const item of window.carrinho) {
-            const itemRef = doc(db, "produtos", item.id);
-            const atual = window.todosProdutos.find(p => p.id === item.id)?.estoque_atual || 0;
-            await updateDoc(itemRef, { estoque_atual: atual - item.qtd });
+            if(item.tipo !== 'servico') {
+                const itemRef = doc(db, "produtos", item.id);
+                const atual = window.todosProdutos.find(p => p.id === item.id)?.estoque_atual || 0;
+                await updateDoc(itemRef, { estoque_atual: atual - item.qtd });
+            }
         }
 
         if(confirm("Deseja imprimir?")) window.imprimirCupom(nomeCliente, window.carrinho, totalFinal, descontoGlobal, new Date(), dataVencimento);
