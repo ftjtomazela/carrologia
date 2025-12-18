@@ -3,1147 +3,345 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tomazela Piscinas - Limpeza, Manutenção e Produtos para Piscinas | Conchas-SP</title>
-    <meta name="description" content="Limpeza, manutenção e produtos para piscinas em Conchas-SP. Cloro, kit pH, cabos, peneiras e muito mais. Atendimento em até 35km.">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            overflow-x: hidden;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        /* Header */
-        .header {
-            background: linear-gradient(135deg, #0066cc, #004499);
-            color: white;
-            padding: 1rem 0;
-            position: fixed;
-            width: 100%;
-            top: 0;
-            z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            height: 100px;
-            width: auto;
-            max-width: 310px;
-        }   
-
-        .logo img {
-            height: 100%;
-            width: auto;
-            object-fit: contain;
-        }
-
-        .header-contact {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
-
-        .phone {
-            background: #00ff88;
-            color: #004499;
-            padding: 8px 16px;
-            border-radius: 25px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: all 0.3s ease;
-        }
-
-        .phone:hover {
-            background: #00cc66;
-            transform: scale(1.05);
-        }
-
-        /* Hero Section */
-        .hero {
-            background: linear-gradient(rgba(0,102,204,0.8), rgba(0,68,153,0.8)), 
-                        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><rect fill="%2300ccff" width="1200" height="600"/><circle cx="600" cy="300" r="200" fill="%23ffffff" opacity="0.1"/><circle cx="300" cy="150" r="100" fill="%23ffffff" opacity="0.1"/><circle cx="900" cy="450" r="150" fill="%23ffffff" opacity="0.1"/></svg>');
-            background-size: cover;
-            background-position: center;
-            color: white;
-            padding: 120px 0 80px;
-            text-align: center;
-            position: relative;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-        }
-
-        .hero-content {
-            animation: fadeInUp 1s ease-out;
-        }
-
-        .hero h1 {
-            font-size: 3.5rem;
-            margin-bottom: 1rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .hero-subtitle {
-            font-size: 1.4rem;
-            margin-bottom: 2rem;
-            opacity: 0.95;
-        }
-
-        .cta-button {
-            background: linear-gradient(45deg, #00ff88, #00cc66);
-            color: #004499;
-            padding: 18px 40px;
-            border: none;
-            border-radius: 50px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 20px rgba(0,255,136,0.3);
-            animation: pulse 2s infinite;
-        }
-
-        .cta-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 25px rgba(0,255,136,0.4);
-        }
-
-        /* Lead Form */
-        .lead-form {
-            background: white;
-            padding: 3rem;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            margin-top: 3rem;
-            max-width: 500px;
-            margin-left: auto;
-            margin-right: auto;
-            border: 3px solid #00ccff;
-        }
-
-        .lead-form h3 {
-            color: #004499;
-            margin-bottom: 1.5rem;
-            text-align: center;
-            font-size: 1.8rem;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: #004499;
-            font-weight: bold;
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 1rem;
-            transition: border-color 0.3s ease;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #00ccff;
-        }
-
-        .submit-btn {
-            width: 100%;
-            background: linear-gradient(45deg, #004499, #0066cc);
-            color: white;
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .submit-btn:hover {
-            background: linear-gradient(45deg, #0066cc, #004499);
-            transform: translateY(-2px);
-        }
-
-        /* Products Section */
-        .products {
-            padding: 80px 0;
-            background: #f8f9fa;
-        }
-
-        .section-title {
-            text-align: center;
-            font-size: 2.5rem;
-            color: #4395f8;
-            margin-bottom: 3rem;
-        }
-
-        .products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-bottom: 3rem;
-        }
-
-        .product-card {
-            background: white;
-            border-radius: 15px;
-            padding: 2rem;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-            border-top: 4px solid #00ccff;
-        }
-
-        .product-card:hover {
-            transform: translateY(-10px);
-        }
-
-        .product-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-
-        .product-card h3 {
-            color: #004499;
-            margin-bottom: 1rem;
-        }
-
-        .price {
-            font-size: 1.5rem;
-            color: #00cc66;
-            font-weight: bold;
-            margin: 1rem 0;
-        }
-
-        /* Gallery Section */
-        .gallery {
-            padding: 80px 0;
-            background: white;
-        }
-
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-top: 3rem;
-        }
-
-        .gallery-item {
-            position: relative;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            cursor: pointer;
-            aspect-ratio: 4/3;
-        }
-
-        .gallery-item:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-        }
-
-        .gallery-item img,
-        .gallery-item video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.3s ease;
-        }
-
-        .gallery-item:hover img,
-        .gallery-item:hover video {
-            transform: scale(1.05);
-        }
-
-        .gallery-overlay {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(transparent, rgba(0,68,153,0.9));
-            color: white;
-            padding: 1.5rem;
-            transform: translateY(100%);
-            transition: transform 0.3s ease;
-        }
-
-        .gallery-item:hover .gallery-overlay {
-            transform: translateY(0);
-        }
-
-        .gallery-overlay h4 {
-            font-size: 1.1rem;
-            margin-bottom: 0.5rem;
-            color: #00ccff;
-        }
-
-        .gallery-overlay p {
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-
-        /* Lightbox */
-        .lightbox {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .lightbox.active {
-            display: flex;
-        }
-
-        .lightbox img,
-        .lightbox video {
-            max-width: 90%;
-            max-height: 90%;
-            border-radius: 10px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-        }
-
-        .lightbox-close {
-            position: absolute;
-            top: 20px;
-            right: 30px;
-            color: white;
-            font-size: 3rem;
-            cursor: pointer;
-            background: none;
-            border: none;
-            transition: color 0.3s ease;
-        }
-
-        .lightbox-close:hover {
-            color: #00ccff;
-        }
-
-        .gallery-badge {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: #00ff88;
-            color: #004499;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: bold;
-        }
-
-        .video-badge {
-            background: #ff4444;
-            color: white;
-        }
-
-        .play-button {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(255,255,255,0.9);
-            border: none;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            font-size: 24px;
-            color: #004499;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .play-button:hover {
-            background: white;
-            transform: translate(-50%, -50%) scale(1.1);
-        }
-
-        /* Benefits */
-        .benefits {
-            padding: 80px 0;
-            background: linear-gradient(135deg, #004499, #0066cc);
-            color: white;
-        }
-
-        .benefits-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-        }
-
-        .benefit-item {
-            text-align: center;
-            padding: 2rem;
-        }
-
-        .benefit-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            color: #00ff88;
-        }
-
-        /* Testimonials */
-        .testimonials {
-            padding: 80px 0;
-            background: white;
-        }
-
-        .testimonial-card {
-            background: #f8f9fa;
-            padding: 2rem;
-            border-radius: 15px;
-            margin-bottom: 2rem;
-            border-left: 5px solid #00ccff;
-        }
-
-        .testimonial-text {
-            font-style: italic;
-            margin-bottom: 1rem;
-            font-size: 1.1rem;
-        }
-
-        .testimonial-author {
-            font-weight: bold;
-            color: #004499;
-        }
-
-        /* CTA Section */
-        .final-cta {
-            padding: 80px 0;
-            background: linear-gradient(45deg, #00ff88, #00cc66);
-            text-align: center;
-            color: #004499;
-        }
-
-        .final-cta h2 {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .urgency {
-            background: #ff4444;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 25px;
-            display: inline-block;
-            margin: 1rem 0;
-            animation: blink 1.5s infinite;
-        }
-
-        /* Footer */
-        .footer {
-            background: #333;
-            color: white;
-            padding: 2rem 0;
-            text-align: center;
-        }
-
-        .footer-content {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        .footer-section h4 {
-            color: #00ccff;
-            margin-bottom: 1rem;
-        }
-
-        /* Animations */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-            }
-            50% {
-                transform: scale(1.05);
-            }
-            100% {
-                transform: scale(1);
-            }
-        }
-
-        @keyframes blink {
-            0%, 50% {
-                opacity: 1;
-            }
-            51%, 100% {
-                opacity: 0.7;
-            }
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2.5rem;
-            }
-            
-            .hero-subtitle {
-                font-size: 1.2rem;
-            }
-            
-            .header-contact {
-                display: none;
-            }
-            
-            .lead-form {
-                margin: 2rem 1rem;
-                padding: 2rem;
-            }
-        }
-
-        /* WhatsApp Float Button */
-        .whatsapp-float {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #25d366;
-            color: white;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 30px;
-            text-decoration: none;
-            box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4);
-            z-index: 1000;
-            animation: bounce 2s infinite;
-        }
-
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% {
-                transform: translateY(0);
-            }
-            40% {
-                transform: translateY(-10px);
-            }
-            60% {
-                transform: translateY(-5px);
-            }
-        }
-    </style>
+    <title>Auto Peças Pro - ERP Completo</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="container">
-            <div class="header-content">
-                <div class="logo">
-        <img src="logo.png" alt="Tomazela Piscinas">
+
+    <section id="tela-login">
+        <div class="login-box">
+            <img src="unnamed.jpg" alt="Logo Stir" class="login-logo">
+            <h2 style="color:#1e293b; margin-bottom:20px;">Acesso Restrito</h2>
+            <input type="email" id="login-email" placeholder="E-mail" style="margin-bottom:15px;">
+            <input type="password" id="login-senha" placeholder="Senha" style="margin-bottom:20px;">
+            <button class="btn-primary" onclick="fazerLogin()">ENTRAR NO SISTEMA</button>
+            <p id="msg-erro-login" style="color:red; margin-top:10px; font-size:14px;"></p>
         </div>
-                <div class="header-contact">
-                    <span>📍 Conchas-SP Raio 35km | Tatui e Boituva-SP | </span>
-                    <a href="tel:+5514981722063" class="phone">📞 (14) 98172-2063</a>
+    </section>
+
+    <button id="btn-menu-mobile" onclick="alternarMenu()">
+        <span class="material-icons">menu</span>
+    </button>
+
+    <nav class="sidebar" id="sidebar-principal" style="display:none;">
+        <div class="logo">
+            <img src="unnamed.jpg" alt="Logo Stir Auto Peças" class="logo-img">
+        </div>
+        <button onclick="mostrarTela('dashboard')" class="active" id="btn-dashboard">
+            <span class="material-icons">dashboard</span> Visão Geral
+        </button>
+        <button onclick="mostrarTela('vendas')" id="btn-vendas">
+            <span class="material-icons">point_of_sale</span> PDV / Vendas
+        </button>
+        <button onclick="mostrarTela('financeiro')" id="btn-financeiro">
+            <span class="material-icons">payments</span> Contas a Pagar
+        </button>
+        <button onclick="mostrarTela('entrada')" id="btn-entrada">
+            <span class="material-icons">local_shipping</span> Entrada de Nota
+        </button>
+        <button onclick="mostrarTela('cadastro')" id="btn-cadastro">
+            <span class="material-icons">inventory_2</span> Cadastro de Peças
+        </button>
+        <button onclick="mostrarTela('historico')" id="btn-historico">
+            <span class="material-icons">history</span> Movimentações
+        </button>
+        <button onclick="mostrarTela('clientes')" id="btn-clientes">
+            <span class="material-icons">people</span> Clientes
+        </button>
+        <button onclick="mostrarTela('relatorio')" id="btn-relatorio">
+            <span class="material-icons">assessment</span> Relatórios
+        </button>
+        
+        <div style="margin-top:auto; border-top:1px solid #334155; padding-top:10px;">
+            <button onclick="fazerLogout()" style="color:#ef4444;">
+                <span class="material-icons">logout</span> Sair
+            </button>
+        </div>
+    </nav>
+
+    <div id="overlay-menu" onclick="alternarMenu()"></div>
+
+    <main class="content" id="conteudo-principal" style="display:none;">
+        
+        <section id="tela-dashboard" class="tela">
+            <header>
+                <h1>Financeiro & Visão Geral</h1>
+                <button class="btn-secondary" onclick="carregarDashboard()">
+                    <span class="material-icons">refresh</span> Atualizar
+                </button>
+            </header>
+            
+            <div class="dashboard-grid">
+                <div class="card dash-card" style="border-left: 5px solid var(--success);">
+                    <h3>Entradas Hoje (Caixa)</h3>
+                    <div class="dash-value">R$ <span id="dash-total">0.00</span></div>
+                    <p><span id="dash-qtd">0</span> vendas realizadas</p>
+                </div>
+                <div class="card dash-card" style="border-left: 5px solid #f59e0b;">
+                    <h3>A Receber (Clientes)</h3>
+                    <div class="dash-value" style="color:#d97706">R$ <span id="dash-receber">0.00</span></div>
+                    <p><span id="dash-qtd-receber">0</span> pendentes</p>
+                </div>
+                <div class="card dash-card" style="border-left: 5px solid #ef4444;">
+                    <h3>A Pagar (Fornecedores)</h3>
+                    <div class="dash-value" style="color:#ef4444">R$ <span id="dash-pagar">0.00</span></div>
+                    <p><span id="dash-qtd-pagar">0</span> boletos abertos</p>
                 </div>
             </div>
-        </div>
-    </header>
 
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="container">
-            <div class="hero-content">
-                <h1>🧽 Sua Piscina Sempre Limpa e Cristalina!</h1>
-                <p class="hero-subtitle">
-                    Especialistas em Limpeza, Manutenção e Produtos para Piscinas | Conchas-SP<br>
-                    <strong>✅ 1ª Limpeza Grátis | ✅ Até 35km de Conchas | Tatui e Boituva-SP✅ | 20+ Anos de Experiência</strong>
-                </p>
-                <a href="#contato" class="cta-button">💧 QUERO MINHA 1ª LIMPEZA GRÁTIS!</a>
-                
-                <!-- Lead Form -->
-                <div class="lead-form" id="contato">
-                    <h3>🎯 Agende Sua 1ª Limpeza Gratuita</h3>
-                    <form id="leadForm">
-                        <div class="form-group">
-                            <label for="nome">👤 Nome Completo *</label>
-                            <input type="text" id="nome" name="nome" required placeholder="Digite seu nome completo">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="whatsapp">📱 WhatsApp *</label>
-                            <input type="tel" id="whatsapp" name="whatsapp" required placeholder="(14) 99999-9999">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="cidade">📍 Cidade *</label>
-                            <select id="cidade" name="cidade" required>
-                                <option value="">Selecione sua cidade</option>
-                                <option value="Conchas">Conchas</option>
-                                <option value="Botucatu">Botucatu</option>
-                                <option value="Laranjal Paulista">Laranjal Paulista</option>
-                                <option value="Anhembi">Anhembi</option>
-                                <option value="Bofete">Bofete</option>
-                                <option value="Torre de Pedra">Torre de Pedra</option>
-                                <option value="Porangaba">Porangaba</option>
-                                <option value="Tatuí">Tatuí</option>
-                                <option value="Boituva">Boituva</option>
-                                <option value="Outra">Outra cidade da região</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="interesse">🏊‍♂️ O que você precisa?</label>
-                            <select id="interesse" name="interesse" required>
-                                <option value="">Selecione uma opção</option>
-                                <option value="Limpeza Completa">🧽 Limpeza Completa da Piscina</option>
-                                <option value="Manutencao Semanal">📅 Manutenção Semanal</option>
-                                <option value="Produtos Quimicos">🧪 Produtos Químicos (Cloro, pH, etc.)</option>
-                                <option value="Acessorios">🛠️ Acessórios (Cabo, Peneira, Kit pH)</option>
-                                <option value="Baldes Cloro">🪣 Baldes de Cloro</option>
-                                <option value="Kit Manutencao">📦 Kit Completo de Manutenção</option>
-                                <option value="Visita Tecnica">🔍 Avaliação Técnica da Piscina</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="observacoes">💬 Descreva sua piscina</label>
-                            <textarea id="observacoes" name="observacoes" rows="3" placeholder="Tamanho, problemas atuais, há quanto tempo não é limpa..."></textarea>
-                        </div>
-                        
-                        <button type="submit" class="submit-btn">
-                            🚀 AGENDAR 1ª LIMPEZA GRATUITA AGORA!
+            <div class="card" style="margin-top:20px;">
+                <h3 style="color:#b91c1c; margin-bottom:15px;">Clientes Devedores (A Receber)</h3>
+                <div style="overflow-x:auto;">
+                    <table class="pdv-table">
+                        <thead><tr><th>Vencimento</th><th>Cliente</th><th>Valor</th><th>Ação</th></tr></thead>
+                        <tbody id="lista-cobranca"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="tela-financeiro" class="tela" style="display:none;">
+            <header>
+                <h1>Contas a Pagar (Fornecedores)</h1>
+                <button class="btn-secondary" onclick="carregarContasPagar()">
+                    <span class="material-icons">refresh</span> Atualizar
+                </button>
+            </header>
+
+            <div class="card" style="margin-bottom:20px; border:1px solid #e2e8f0;">
+                <h4>Adicionar Conta Manualmente</h4>
+                <div class="row" style="align-items:flex-end;">
+                    <div class="form-group" style="flex:2"><label>Fornecedor</label><input type="text" id="pagar-fornecedor"></div>
+                    <div class="form-group"><label>Nº Doc / Boleto</label><input type="text" id="pagar-doc"></div>
+                    <div class="form-group"><label>Vencimento</label><input type="date" id="pagar-venc"></div>
+                    <div class="form-group"><label>Valor (R$)</label><input type="number" id="pagar-valor"></div>
+                    <div class="form-group"><button class="btn-primary" onclick="salvarContaManual()">Adicionar</button></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="overflow-x:auto;">
+                    <table class="pdv-table">
+                        <thead>
+                            <tr>
+                                <th>Vencimento</th>
+                                <th>Fornecedor</th>
+                                <th>Documento</th>
+                                <th>Valor</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-contas-pagar"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="tela-entrada" class="tela" style="display:none;">
+            <header><h1>Entrada de Nota (Importação XML)</h1></header>
+            
+            <div class="card" style="background:#f0f9ff; border:1px solid #bae6fd;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <h3 style="margin:0; color:#0369a1;">Carregar XML (NFe)</h3>
+                        <p style="margin:5px 0 0 0; font-size:12px; color:#0c4a6e;">Importa produtos e gera Contas a Pagar automaticamente</p>
+                    </div>
+                    <div>
+                        <input type="file" id="input-xml" accept=".xml" style="display:none;" onchange="importarXML(this)">
+                        <button class="btn-secondary" onclick="document.getElementById('input-xml').click()" style="background:#0284c7; color:white;">
+                            <span class="material-icons">upload_file</span> Escolher Arquivo
                         </button>
-                        
-                        <p style="font-size: 0.9rem; color: #666; margin-top: 1rem; text-align: center;">
-                            ✅ Resposta em até 30 minutos<br>
-                            ✅ Primeira limpeza gratuita<br>
-                            ✅ Avaliação sem compromisso
-                        </p>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Products Section -->
-    <section class="products">
-        <div class="container">
-            <h2 class="section-title">🛠️ Nossos Produtos e Serviços</h2>
-            <div class="products-grid">
-                <div class="product-card">
-                    <div class="product-icon">🧽</div>
-                    <h3>Limpeza Completa</h3>
-                    <p>Limpeza profunda da piscina, aspiração, escovação das paredes e tratamento químico completo.</p>
-                    <p><strong>✅ 1ª Limpeza Gratuita</strong></p>
-                </div>
-                
-                <div class="product-card">
-                    <div class="product-icon">📅</div>
-                    <h3>Manutenção Semanal</h3>
-                    <p>Visitas semanais para manter sua piscina sempre limpa e com pH balanceado.</p>
-                    <p><strong>✅ 8 Visitas por Mês</strong></p>
-                </div>
-                
-                <div class="product-card">
-                    <div class="product-icon">🧪</div>
-                    <h3>Produtos Químicos</h3>
-                    <p>Cloro granulado, barrilha, algicida, clarificante e todos produtos para tratamento da água.</p>
-                    <p><strong>✅ Entrega em Domicílio</strong></p>
-                </div>
-                
-                <div class="product-card">
-                    <div class="product-icon">🪣</div>
-                    <h3>Baldes de Cloro</h3>
-                    <p>Cloro granulado e pastilhas em baldes de diferentes tamanhos para sua conveniência.</p>
-                    <p><strong>✅ Produtos de Qualidade</strong></p>
-                </div>
-                
-                <div class="product-card">
-                    <div class="product-icon">🛠️</div>
-                    <h3>Acessórios para Piscina</h3>
-                    <p>Cabos telescópicos, peneiras, escovas, aspiradores manuais e kit medidor de pH.</p>
-                    <p><strong>✅ Qualidade Premium</strong></p>
-                </div>
-                
-                <div class="product-card">
-                    <div class="product-icon">📦</div>
-                    <h3>Kit Manutenção</h3>
-                    <p>Kit completo com produtos químicos e acessórios essenciais para cuidar da sua piscina.</p>
-                    <p><strong>✅ Tudo em 1 Kit</strong></p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Gallery Section -->
-    <section class="gallery">
-        <div class="container">
-            <h2 class="section-title">📸 Nossos Trabalhos em Ação</h2>
-            <p style="text-align: center; font-size: 1.2rem; color: #666; margin-bottom: 1rem;">
-                Veja a transformação das piscinas que cuidamos na região
-            </p>
-            
-            <div class="gallery-grid">
-                <div class="gallery-item" onclick="openLightbox('Transform.mp4', 'video')">
-                    <video muted loop>
-                        <source src="Transform.mp4" type="video/mp4">
-                        Seu navegador não suporta vídeo.
-                    </video>
-                    <div class="gallery-badge video-badge">📹 VÍDEO</div>
-                    <div class="play-button">▶</div>
-                    <div class="gallery-overlay">
-                        <h4>🎬 Transformação Completa</h4>
-                        <p>Vídeo mostrando piscina verde sendo recuperada em 2 dias</p>
                     </div>
                 </div>
-                
-                <div class="gallery-item" onclick="openLightbox('aspirar.JPG')">
-                    <img src="aspirar.JPG" alt="Limpeza Profissional em Ação">
-                    <div class="gallery-badge">LIMPEZA</div>
-                    <div class="gallery-overlay">
-                        <h4>🧽 Limpeza Profissional</h4>
-                        <p>Aspiração e tratamento químico completo</p>
+            </div>
+
+            <div class="card form-container">
+                <h4 style="color:var(--primary); margin-bottom:10px;">Dados da Nota</h4>
+                <div class="row">
+                    <div class="form-group"><label>Nº Nota</label><input type="text" id="ent-nota"></div>
+                    <div class="form-group" style="flex:2"><label>Fornecedor</label><input type="text" id="ent-fornecedor"></div>
+                    <div class="form-group"><label>Emissão</label><input type="date" id="ent-data"></div>
+                </div>
+
+                <div id="area-financeira-entrada" style="margin: 15px 0; background: #fff1f2; padding: 15px; border-radius: 8px; border: 1px solid #fda4af; display:none;">
+                    <h4 style="margin:0 0 10px 0; color:#be123c;">Financeiro (Boletos Identificados no XML)</h4>
+                    <ul id="lista-boletos-xml" style="list-style:none; padding:0; margin:0; font-size:14px; color:#881337;"></ul>
+                </div>
+
+                <h4 style="color:var(--primary); margin:20px 0 10px 0;">Produtos</h4>
+                <div class="search-bar-container">
+                    <span class="material-icons">search</span>
+                    <input type="text" id="busca-entrada" placeholder="Buscar produto manual..." onkeyup="filtrarProdutosEntrada()">
+                </div>
+                <div id="sugestoes-entrada" style="max-height:150px; overflow-y:auto; border:1px solid #ddd; display:none; margin-bottom:15px;"></div>
+
+                <div class="row" style="align-items:flex-end;">
+                    <div class="form-group" style="flex:2">
+                        <label>Produto</label>
+                        <input type="text" id="ent-prod-nome" disabled style="background:#f3f4f6;">
+                        <input type="hidden" id="ent-prod-id">
                     </div>
+                    <div class="form-group"><label>Qtd</label><input type="number" id="ent-prod-qtd" min="1"></div>
+                    <div class="form-group"><label>Custo</label><input type="number" id="ent-prod-custo"></div>
+                    <div class="form-group"><button class="btn-secondary" onclick="adicionarItemEntrada()">+ Add</button></div>
                 </div>
-                
-                <div class="gallery-item" onclick="openLightbox('fotocombalde.png')">
-                    <img src="fotocombalde.png" alt="Produtos de Qualidade">
-                    <div class="gallery-badge">PRODUTOS</div>
-                    <div class="gallery-overlay">
-                        <h4>🧪 Produtos Premium</h4>
-                        <p>Cloro, algicida e produtos químicos de primeira linha</p>
+
+                <div style="overflow-x:auto; margin-top:15px;">
+                    <table class="pdv-table">
+                        <thead><tr><th>Cód</th><th>Produto</th><th>Qtd</th><th>Custo</th><th>Total</th><th></th></tr></thead>
+                        <tbody id="tabela-entrada"></tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top:20px; text-align:right;">
+                    <h3 style="display:inline-block; margin-right:20px;">Total: R$ <span id="ent-total">0.00</span></h3>
+                    <button class="btn-primary" onclick="salvarEntrada()" style="width:auto; padding:15px 30px;">
+                        <span class="material-icons">save</span> LANÇAR NO SISTEMA
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section id="tela-vendas" class="tela">
+            <div class="pdv-layout">
+                <div class="pdv-lista-container">
+                    <div class="pdv-lista-header"><span>PRODUTO</span><span>QTD</span><span>PREÇO</span><span></span></div>
+                    <div class="pdv-lista-scroll"><table class="pdv-table"><tbody id="tabela-carrinho"></tbody></table></div>
+                </div>
+                <div class="pdv-painel-controles">
+                    <div class="box-total">
+                        <small>Total a Pagar</small>
+                        <div style="display:flex; justify-content:flex-end; align-items:center;">
+                            <span style="font-size:32px; color:#4ade80; margin-right:5px;">R$</span>
+                            <input type="number" id="valor-total-input" value="0.00" onchange="recalcularDescontoPeloTotal()" style="width:150px;">
+                        </div>
+                        <small id="info-subtotal" style="font-size:12px; margin-top:5px; color:#64748b;">Subtotal: R$ 0.00</small>
                     </div>
-                </div>
-                
-<br>
-            
-            <div style="text-align: center; margin-top: 3rem;">
-                <p style="font-size: 1.1rem; color: #004499;">
-                    <strong>📱 Quer ver sua piscina assim também?</strong><br>
-                    Agende sua 1ª limpeza gratuita e comprove a qualidade!
-                </p>
-                <a href="#contato" class="cta-button" style="margin-top: 1rem;">
-                    🎁 QUERO MINHA 1ª LIMPEZA GRÁTIS!
-                </a>
-            </div>
-        </div>
-    </section>
+                    
+                    <div class="box-input scan-area" style="position: relative;">
+                        <input type="text" id="pdv-busca" placeholder="Bipe ou Digite o Nome..." onkeyup="filtrarProdutosPDV()" autocomplete="off">
+                        <div id="sugestoes-pdv" class="lista-sugestoes" style="display:none;"></div>
+                    </div>
 
-    <!-- Lightbox -->
-    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
-        <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
-        <img id="lightbox-img" src="" alt="" style="display: none;">
-        <video id="lightbox-video" controls style="display: none;">
-            <source src="" type="video/mp4">
-            Seu navegador não suporta vídeo.
-        </video>
-    </div>
-
-    <!-- Benefits Section -->
-    <section class="benefits">
-        <div class="container">
-            <h2 class="section-title">Por Que Escolher a Tomazela Piscinas?</h2>
-            <div class="benefits-grid">
-                <div class="benefit-item">
-                    <div class="benefit-icon">🏆</div>
-                    <h3>20+ Anos de Experiência</h3>
-                    <p>Especialistas em limpeza e manutenção de piscinas com centenas de clientes satisfeitos.</p>
-                </div>
-                
-                <div class="benefit-item">
-                    <div class="benefit-icon">💎</div>
-                    <h3>Produtos de Qualidade</h3>
-                    <p>Trabalhamos apenas com produtos químicos e acessórios das melhores marcas do mercado.</p>
-                </div>
-                
-                <div class="benefit-item">
-                    <div class="benefit-icon">🚀</div>
-                    <h3>Atendimento Regional</h3>
-                    <p>Matriz em Conchas-SP atendendo em raio de 35km + Filial em Tatuí-SP para Tatuí e Boituva com rapidez e eficiência.</p>
-                </div>
-                
-                <div class="benefit-item">
-                    <div class="benefit-icon">💰</div>
-                    <h3>Preços Justos</h3>
-                    <p>Os melhores preços da região com facilidades de pagamento e entrega gratuita.</p>
+                    <div class="box-options">
+                        <label>Cliente</label>
+                        <input type="text" id="pdv-busca-cliente" placeholder="Buscar..." onkeyup="filtrarClientesPDV()" style="margin-bottom:5px;">
+                        <select id="pdv-cliente-select"><option value="consumidor">Consumidor Final</option></select>
+                    </div>
+                    <div class="box-options">
+                        <label>Pagamento</label>
+                        <select id="pdv-forma-pagamento">
+                            <option value="dinheiro">💵 Dinheiro</option>
+                            <option value="pix">💠 PIX</option>
+                            <option value="credito">💳 Crédito</option>
+                            <option value="debito">💳 Débito</option>
+                            <option value="prazo" style="color:red; font-weight:bold;">📅 A Prazo (30 Dias)</option>
+                        </select>
+                    </div>
+                    <button class="btn-finalizar-pro" onclick="finalizarVenda()">FINALIZAR</button>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Testimonials -->
-    <section class="testimonials">
-        <div class="container">
-            <h2 class="section-title">❤️ O Que Nossos Clientes Dizem</h2>
-            
-            <div class="testimonial-card">
-                <div class="testimonial-text">
-                    "A Tomazela fez a primeira limpeza da nossa piscina de graça e ficou perfeita! Agora fazem a manutenção com 8 visitas por mês. Sempre pontuais e produtos de qualidade."
-                </div>
-                <div class="testimonial-author">⭐⭐⭐⭐⭐ - Maria Silva, Tatuí-SP</div>
+        <section id="tela-historico" class="tela" style="display:none;">
+            <header>
+                <h1>Histórico de Movimentações</h1>
+                <button class="btn-secondary" onclick="carregarHistorico('vendas')">
+                    <span class="material-icons">refresh</span> Atualizar
+                </button>
+            </header>
+            <div style="display:flex; gap:10px; margin-bottom:20px;">
+                <button class="btn-secondary" onclick="carregarHistorico('vendas')" style="flex:1; justify-content:center;">VENDAS (SAÍDAS)</button>
+                <button class="btn-secondary" onclick="carregarHistorico('entradas')" style="flex:1; justify-content:center; background:#0e7490;">COMPRAS (ENTRADAS)</button>
             </div>
-            
-            <div class="testimonial-card">
-                <div class="testimonial-text">
-                    "Compro todos os produtos químicos com eles. Entrega rápida, produtos originais e sempre me orientam sobre a dosagem correta. Super recomendo!"
-                </div>
-                <div class="testimonial-author">⭐⭐⭐⭐⭐ - João Santos, Botucatu-SP</div>
+            <div class="search-bar-container">
+                <span class="material-icons">search</span>
+                <input type="text" id="busca-historico" placeholder="Filtrar..." onkeyup="filtrarHistorico()">
             </div>
-            
-            <div class="testimonial-card">
-                <div class="testimonial-text">
-                    "Fizeram uma limpeza completa na minha piscina que estava verde há meses. Em 2 dias ficou cristalina! Profissionais de confiança."
-                </div>
-                <div class="testimonial-author">⭐⭐⭐⭐⭐ - Ana Costa, Boituva-SP</div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Final CTA -->
-    <section class="final-cta">
-        <div class="container">
-            <h2>🎯 Sua Piscina Merece o Melhor Cuidado!</h2>
-            <div class="urgency">⏰ 1ª LIMPEZA GRATUITA VÁLIDA APENAS EM MAIO 2025</div>
-            <p style="font-size: 1.3rem; margin: 1rem 0;">
-                <strong>🎁 GANHE:</strong> Limpeza Completa + Análise da Água + Orientações Personalizadas<br>
-                <strong>💸 TOTALMENTE GRÁTIS!</strong>
-            </p>
-            <a href="#contato" class="cta-button" style="font-size: 1.3rem;">
-                💧 AGENDAR 1ª LIMPEZA GRATUITA AGORA!
-            </a>
-            <p style="margin-top: 1rem; font-size: 0.9rem;">
-                ⚡ Atendimento em até 30 minutos | 📞 Disponível 7 dias por semana
-            </p>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h4>🏊‍♂️ Tomazela Piscinas</h4>
-                    <p>Especialistas em limpeza, manutenção e produtos para piscinas há mais de 20 anos. Base em Conchas-SP.</p>
-                </div>
-                
-                <div class="footer-section">
-                    <h4>📞 Contato</h4>
-                    <p>📱 WhatsApp: (14) 98172-2063</p>
-                    <p>📧 Email: tomazelapiscinas@gmail.com</p>
-                    <p>🌐 Site: tomazelapiscinas.shop</p>
-                    <p>📍 Conchas-SP | Raio 35km</p>
-                </div>
-                
-                <div class="footer-section">
-                    <h4>🎯 Áreas de Atendimento</h4>
-                    <p>✅ Conchas • Botucatu • Laranjal Paulista</p>
-                    <p>✅ Anhembi • Bofete • Torre de Pedra • Porangaba</p>
-                    <p>✅ Tatuí • Boituva</p>
-                </div>
-                
-                <div class="footer-section">
-                    <h4>🛠️ Nossos Serviços</h4>
-                    <p>🧽 Limpeza Completa</p>
-                    <p>📅 Manutenção Semanal</p>
-                    <p>🧪 Produtos Químicos</p>
-                    <p>🛠️ Acessórios para Piscina</p>
+            <div class="card">
+                <div style="overflow-x:auto;">
+                    <table id="tabela-historico"><thead id="head-historico"></thead><tbody id="lista-historico"></tbody></table>
                 </div>
             </div>
-            
-            <div style="text-align: center; padding-top: 2rem; border-top: 1px solid #555;">
-                <p>&copy; 2025 Tomazela Piscinas - Todos os direitos reservados | Sua piscina sempre cristalina ✨</p>
+        </section>
+
+        <section id="tela-cadastro" class="tela" style="display:none;">
+            <header><h1>Cadastro de Peças</h1></header>
+            <div class="card form-container">
+                <div class="row"><div class="form-group"><label>Cód. Barras</label><input type="text" id="cad-codigo"></div><div class="form-group"><label>OEM</label><input type="text" id="cad-oem"></div><div class="form-group"><label>Marca</label><input type="text" id="cad-marca"></div></div>
+                <div class="row"><div class="form-group" style="flex:2"><label>Nome</label><input type="text" id="cad-nome"></div><div class="form-group"><label>Preço Venda</label><input type="number" id="cad-preco"></div></div>
+                <div class="row"><div class="form-group"><label>Custo</label><input type="number" id="cad-custo"></div><div class="form-group"><label>Estoque</label><input type="number" id="cad-estoque"></div><div class="form-group"><label>Min</label><input type="number" id="cad-minimo"></div></div>
+                <div class="row"><div class="form-group"><label>Carros</label><input type="text" id="cad-carros"></div><div class="form-group"><label>Local</label><input type="text" id="cad-local"></div><div class="form-group"><label>Fornecedor</label><input type="text" id="cad-fornecedor"></div></div>
+                <button class="btn-primary" onclick="salvarProduto()" style="margin-top:10px;">Salvar Produto</button>
+                <hr>
+                <input type="text" id="busca-estoque" placeholder="Buscar estoque..." onkeyup="filtrarEstoque()" style="margin-bottom:10px;">
+                <div style="overflow-x:auto;"><table id="tabela-estoque"><thead><tr><th>Produto</th><th>Preço</th><th>Qtd</th><th>Ação</th></tr></thead><tbody id="lista-produtos-estoque"></tbody></table></div>
             </div>
-        </div>
-    </footer>
+        </section>
 
-    <!-- WhatsApp Float Button -->
-    <a href="https://wa.me/5514981722063?text=Ol%C3%A1%21%20Vim%20do%20site%20e%20gostaria%20de%20agendar%20minha%201%C2%AA%20limpeza%20gratuita." class="whatsapp-float" target="_blank">
-        📱
-    </a>
+        <section id="tela-clientes" class="tela" style="display:none;">
+            <header><h1>Gestão de Clientes</h1></header>
+            <div class="card form-container">
+                <h4 style="color:var(--primary); margin-bottom:10px;">Dados Pessoais</h4>
+                <div class="row">
+                    <div class="form-group" style="flex:2"><label>Nome Completo / Razão Social</label><input type="text" id="cli-nome"></div>
+                    <div class="form-group"><label>Celular / Zap</label><input type="text" id="cli-fone"></div>
+                </div>
+                <div class="row">
+                    <div class="form-group"><label>CPF / CNPJ</label><input type="text" id="cli-doc"></div>
+                    <div class="form-group"><label>Email</label><input type="email" id="cli-email"></div>
+                </div>
 
-    <script>
-        // Form submission handling
-        document.getElementById('leadForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Get form data
-            const formData = new FormData(this);
-            const data = Object.fromEntries(formData);
-            
-            // Format WhatsApp message
-            let message = `🏊‍♀️ *NOVO CLIENTE - TOMAZELA PISCINAS*\n\n`;
-            message += `👤 *Nome:* ${data.nome}\n`;
-            message += `📱 *WhatsApp:* ${data.whatsapp}\n`;
-            message += `📍 *Cidade:* ${data.cidade}\n`;
-            message += `🎯 *Interesse:* ${data.interesse}\n`;
-            if(data.observacoes) message += `💬 *Sobre a piscina:* ${data.observacoes}\n`;
-            message += `\n⏰ *Data:* ${new Date().toLocaleString('pt-BR')}\n`;
-            message += `🌐 *Origem:* Landing Page\n`;
-            message += `🎁 *Solicitação:* 1ª Limpeza Gratuita`;
-            
-            // Encode message for WhatsApp
-            const encodedMessage = encodeURIComponent(message);
-            const whatsappUrl = `https://wa.me/5514981722063?text=${encodedMessage}`;
-            
-            // Show success message
-            alert('✅ Obrigado! Você será redirecionado para o WhatsApp para agendar sua 1ª limpeza gratuita.');
-            
-            // Redirect to WhatsApp
-            window.open(whatsappUrl, '_blank');
-            
-            // Reset form
-            this.reset();
-        });
+                <h4 style="color:var(--primary); margin:20px 0 10px 0;">Endereço</h4>
+                <div class="row">
+                    <div class="form-group"><label>CEP</label><input type="text" id="cli-cep"></div>
+                    <div class="form-group" style="flex:2"><label>Endereço (Rua, Nº, Bairro, Cidade)</label><input type="text" id="cli-endereco"></div>
+                </div>
 
-        // Smooth scrolling for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
+                <h4 style="color:var(--primary); margin:20px 0 10px 0;">Dados do Veículo</h4>
+                <div class="row">
+                    <div class="form-group"><label>Modelo</label><input type="text" id="cli-carro" placeholder="Ex: Gol G5"></div>
+                    <div class="form-group"><label>Placa</label><input type="text" id="cli-placa"></div>
+                    <div class="form-group"><label>Ano</label><input type="text" id="cli-ano"></div>
+                </div>
 
-        // Animate elements on scroll
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
+                <button class="btn-primary" onclick="salvarCliente()" style="margin-top:20px;">Salvar Cliente</button>
+            </div>
 
-        const observer = new IntersectionObserver(function(entries) {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0)';
-                }
-            });
-        }, observerOptions);
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+            <h3>Base de Clientes</h3>
+            <div class="search-bar-container">
+                <span class="material-icons">search</span>
+                <input type="text" id="busca-clientes" placeholder="Buscar Cliente..." onkeyup="filtrarClientes()">
+            </div>
+            <div class="card">
+                <div style="overflow-x:auto;">
+                    <table id="tabela-clientes"><thead><tr><th>Nome</th><th>Contato</th><th>Veículo</th><th>Ação</th></tr></thead><tbody id="lista-clientes"></tbody></table>
+                </div>
+            </div>
+        </section>
 
-        // Observe all product cards and benefit items
-        document.querySelectorAll('.product-card, .benefit-item, .testimonial-card, .gallery-item').forEach(el => {
-            el.style.opacity = '0';
-            el.style.transform = 'translateY(30px)';
-            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-            observer.observe(el);
-        });
+        <section id="tela-relatorio" class="tela" style="display:none;">
+            <header>
+                <h1>Reposição de Estoque</h1>
+                <button class="btn-secondary" onclick="gerarRelatorio()">Atualizar Lista</button>
+            </header>
+            <div class="card">
+                <div style="overflow-x:auto;">
+                    <table id="tabela-relatorio"><thead><tr><th>Peça</th><th>Local</th><th>Atual</th><th>Mínimo</th><th>Status</th></tr></thead><tbody></tbody></table>
+                </div>
+            </div>
+        </section>
 
-        // Add floating animation to WhatsApp button
-        const whatsappBtn = document.querySelector('.whatsapp-float');
-        if (whatsappBtn) {
-            whatsappBtn.addEventListener('mouseenter', function() {
-                this.style.transform = 'scale(1.1)';
-            });
-            
-            whatsappBtn.addEventListener('mouseleave', function() {
-                this.style.transform = 'scale(1)';
-            });
-        }
+    </main>
 
-        // Auto-scroll to form when CTA button is clicked
-        document.querySelectorAll('.cta-button').forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                document.getElementById('contato').scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'center'
-                });
-                
-                // Focus on first input after scroll
-                setTimeout(() => {
-                    document.getElementById('nome').focus();
-                }, 800);
-            });
-        });
+    <div id="cupom-impressao" class="print-container"></div>
 
-        // Form validation enhancement
-        const form = document.getElementById('leadForm');
-        const inputs = form.querySelectorAll('input[required], select[required]');
-        
-        inputs.forEach(input => {
-            input.addEventListener('blur', function() {
-                if (this.value.trim() === '') {
-                    this.style.borderColor = '#ff4444';
-                } else {
-                    this.style.borderColor = '#00cc66';
-                }
-            });
-        });
-
-        // Phone number formatting
-        const phoneInput = document.getElementById('whatsapp');
-        phoneInput.addEventListener('input', function() {
-            let value = this.value.replace(/\D/g, '');
-            
-            if (value.length >= 11) {
-                value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-            } else if (value.length >= 7) {
-                value = value.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
-            } else if (value.length >= 3) {
-                value = value.replace(/(\d{2})(\d{0,5})/, '($1) $2');
-            }
-            
-            this.value = value;
-        });
-
-        // Add loading state to submit button
-        const submitBtn = document.querySelector('.submit-btn');
-        const originalText = submitBtn.textContent;
-        
-        form.addEventListener('submit', function() {
-            submitBtn.textContent = '⏳ Enviando...';
-            submitBtn.disabled = true;
-            
-            setTimeout(() => {
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-            }, 3000);
-        });
-
-        // Highlight active section in navigation
-        window.addEventListener('scroll', function() {
-            const sections = document.querySelectorAll('section');
-            const scrollPos = window.scrollY + 100;
-            
-            sections.forEach(section => {
-                const top = section.offsetTop;
-                const bottom = top + section.offsetHeight;
-                
-                if (scrollPos >= top && scrollPos <= bottom) {
-                    // Add active class or other visual feedback if needed
-                }
-            });
-        });
-
-        // Add pulse animation to important elements
-        setInterval(() => {
-            const urgencyElement = document.querySelector('.urgency');
-            if (urgencyElement) {
-                urgencyElement.style.transform = 'scale(1.05)';
-                setTimeout(() => {
-                    urgencyElement.style.transform = 'scale(1)';
-                }, 200);
-            }
-        }, 3000);
-
-        // Lightbox functions
-        function openLightbox(mediaSrc, mediaType = 'image') {
-            const lightbox = document.getElementById('lightbox');
-            const lightboxImg = document.getElementById('lightbox-img');
-            const lightboxVideo = document.getElementById('lightbox-video');
-            
-            if (mediaType === 'video') {
-                lightboxImg.style.display = 'none';
-                lightboxVideo.style.display = 'block';
-                lightboxVideo.querySelector('source').src = mediaSrc;
-                lightboxVideo.load();
-            } else {
-                lightboxVideo.style.display = 'none';
-                lightboxImg.style.display = 'block';
-                lightboxImg.src = mediaSrc;
-            }
-            
-            lightbox.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeLightbox() {
-            const lightbox = document.getElementById('lightbox');
-            const lightboxVideo = document.getElementById('lightbox-video');
-            
-            // Pause video when closing
-            if (lightboxVideo.style.display === 'block') {
-                lightboxVideo.pause();
-            }
-            
-            lightbox.classList.remove('active');
-            document.body.style.overflow = 'auto';
-        }
-
-        // Auto-play gallery video on hover
-        document.querySelectorAll('.gallery-item video').forEach(video => {
-            const galleryItem = video.closest('.gallery-item');
-            
-            galleryItem.addEventListener('mouseenter', function() {
-                video.play();
-            });
-            
-            galleryItem.addEventListener('mouseleave', function() {
-                video.pause();
-                video.currentTime = 0;
-            });
-        });
-
-        // Close lightbox with ESC key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeLightbox();
-            }
-        });
-
-        // Prevent form submission if required fields are empty
-        form.addEventListener('submit', function(e) {
-            let hasError = false;
-            
-            inputs.forEach(input => {
-                if (input.hasAttribute('required') && input.value.trim() === '') {
-                    input.style.borderColor = '#ff4444';
-                    hasError = true;
-                }
-            });
-            
-            if (hasError) {
-                e.preventDefault();
-                alert('⚠️ Por favor, preencha todos os campos obrigatórios!');
-                return false;
-            }
-        });
-    </script>
+    <script type="module" src="app.js"></script>
 </body>
 </html>
