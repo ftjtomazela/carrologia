@@ -235,15 +235,14 @@
                     </div>
 
                     <div class="box-options" style="background: #fff7ed; border:1px solid #fed7aa; padding: 10px; border-radius: 8px;">
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <input type="checkbox" id="check-ajuda-pneu" style="width:20px; height:20px;">
-                            <label for="check-ajuda-pneu" style="margin:0; font-size:14px; color:#c2410c; cursor:pointer; font-weight:bold;">
-                                Houve ajuda no Pneu/Balanceamento?
-                            </label>
-                        </div>
+                        <label style="color:#c2410c; font-weight:bold; font-size:13px;">Quem realizou Pneus/Balanceamento?</label>
+                        <select id="pdv-responsavel-pneu" style="width:100%; margin-top:5px; border:1px solid #fdba74;">
+                            <option value="gustavo">👤 Gustavo Sozinho (50%)</option>
+                            <option value="tico">👤 Tico Sozinho (50%)</option>
+                            <option value="dupla">👥 Gustavo + Tico (25% cada)</option>
+                        </select>
                         <small style="display:block; margin-top:5px; color:#9a3412; font-size:11px;">
-                            Se marcado: Gustavo (25%) / Tico (25%)<br>
-                            Se desmarcado: Gustavo (50%)
+                            *Esta regra se aplica apenas aos itens da categoria PNEU.
                         </small>
                     </div>
 
