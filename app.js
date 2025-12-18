@@ -507,9 +507,6 @@ window.excluirEntrada = async (id) => {
     }
 }
 
-// ==========================================
-// NOVA FUNÇÃO: VER DETALHES AGORA IMPRIME
-// ==========================================
 window.verDetalhesVenda = (jsonVenda) => {
     const venda = JSON.parse(decodeURIComponent(jsonVenda));
 
@@ -523,7 +520,7 @@ window.verDetalhesVenda = (jsonVenda) => {
     else if(venda.vencimento) dataVenc = new Date(venda.vencimento);
 
     // Reutiliza a função de imprimir
-    window.imprimirCupom(venda.cliente, venda.itens, venda.total, venda.desconto || 0, dataVenda, dataVenc);
+    window.imprimirCupom(venda.cliente, venda.itens, venda.total, venda.desconto || 0, dataVenda, dataVenc, venda.km, venda.carro, venda.placa);
 }
 
 window.cobrarZap = (cliente, valor) => { window.open(`https://wa.me/?text=Olá ${cliente}, lembrete de pagamento R$ ${valor}`, '_blank'); }
@@ -770,10 +767,25 @@ window.finalizarVenda = async () => {
     // CAPTURA A ESCOLHA DO SELETOR DE PNEUS
     const responsavelPneu = document.getElementById('pdv-responsavel-pneu').value;
     
+    // CAPTURA KM E VEICULO
+    const kmAtual = document.getElementById('pdv-km').value || "";
+    
+    let carroCliente = "";
+    let placaCliente = "";
+    
+    const clienteSelect = document.getElementById('pdv-cliente-select').value;
+    if (clienteSelect !== "consumidor") {
+        const idCliente = clienteSelect.split('|')[1];
+        const clienteObj = window.todosClientes.find(c => c.id === idCliente);
+        if (clienteObj) {
+            carroCliente = clienteObj.carro_modelo || "";
+            placaCliente = clienteObj.carro_placa || "";
+        }
+    }
+
     if(!confirm(`Confirmar venda de R$ ${totalFinal.toFixed(2)}?`)) return;
 
     try {
-        const clienteSelect = document.getElementById('pdv-cliente-select').value;
         let nomeCliente = "Consumidor Final";
         if(clienteSelect !== "consumidor") nomeCliente = clienteSelect.split('|')[0];
         
@@ -842,7 +854,10 @@ window.finalizarVenda = async () => {
             vencimento: dataVencimento, 
             itens: window.carrinho,
             valores_comissao: comissoes,
-            comissao_paga: false // PADRÃO: NÃO PAGO
+            comissao_paga: false, // PADRÃO: NÃO PAGO
+            km: kmAtual,          // SALVA O KM
+            carro: carroCliente,  // SALVA O CARRO
+            placa: placaCliente   // SALVA A PLACA
         });
 
         for (const item of window.carrinho) {
@@ -853,17 +868,31 @@ window.finalizarVenda = async () => {
             }
         }
 
-        if(confirm("Deseja imprimir?")) window.imprimirCupom(nomeCliente, window.carrinho, totalFinal, descontoGlobal, new Date(), dataVencimento);
+        if(confirm("Deseja imprimir?")) window.imprimirCupom(nomeCliente, window.carrinho, totalFinal, descontoGlobal, new Date(), dataVencimento, kmAtual, carroCliente, placaCliente);
         alert("Venda Realizada com Sucesso!");
         window.carrinho = []; subtotalVenda = 0; descontoGlobal = 0; window.atualizarTabela();
         document.getElementById('valor-total-input').value = "0.00";
+        document.getElementById('pdv-km').value = "";
     } catch(e) { alert("Erro: " + e.message); }
 }
 
-window.imprimirCupom = (nomeCliente, itens, total, desconto, data, vencimento) => {
+// 3. ATUALIZAÇÃO DA IMPRESSÃO (AGORA RECEBE KM E VEÍCULO)
+window.imprimirCupom = (nomeCliente, itens, total, desconto, data, vencimento, km, carro, placa) => {
     const printArea = document.querySelector('.print-container');
     const dataStr = data.toLocaleDateString('pt-BR');
     
+    // LINHA EXTRA DO VEÍCULO E KM
+    let infoVeiculo = "";
+    if(carro || placa || km) {
+        infoVeiculo = `
+            <tr>
+                <td colspan="5" style="border-bottom: 1px solid #000; font-size:11px;">
+                    <strong>VEÍCULO:</strong> ${carro || ''} (${placa || ''}) &nbsp;&nbsp; <strong>KM:</strong> ${km || '--'}
+                </td>
+            </tr>
+        `;
+    }
+
     const totalLinhas = 10;
     const itensVazios = totalLinhas - itens.length;
     let linhasVaziasHTML = "";
@@ -905,6 +934,7 @@ window.imprimirCupom = (nomeCliente, itens, total, desconto, data, vencimento) =
                             <strong>DATA:</strong> ${dataStr} &nbsp;&nbsp;&nbsp; <strong>CLIENTE:</strong> ${nomeCliente}
                         </td>
                     </tr>
+                    ${infoVeiculo}
                     <tr style="background: #eee;">
                         <th style="width: 50px;" class="nota-center">QTD</th>
                         <th style="width: 100px;">CÓDIGO</th>
