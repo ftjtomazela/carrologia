@@ -838,11 +838,24 @@ window.finalizarVenda = async () => {
                     comissoes.empresa += totalItem;
                 }
             } else {
-                // PEÇA: 100% Empresa
-                comissoes.empresa += totalItem;
+                // PEÇA: 100% Lucro dividido
+                const custoTotal = (item.preco_custo || 0) * item.qtd;
+                const lucro = totalItem - custoTotal;
+
+                if (lucro > 0) {
+                    comissoes.evandro += lucro * 0.50;
+                    comissoes.empresa += custoTotal + (lucro * 0.50);
+                } else {
+                    comissoes.empresa += totalItem;
+                }
             }
         });
         
+        // Aplica o desconto global na parte da empresa (opcional, ajustável)
+        if (descontoGlobal > 0) {
+            comissoes.empresa -= descontoGlobal;
+        }
+
         await addDoc(collection(db, "vendas"), {
             data: new Date(), 
             subtotal: subtotalVenda, 
