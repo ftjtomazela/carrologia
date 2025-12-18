@@ -518,7 +518,13 @@ window.cobrarZap = (cliente, valor) => { window.open(`https://wa.me/?text=Olá $
 
 // RELATÓRIOS
 window.gerarRelatorio = async () => {
-    const tbody = document.querySelector('#tabela-relatorio tbody'); tbody.innerHTML = "Carregando...";
+    const tbody = document.querySelector('#tabela-relatorio tbody'); 
+    const thead = document.querySelector('#tabela-relatorio thead');
+    
+    // Reseta cabeçalho padrão
+    thead.innerHTML = `<tr><th>Peça</th><th>Local</th><th>Atual</th><th>Mínimo</th><th>Status</th></tr>`;
+    tbody.innerHTML = "<tr><td colspan='5'>Carregando...</td></tr>";
+    
     try {
         const q = await getDocs(collection(db, "produtos")); tbody.innerHTML = "";
         q.forEach((doc) => { const p = doc.data(); if (p.estoque_atual <= p.estoque_minimo && p.tipo !== 'servico') tbody.innerHTML += `<tr><td>${p.nome}</td><td>${p.localizacao||'-'}</td><td>${p.estoque_atual}</td><td>${p.estoque_minimo}</td><td style="color:red; font-weight:bold">REPOR</td></tr>`; });
@@ -529,67 +535,73 @@ window.gerarRelatorioComissoes = async () => {
     const tbody = document.querySelector('#tabela-relatorio tbody');
     const header = document.querySelector('#tabela-relatorio thead');
     
-    tbody.innerHTML = "<tr><td colspan='5'>Calculando comissões...</td></tr>";
+    tbody.innerHTML = "<tr><td colspan='7'>Carregando vendas dos últimos 30 dias...</td></tr>";
     
     try {
-        const inicioMes = new Date();
-        inicioMes.setDate(1); 
-        inicioMes.setHours(0,0,0,0);
+        // FILTRO: ÚLTIMOS 30 DIAS
+        const dataLimite = new Date();
+        dataLimite.setDate(dataLimite.getDate() - 30);
+        dataLimite.setHours(0,0,0,0);
         
-        const q = query(collection(db, "vendas"), where("data", ">=", inicioMes));
+        // Ordena por data (mais recente primeiro)
+        const q = query(collection(db, "vendas"), where("data", ">=", dataLimite), orderBy("data", "desc"));
         const snapshot = await getDocs(q);
         
-        let totais = { evandro: 0, tico: 0, gustavo: 0, empresa: 0 };
-        let qtdVendas = 0;
+        let totalEvandro = 0, totalTico = 0, totalGustavo = 0, totalEmpresa = 0;
+        
+        // Atualiza cabeçalho para a visão detalhada
+        header.innerHTML = `
+            <tr style="background:#1e293b; color:white;">
+                <th>Data / Hora</th>
+                <th>Cliente</th>
+                <th>Total Venda</th>
+                <th>Evandro</th>
+                <th>Tico</th>
+                <th>Gustavo</th>
+                <th>Loja (Caixa)</th>
+            </tr>
+        `;
+        
+        tbody.innerHTML = ""; // Limpa carregando
 
         snapshot.forEach(doc => {
             const v = doc.data();
-            if(v.valores_comissao) {
-                totais.evandro += v.valores_comissao.evandro || 0;
-                totais.tico += v.valores_comissao.tico || 0;
-                totais.gustavo += v.valores_comissao.gustavo || 0;
-                totais.empresa += v.valores_comissao.empresa || 0;
-                qtdVendas++;
-            }
+            const dataVenda = v.data?.toDate ? v.data.toDate().toLocaleString('pt-BR') : "--";
+            
+            // Pega valores ou 0 se não existir
+            const comissao = v.valores_comissao || { evandro: 0, tico: 0, gustavo: 0, empresa: 0 };
+            
+            // Soma nos totais gerais
+            totalEvandro += comissao.evandro || 0;
+            totalTico += comissao.tico || 0;
+            totalGustavo += comissao.gustavo || 0;
+            totalEmpresa += comissao.empresa || 0;
+
+            // Adiciona Linha da Venda
+            tbody.innerHTML += `
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="font-size:12px;">${dataVenda}</td>
+                    <td>${v.cliente}</td>
+                    <td>R$ ${v.total.toFixed(2)}</td>
+                    <td style="color:#16a34a;">R$ ${(comissao.evandro || 0).toFixed(2)}</td>
+                    <td style="color:#16a34a;">R$ ${(comissao.tico || 0).toFixed(2)}</td>
+                    <td style="color:#16a34a;">R$ ${(comissao.gustavo || 0).toFixed(2)}</td>
+                    <td style="color:#0369a1;">R$ ${(comissao.empresa || 0).toFixed(2)}</td>
+                </tr>
+            `;
         });
 
-        header.innerHTML = `
-            <tr style="background:#1e293b; color:white;">
-                <th>Colaborador</th>
-                <th>Função</th>
-                <th>Total a Receber</th>
-                <th>Status</th>
-            </tr>
-        `;
-
-        tbody.innerHTML = `
-            <tr>
-                <td><strong>Evandro</strong></td>
-                <td>Gestor / Mecânico / Alinhamento</td>
-                <td style="color:#16a34a; font-weight:bold; font-size:18px;">R$ ${totais.evandro.toFixed(2)}</td>
-                <td>-</td>
-            </tr>
-            <tr>
-                <td><strong>Tico</strong></td>
-                <td>Mecânico</td>
-                <td style="color:#16a34a; font-weight:bold; font-size:18px;">R$ ${totais.tico.toFixed(2)}</td>
-                <td>-</td>
-            </tr>
-            <tr>
-                <td><strong>Gustavo</strong></td>
-                <td>Auxiliar / Pneus</td>
-                <td style="color:#16a34a; font-weight:bold; font-size:18px;">R$ ${totais.gustavo.toFixed(2)}</td>
-                <td>-</td>
-            </tr>
-            <tr style="background:#f0f9ff; border-top:2px solid #bae6fd;">
-                <td><strong>CAIXA EMPRESA</strong></td>
-                <td>Lucro Peças + Parte Serviços</td>
-                <td style="color:#0369a1; font-weight:bold; font-size:18px;">R$ ${totais.empresa.toFixed(2)}</td>
-                <td>CAIXA</td>
+        // LINHA DE TOTAIS NO FINAL
+        tbody.innerHTML += `
+            <tr style="background:#f0f9ff; font-weight:bold; border-top: 2px solid #000;">
+                <td colspan="3" style="text-align:right;">TOTAIS (30 DIAS):</td>
+                <td style="color:#16a34a; font-size:16px;">R$ ${totalEvandro.toFixed(2)}</td>
+                <td style="color:#16a34a; font-size:16px;">R$ ${totalTico.toFixed(2)}</td>
+                <td style="color:#16a34a; font-size:16px;">R$ ${totalGustavo.toFixed(2)}</td>
+                <td style="color:#0369a1; font-size:16px;">R$ ${totalEmpresa.toFixed(2)}</td>
             </tr>
         `;
         
-        alert(`Relatório gerado com base em ${qtdVendas} vendas deste mês.`);
     } catch (e) { console.error(e); alert("Erro ao gerar relatório: " + e.message); }
 }
 
