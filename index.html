@@ -286,7 +286,7 @@
                 <div class="row">
                     <div class="form-group campo-peca"><label>Cód. Barras</label><input type="text" id="cad-codigo"></div>
                     <div class="form-group campo-peca"><label>OEM</label><input type="text" id="cad-oem"></div>
-                    <div class="form-group campo-peca"><label>Marca</label><input type="text" id="cad-marca"></div>
+                    <div class="form-group campo-peca"><label>NCM (Fiscal)</label><input type="text" id="cad-ncm" placeholder="Ex: 8708.99.90"></div>
                 </div>
                 
                 <div class="row">
@@ -296,13 +296,20 @@
                 
                 <div class="row">
                     <div class="form-group"><label>Custo (Opcional)</label><input type="number" id="cad-custo"></div>
-                    <div class="form-group campo-peca"><label>Estoque</label><input type="number" id="cad-estoque"></div>
-                    <div class="form-group campo-peca"><label>Min</label><input type="number" id="cad-minimo"></div>
+                    
+                    <div class="form-group campo-servico" style="display:none; flex:2;"><label>Cód. Serviço (LC 116)</label><input type="text" id="cad-cod-servico" placeholder="Ex: 14.01 - Manutenção"></div>
+                    
+                    <div class="form-group campo-peca"><label>Marca</label><input type="text" id="cad-marca"></div>
+                </div>
+                
+                <div class="row campo-peca">
+                    <div class="form-group"><label>Estoque</label><input type="number" id="cad-estoque"></div>
+                    <div class="form-group"><label>Mínimo</label><input type="number" id="cad-minimo"></div>
+                    <div class="form-group"><label>Local</label><input type="text" id="cad-local"></div>
                 </div>
                 
                 <div class="row">
-                    <div class="form-group"><label>Carros Compatíveis</label><input type="text" id="cad-carros"></div>
-                    <div class="form-group campo-peca"><label>Local</label><input type="text" id="cad-local"></div>
+                    <div class="form-group" style="flex:2;"><label>Carros Compatíveis</label><input type="text" id="cad-carros"></div>
                     <div class="form-group campo-peca"><label>Fornecedor</label><input type="text" id="cad-fornecedor"></div>
                 </div>
 
