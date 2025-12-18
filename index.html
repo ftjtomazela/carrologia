@@ -44,7 +44,7 @@
             <span class="material-icons">local_shipping</span> Entrada de Nota
         </button>
         <button onclick="mostrarTela('cadastro')" id="btn-cadastro">
-            <span class="material-icons">inventory_2</span> Cadastro de Peças
+            <span class="material-icons">inventory_2</span> Cadastro de Itens
         </button>
         <button onclick="mostrarTela('historico')" id="btn-historico">
             <span class="material-icons">history</span> Movimentações
@@ -210,7 +210,7 @@
         <section id="tela-vendas" class="tela">
             <div class="pdv-layout">
                 <div class="pdv-lista-container">
-                    <div class="pdv-lista-header"><span>PRODUTO</span><span>QTD</span><span>PREÇO</span><span></span></div>
+                    <div class="pdv-lista-header"><span>ITEM</span><span>QTD</span><span>PREÇO</span><span></span></div>
                     <div class="pdv-lista-scroll"><table class="pdv-table"><tbody id="tabela-carrinho"></tbody></table></div>
                 </div>
                 <div class="pdv-painel-controles">
@@ -224,7 +224,7 @@
                     </div>
                     
                     <div class="box-input scan-area" style="position: relative;">
-                        <input type="text" id="pdv-busca" placeholder="Bipe ou Digite o Nome..." onkeyup="filtrarProdutosPDV()" autocomplete="off">
+                        <input type="text" id="pdv-busca" placeholder="Bipe, Digite Peça ou Serviço..." onkeyup="filtrarProdutosPDV()" autocomplete="off">
                         <div id="sugestoes-pdv" class="lista-sugestoes" style="display:none;"></div>
                     </div>
 
@@ -271,16 +271,45 @@
         </section>
 
         <section id="tela-cadastro" class="tela" style="display:none;">
-            <header><h1>Cadastro de Peças</h1></header>
+            <header><h1>Cadastro de Itens e Serviços</h1></header>
             <div class="card form-container">
-                <div class="row"><div class="form-group"><label>Cód. Barras</label><input type="text" id="cad-codigo"></div><div class="form-group"><label>OEM</label><input type="text" id="cad-oem"></div><div class="form-group"><label>Marca</label><input type="text" id="cad-marca"></div></div>
-                <div class="row"><div class="form-group" style="flex:2"><label>Nome</label><input type="text" id="cad-nome"></div><div class="form-group"><label>Preço Venda</label><input type="number" id="cad-preco"></div></div>
-                <div class="row"><div class="form-group"><label>Custo</label><input type="number" id="cad-custo"></div><div class="form-group"><label>Estoque</label><input type="number" id="cad-estoque"></div><div class="form-group"><label>Min</label><input type="number" id="cad-minimo"></div></div>
-                <div class="row"><div class="form-group"><label>Carros</label><input type="text" id="cad-carros"></div><div class="form-group"><label>Local</label><input type="text" id="cad-local"></div><div class="form-group"><label>Fornecedor</label><input type="text" id="cad-fornecedor"></div></div>
-                <button class="btn-primary" onclick="salvarProduto()" style="margin-top:10px;">Salvar Produto</button>
+                
+                <div style="margin-bottom: 20px; padding-bottom:15px; border-bottom:1px solid #eee;">
+                    <label style="margin-right: 20px; font-weight: bold; cursor: pointer;">
+                        <input type="radio" name="tipo_produto" value="peca" checked onchange="alternarCamposCadastro()"> 📦 Peça Física
+                    </label>
+                    <label style="font-weight: bold; cursor: pointer;">
+                        <input type="radio" name="tipo_produto" value="servico" onchange="alternarCamposCadastro()"> 🔧 Serviço / Mão de Obra
+                    </label>
+                </div>
+
+                <div class="row">
+                    <div class="form-group campo-peca"><label>Cód. Barras</label><input type="text" id="cad-codigo"></div>
+                    <div class="form-group campo-peca"><label>OEM</label><input type="text" id="cad-oem"></div>
+                    <div class="form-group campo-peca"><label>Marca</label><input type="text" id="cad-marca"></div>
+                </div>
+                
+                <div class="row">
+                    <div class="form-group" style="flex:2"><label>Nome / Descrição do Serviço</label><input type="text" id="cad-nome"></div>
+                    <div class="form-group"><label>Preço Venda</label><input type="number" id="cad-preco"></div>
+                </div>
+                
+                <div class="row">
+                    <div class="form-group"><label>Custo (Opcional)</label><input type="number" id="cad-custo"></div>
+                    <div class="form-group campo-peca"><label>Estoque</label><input type="number" id="cad-estoque"></div>
+                    <div class="form-group campo-peca"><label>Min</label><input type="number" id="cad-minimo"></div>
+                </div>
+                
+                <div class="row">
+                    <div class="form-group"><label>Carros Compatíveis</label><input type="text" id="cad-carros"></div>
+                    <div class="form-group campo-peca"><label>Local</label><input type="text" id="cad-local"></div>
+                    <div class="form-group campo-peca"><label>Fornecedor</label><input type="text" id="cad-fornecedor"></div>
+                </div>
+
+                <button class="btn-primary" onclick="salvarProduto()" style="margin-top:10px;">Salvar Item</button>
                 <hr>
-                <input type="text" id="busca-estoque" placeholder="Buscar estoque..." onkeyup="filtrarEstoque()" style="margin-bottom:10px;">
-                <div style="overflow-x:auto;"><table id="tabela-estoque"><thead><tr><th>Produto</th><th>Preço</th><th>Qtd</th><th>Ação</th></tr></thead><tbody id="lista-produtos-estoque"></tbody></table></div>
+                <input type="text" id="busca-estoque" placeholder="Buscar no sistema..." onkeyup="filtrarEstoque()" style="margin-bottom:10px;">
+                <div style="overflow-x:auto;"><table id="tabela-estoque"><thead><tr><th>Item</th><th>Preço</th><th>Qtd/Tipo</th><th>Ação</th></tr></thead><tbody id="lista-produtos-estoque"></tbody></table></div>
             </div>
         </section>
 
