@@ -84,21 +84,19 @@ window.mostrarTela = (telaId) => {
 }
 
 // ==========================================
-// NOVA FUNÇÃO: Alternar Peça / Serviço
+// FUNÇÃO: Alternar Peça / Serviço
 // ==========================================
 window.alternarCamposCadastro = () => {
     const tipo = document.querySelector('input[name="tipo_produto"]:checked').value;
-    const camposPeca = document.querySelectorAll('.campo-peca');
     
-    camposPeca.forEach(div => {
-        if(tipo === 'servico') {
-            div.style.display = 'none';
-        } else {
-            div.style.display = 'block'; // ou 'flex' se o form-group original for flex, mas block é o padrão da div
-        }
-    });
-}
+    // Campos exclusivos de peça
+    const camposPeca = document.querySelectorAll('.campo-peca');
+    camposPeca.forEach(el => el.style.display = (tipo === 'peca') ? 'block' : 'none');
 
+    // Campos exclusivos de serviço (Código Fiscal de Serviço)
+    const camposServico = document.querySelectorAll('.campo-servico');
+    camposServico.forEach(el => el.style.display = (tipo === 'servico') ? 'block' : 'none');
+}
 
 // ==========================================
 // CONTAS A PAGAR
@@ -381,7 +379,6 @@ window.filtrarEstoque = () => {
 }
 window.salvarProduto = async () => {
     try {
-        // Verifica o tipo selecionado no radio button
         const tipoSelecionado = document.querySelector('input[name="tipo_produto"]:checked').value;
         const isServico = (tipoSelecionado === 'servico');
 
@@ -390,15 +387,20 @@ window.salvarProduto = async () => {
             nome: document.getElementById('cad-nome').value, 
             preco: parseFloat(document.getElementById('cad-preco').value) || 0, 
             preco_custo: parseFloat(document.getElementById('cad-custo').value) || 0,
-            carros_compativeis: document.getElementById('cad-carros').value, 
-            // Campos que só importam para Peças (mas salvamos vazio se for serviço)
+            carros_compativeis: document.getElementById('cad-carros').value,
+            
+            // Campos de Peça (vazios se for serviço)
             codigo_barras: isServico ? "SERV-" + Date.now() : (document.getElementById('cad-codigo').value || "SEM GTIN"), 
             codigo_oem: isServico ? "" : document.getElementById('cad-oem').value, 
+            ncm: isServico ? "" : document.getElementById('cad-ncm').value, // NOVO CAMPO NCM
             marca: isServico ? "" : document.getElementById('cad-marca').value,
             estoque_atual: isServico ? 9999 : (parseInt(document.getElementById('cad-estoque').value) || 0), 
             estoque_minimo: isServico ? 0 : (parseInt(document.getElementById('cad-minimo').value) || 0), 
             localizacao: isServico ? "" : document.getElementById('cad-local').value, 
-            fornecedor: isServico ? "" : document.getElementById('cad-fornecedor').value
+            fornecedor: isServico ? "" : document.getElementById('cad-fornecedor').value,
+
+            // Campos de Serviço (vazio se for peça)
+            codigo_servico: isServico ? document.getElementById('cad-cod-servico').value : "" // NOVO CAMPO
         };
 
         if(idProdutoEditando) { await updateDoc(doc(db, "produtos", idProdutoEditando), dados); idProdutoEditando = null; } 
@@ -413,7 +415,7 @@ window.prepararEdicao = (id, dadosJson) => {
     const isServico = (p.tipo === 'servico');
     if(isServico) document.querySelector('input[name="tipo_produto"][value="servico"]').checked = true;
     else document.querySelector('input[name="tipo_produto"][value="peca"]').checked = true;
-    window.alternarCamposCadastro();
+    window.alternarCamposCadastro(); // Atualiza a visão
 
     document.getElementById('cad-nome').value = p.nome || ""; 
     document.getElementById('cad-preco').value = p.preco || ""; 
@@ -421,13 +423,18 @@ window.prepararEdicao = (id, dadosJson) => {
     document.getElementById('cad-carros').value = p.carros_compativeis || "";
 
     if(!isServico) {
+        // Preenche campos de peça
         document.getElementById('cad-codigo').value = p.codigo_barras || ""; 
         document.getElementById('cad-oem').value = p.codigo_oem || "";
+        document.getElementById('cad-ncm').value = p.ncm || ""; // PREENCHE NCM
         document.getElementById('cad-marca').value = p.marca || "";
         document.getElementById('cad-estoque').value = p.estoque_atual || "";
         document.getElementById('cad-minimo').value = p.estoque_minimo || "";
         document.getElementById('cad-local').value = p.localizacao || "";
         document.getElementById('cad-fornecedor').value = p.fornecedor || "";
+    } else {
+        // Preenche campos de serviço
+        document.getElementById('cad-cod-servico').value = p.codigo_servico || ""; // PREENCHE CÓD SERVIÇO
     }
 
     document.querySelector('.content').scrollTop = 0;
