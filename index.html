@@ -233,6 +233,20 @@
                         <input type="text" id="pdv-busca-cliente" placeholder="Buscar..." onkeyup="filtrarClientesPDV()" style="margin-bottom:5px;">
                         <select id="pdv-cliente-select"><option value="consumidor">Consumidor Final</option></select>
                     </div>
+
+                    <div class="box-options" style="background: #fff7ed; border:1px solid #fed7aa; padding: 10px; border-radius: 8px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <input type="checkbox" id="check-ajuda-pneu" style="width:20px; height:20px;">
+                            <label for="check-ajuda-pneu" style="margin:0; font-size:14px; color:#c2410c; cursor:pointer; font-weight:bold;">
+                                Houve ajuda no Pneu/Balanceamento?
+                            </label>
+                        </div>
+                        <small style="display:block; margin-top:5px; color:#9a3412; font-size:11px;">
+                            Se marcado: Gustavo (25%) / Tico (25%)<br>
+                            Se desmarcado: Gustavo (50%)
+                        </small>
+                    </div>
+
                     <div class="box-options">
                         <label>Pagamento</label>
                         <select id="pdv-forma-pagamento">
@@ -299,6 +313,16 @@
                     
                     <div class="form-group campo-servico" style="display:none; flex:2;"><label>Cód. Serviço (LC 116)</label><input type="text" id="cad-cod-servico" placeholder="Ex: 14.01 - Manutenção"></div>
                     
+                    <div class="form-group campo-servico" style="display:none; flex:2; border:1px solid #16a34a; padding:5px; border-radius:5px;">
+                        <label style="color:#166534; font-weight:bold;">Regra de Comissão</label>
+                        <select id="cad-cat-comissao">
+                            <option value="mecanica">🔧 Mecânica (Evandro/Tico/Gustavo)</option>
+                            <option value="pneu">🛞 Pneu e Balanceamento (Gustavo/Tico)</option>
+                            <option value="alinhamento">📐 Alinhamento (Evandro)</option>
+                            <option value="outros">🚫 Sem Comissão Extra</option>
+                        </select>
+                    </div>
+
                     <div class="form-group campo-peca"><label>Marca</label><input type="text" id="cad-marca"></div>
                 </div>
                 
@@ -364,12 +388,18 @@
 
         <section id="tela-relatorio" class="tela" style="display:none;">
             <header>
-                <h1>Reposição de Estoque</h1>
-                <button class="btn-secondary" onclick="gerarRelatorio()">Atualizar Lista</button>
+                <h1>Relatórios Gerenciais</h1>
+                <div>
+                    <button class="btn-secondary" onclick="gerarRelatorio()">📉 Estoque Baixo</button>
+                    <button class="btn-primary" onclick="gerarRelatorioComissoes()" style="margin-left:10px;">💰 Comissões / Salários</button>
+                </div>
             </header>
             <div class="card">
                 <div style="overflow-x:auto;">
-                    <table id="tabela-relatorio"><thead><tr><th>Peça</th><th>Local</th><th>Atual</th><th>Mínimo</th><th>Status</th></tr></thead><tbody></tbody></table>
+                    <table id="tabela-relatorio">
+                        <thead><tr><th>Peça</th><th>Local</th><th>Atual</th><th>Mínimo</th><th>Status</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
             </div>
         </section>
