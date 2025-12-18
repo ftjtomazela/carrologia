@@ -230,7 +230,10 @@
 
                     <div class="box-options">
                         <label>Cliente</label>
-                        <input type="text" id="pdv-busca-cliente" placeholder="Buscar..." onkeyup="filtrarClientesPDV()" style="margin-bottom:5px;">
+                        <div style="display:flex; gap:5px;">
+                            <input type="text" id="pdv-busca-cliente" placeholder="Buscar..." onkeyup="filtrarClientesPDV()" style="flex:1;">
+                            <input type="number" id="pdv-km" placeholder="KM Atual" style="width: 100px;" title="Quilometragem do Veículo">
+                        </div>
                         <select id="pdv-cliente-select"><option value="consumidor">Consumidor Final</option></select>
                     </div>
 
