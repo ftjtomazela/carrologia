@@ -152,12 +152,6 @@ th { color: #64748b; font-weight: 500; }
 }
 .btn-whatsapp:hover { background: #128C7E; }
 
-/* Animações */
-@keyframes piscarVerde { 0% { background-color: rgba(22, 163, 74, 0.5); } 100% { background-color: transparent; } }
-.flash-success { animation: piscarVerde 0.5s ease-out; }
-@keyframes piscarVermelho { 0% { background-color: rgba(220, 38, 38, 0.5); } 100% { background-color: transparent; } }
-.flash-error { animation: piscarVermelho 0.5s ease-out; }
-
 /* DASHBOARD */
 .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 20px; }
 .dash-card h3 { margin-top: 0; color: #64748b; font-size: 16px; }
@@ -204,6 +198,27 @@ th { color: #64748b; font-weight: 500; }
 #tabela-historico tr:hover { background-color: #f1f5f9; }
 #tabela-historico td { border-bottom: 1px solid #f1f5f9; padding: 12px 10px; }
 
+/* --- MODAL (JANELA DETALHES) --- */
+.modal {
+    display: none; position: fixed; z-index: 2000; left: 0; top: 0;
+    width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6);
+    backdrop-filter: blur(2px);
+}
+.modal-content {
+    background-color: #fefefe; margin: 10% auto; padding: 25px;
+    border: 1px solid #888; width: 80%; max-width: 600px;
+    border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    animation: modalSlide 0.3s ease-out;
+}
+@keyframes modalSlide {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+.close-modal {
+    color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;
+}
+.close-modal:hover { color: black; text-decoration: none; }
+
 /* ========================================================== */
 /* RESPONSIVIDADE (CELULARES)                                */
 /* ========================================================== */
@@ -225,6 +240,7 @@ th { color: #64748b; font-weight: 500; }
     .pdv-lista-container { max-height: 300px; }
     .pdv-painel-controles { width: 100%; }
     .card { overflow-x: auto; }
+    .modal-content { width: 95%; margin: 20% auto; }
 }
 
 /* ========================================================== */

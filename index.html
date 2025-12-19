@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auto Peças Pro - ERP Completo</title>
+    <title>CARROLOGIA CENTER CAR</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     
     <link rel="stylesheet" href="style.css">
+
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
 <body>
 
@@ -45,6 +47,9 @@
         </button>
         <button onclick="mostrarTela('cadastro')" id="btn-cadastro">
             <span class="material-icons">inventory_2</span> Cadastro de Itens
+        </button>
+        <button onclick="mostrarTela('equipe')" id="btn-equipe">
+            <span class="material-icons">groups</span> Equipe
         </button>
         <button onclick="mostrarTela('historico')" id="btn-historico">
             <span class="material-icons">history</span> Movimentações
@@ -223,30 +228,36 @@
                         <small id="info-subtotal" style="font-size:12px; margin-top:5px; color:#64748b;">Subtotal: R$ 0.00</small>
                     </div>
                     
-                    <div class="box-input scan-area" style="position: relative;">
-                        <input type="text" id="pdv-busca" placeholder="Bipe, Digite Peça ou Serviço..." onkeyup="filtrarProdutosPDV()" autocomplete="off">
+                    <div class="box-input scan-area" style="position: relative; display: flex; gap: 10px; align-items: center; border: 1px solid #ddd; padding: 5px;">
+                        <input type="text" id="pdv-busca" placeholder="Bipe, Digite ou..." onkeyup="filtrarProdutosPDV()" autocomplete="off" style="flex:1; border: none; background: transparent; text-align: left; padding: 10px;">
+                        
+                        <button onclick="abrirCamera('pdv')" style="background: #2563eb; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                            <span class="material-icons">photo_camera</span>
+                        </button>
+                        
                         <div id="sugestoes-pdv" class="lista-sugestoes" style="display:none;"></div>
                     </div>
 
-                    <div class="box-options">
+                    <div class="box-options" style="background: #f0f9ff; border: 1px solid #bae6fd;">
                         <label>Cliente</label>
+                        <input type="text" id="pdv-busca-cliente" placeholder="Buscar Cliente..." onkeyup="filtrarClientesPDV()" style="margin-bottom:5px;">
+                        <select id="pdv-cliente-select" onchange="carregarVeiculosNoPDV()"><option value="consumidor">Consumidor Final</option></select>
+                        
+                        <label style="margin-top:10px;">Veículo & KM</label>
                         <div style="display:flex; gap:5px;">
-                            <input type="text" id="pdv-busca-cliente" placeholder="Buscar..." onkeyup="filtrarClientesPDV()" style="flex:1;">
-                            <input type="number" id="pdv-km" placeholder="KM Atual" style="width: 100px;" title="Quilometragem do Veículo">
+                            <select id="pdv-veiculo-select" style="flex:1;">
+                                <option value="">Sem Veículo / Avulso</option>
+                            </select>
+                            <button onclick="adicionarCarroRapido()" class="btn-secondary" style="padding: 0 10px;" title="Novo Carro">+</button>
                         </div>
-                        <select id="pdv-cliente-select"><option value="consumidor">Consumidor Final</option></select>
+                        <input type="number" id="pdv-km" placeholder="KM Atual" style="margin-top:5px;" title="Quilometragem do Veículo">
                     </div>
 
-                    <div class="box-options" style="background: #fff7ed; border:1px solid #fed7aa; padding: 10px; border-radius: 8px;">
-                        <label style="color:#c2410c; font-weight:bold; font-size:13px;">Quem realizou Pneus/Balanceamento?</label>
-                        <select id="pdv-responsavel-pneu" style="width:100%; margin-top:5px; border:1px solid #fdba74;">
-                            <option value="gustavo">👤 Gustavo Sozinho (50%)</option>
-                            <option value="tico">👤 Tico Sozinho (50%)</option>
-                            <option value="dupla">👥 Gustavo + Tico (25% cada)</option>
-                        </select>
-                        <small style="display:block; margin-top:5px; color:#9a3412; font-size:11px;">
-                            *Esta regra se aplica apenas aos itens da categoria PNEU.
-                        </small>
+                    <div class="box-options" style="background: #fff7ed; border:1px solid #fed7aa;">
+                        <label style="color:#c2410c;">Quem realizou Pneus/Balanceamento?</label>
+                        <div id="pdv-opcoes-equipe-pneu" style="display:flex; flex-direction:column; gap:8px; max-height:80px; overflow-y:auto;">
+                            <small>Carregando...</small>
+                        </div>
                     </div>
 
                     <div class="box-options">
@@ -289,7 +300,6 @@
         <section id="tela-cadastro" class="tela" style="display:none;">
             <header><h1>Cadastro de Itens e Serviços</h1></header>
             <div class="card form-container">
-                
                 <div style="margin-bottom: 20px; padding-bottom:15px; border-bottom:1px solid #eee;">
                     <label style="margin-right: 20px; font-weight: bold; cursor: pointer;">
                         <input type="radio" name="tipo_produto" value="peca" checked onchange="alternarCamposCadastro()"> 📦 Peça Física
@@ -298,47 +308,46 @@
                         <input type="radio" name="tipo_produto" value="servico" onchange="alternarCamposCadastro()"> 🔧 Serviço / Mão de Obra
                     </label>
                 </div>
-
                 <div class="row">
-                    <div class="form-group campo-peca"><label>Cód. Barras</label><input type="text" id="cad-codigo"></div>
+                    <div class="form-group campo-peca" style="position:relative;">
+                        <label>Cód. Barras</label>
+                        <div style="display:flex; gap:5px;">
+                            <input type="text" id="cad-codigo">
+                            <button onclick="abrirCamera('cadastro')" style="background: #2563eb; color: white; border: none; border-radius: 6px; width: 45px; cursor: pointer;">
+                                <span class="material-icons">photo_camera</span>
+                            </button>
+                        </div>
+                    </div>
                     <div class="form-group campo-peca"><label>OEM</label><input type="text" id="cad-oem"></div>
                     <div class="form-group campo-peca"><label>NCM (Fiscal)</label><input type="text" id="cad-ncm" placeholder="Ex: 8708.99.90"></div>
                 </div>
-                
                 <div class="row">
-                    <div class="form-group" style="flex:2"><label>Nome / Descrição do Serviço</label><input type="text" id="cad-nome"></div>
+                    <div class="form-group" style="flex:2;"><label>Nome / Descrição do Serviço</label><input type="text" id="cad-nome"></div>
                     <div class="form-group"><label>Preço Venda</label><input type="number" id="cad-preco"></div>
                 </div>
-                
                 <div class="row">
                     <div class="form-group"><label>Custo (Opcional)</label><input type="number" id="cad-custo"></div>
-                    
                     <div class="form-group campo-servico" style="display:none; flex:2;"><label>Cód. Serviço (LC 116)</label><input type="text" id="cad-cod-servico" placeholder="Ex: 14.01 - Manutenção"></div>
-                    
                     <div class="form-group campo-servico" style="display:none; flex:2; border:1px solid #16a34a; padding:5px; border-radius:5px;">
                         <label style="color:#166534; font-weight:bold;">Regra de Comissão</label>
                         <select id="cad-cat-comissao">
                             <option value="mecanica">🔧 Mecânica (Evandro/Tico/Gustavo)</option>
-                            <option value="pneu">🛞 Pneu e Balanceamento (Gustavo/Tico)</option>
+                            <option value="pneu">🛞 Pneu e Balanceamento (Equipe)</option>
                             <option value="alinhamento">📐 Alinhamento (Evandro)</option>
                             <option value="outros">🚫 Sem Comissão Extra</option>
                         </select>
                     </div>
-
                     <div class="form-group campo-peca"><label>Marca</label><input type="text" id="cad-marca"></div>
                 </div>
-                
                 <div class="row campo-peca">
                     <div class="form-group"><label>Estoque</label><input type="number" id="cad-estoque"></div>
                     <div class="form-group"><label>Mínimo</label><input type="number" id="cad-minimo"></div>
                     <div class="form-group"><label>Local</label><input type="text" id="cad-local"></div>
                 </div>
-                
                 <div class="row">
                     <div class="form-group" style="flex:2;"><label>Carros Compatíveis</label><input type="text" id="cad-carros"></div>
                     <div class="form-group campo-peca"><label>Fornecedor</label><input type="text" id="cad-fornecedor"></div>
                 </div>
-
                 <button class="btn-primary" onclick="salvarProduto()" style="margin-top:10px;">Salvar Item</button>
                 <hr>
                 <input type="text" id="busca-estoque" placeholder="Buscar no sistema..." onkeyup="filtrarEstoque()" style="margin-bottom:10px;">
@@ -346,8 +355,31 @@
             </div>
         </section>
 
+        <section id="tela-equipe" class="tela" style="display:none;">
+            <header><h1>Gestão de Equipe</h1></header>
+            <div class="card form-container">
+                <div class="row">
+                    <div class="form-group" style="flex:2"><label>Nome Completo</label><input type="text" id="eq-nome"></div>
+                    <div class="form-group">
+                        <label>Cargo / Função</label>
+                        <select id="eq-cargo">
+                            <option value="gestor">Gestor / Dono</option>
+                            <option value="mecanico">Mecânico</option>
+                            <option value="auxiliar">Auxiliar</option>
+                            <option value="borracheiro">Borracheiro / Pneus</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Telefone / PIX</label><input type="text" id="eq-fone"></div>
+                </div>
+                <button class="btn-primary" onclick="salvarColaborador()">Cadastrar Colaborador</button>
+            </div>
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+            <h3>Equipe Ativa</h3>
+            <div class="card"><div style="overflow-x:auto;"><table id="tabela-equipe" class="pdv-table"><thead><tr><th>Nome</th><th>Cargo</th><th>Contato</th><th>Ação</th></tr></thead><tbody id="lista-equipe"></tbody></table></div></div>
+        </section>
+
         <section id="tela-clientes" class="tela" style="display:none;">
-            <header><h1>Gestão de Clientes</h1></header>
+            <header><h1>Gestão de Clientes (Multi-Veículos)</h1></header>
             <div class="card form-container">
                 <h4 style="color:var(--primary); margin-bottom:10px;">Dados Pessoais</h4>
                 <div class="row">
@@ -358,21 +390,22 @@
                     <div class="form-group"><label>CPF / CNPJ</label><input type="text" id="cli-doc"></div>
                     <div class="form-group"><label>Email</label><input type="email" id="cli-email"></div>
                 </div>
-
                 <h4 style="color:var(--primary); margin:20px 0 10px 0;">Endereço</h4>
                 <div class="row">
                     <div class="form-group"><label>CEP</label><input type="text" id="cli-cep"></div>
-                    <div class="form-group" style="flex:2"><label>Endereço (Rua, Nº, Bairro, Cidade)</label><input type="text" id="cli-endereco"></div>
+                    <div class="form-group" style="flex:2"><label>Endereço</label><input type="text" id="cli-endereco"></div>
                 </div>
 
-                <h4 style="color:var(--primary); margin:20px 0 10px 0;">Dados do Veículo</h4>
-                <div class="row">
-                    <div class="form-group"><label>Modelo</label><input type="text" id="cli-carro" placeholder="Ex: Gol G5"></div>
-                    <div class="form-group"><label>Placa</label><input type="text" id="cli-placa"></div>
-                    <div class="form-group"><label>Ano</label><input type="text" id="cli-ano"></div>
+                <h4 style="color:var(--primary); margin:20px 0 10px 0;">Garagem (Adicionar Veículos)</h4>
+                <div class="row" style="align-items:flex-end; background:#f8fafc; padding:10px; border-radius:8px;">
+                    <div class="form-group"><label>Modelo</label><input type="text" id="tmp-modelo" placeholder="Ex: Gol G5"></div>
+                    <div class="form-group"><label>Placa</label><input type="text" id="tmp-placa" placeholder="ABC-1234"></div>
+                    <div class="form-group"><label>Ano</label><input type="text" id="tmp-ano"></div>
+                    <div class="form-group"><button class="btn-secondary" onclick="addVeiculoNaLista()">+ Incluir Carro</button></div>
                 </div>
+                <ul id="lista-veiculos-cadastro" style="margin:10px 0; padding:0; list-style:none;"></ul>
 
-                <button class="btn-primary" onclick="salvarCliente()" style="margin-top:20px;">Salvar Cliente</button>
+                <button class="btn-primary" onclick="salvarCliente()" style="margin-top:20px;">Salvar Cliente com Veículos</button>
             </div>
 
             <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
@@ -383,7 +416,7 @@
             </div>
             <div class="card">
                 <div style="overflow-x:auto;">
-                    <table id="tabela-clientes"><thead><tr><th>Nome</th><th>Contato</th><th>Veículo</th><th>Ação</th></tr></thead><tbody id="lista-clientes"></tbody></table>
+                    <table id="tabela-clientes"><thead><tr><th>Nome</th><th>Contato</th><th>Veículos</th><th>Ação</th></tr></thead><tbody id="lista-clientes"></tbody></table>
                 </div>
             </div>
         </section>
@@ -391,25 +424,41 @@
         <section id="tela-relatorio" class="tela" style="display:none;">
             <header>
                 <h1>Relatórios Gerenciais</h1>
-                <div>
-                    <button class="btn-secondary" onclick="gerarRelatorio()">📉 Estoque Baixo</button>
-                    <button class="btn-primary" onclick="gerarRelatorioComissoes()" style="margin-left:10px;">💰 Comissões / Salários</button>
-                </div>
+                <div><button class="btn-secondary" onclick="gerarRelatorio()">📉 Estoque Baixo</button></div>
             </header>
-            <div class="card">
-                <div style="overflow-x:auto;">
-                    <table id="tabela-relatorio">
-                        <thead><tr><th>Peça</th><th>Local</th><th>Atual</th><th>Mínimo</th><th>Status</th></tr></thead>
-                        <tbody></tbody>
-                    </table>
+            <div class="card" style="background:#fff7ed; border:1px solid #fed7aa; margin-top:10px;">
+                <h4 style="color:#c2410c; margin-top:0;">Extrato de Comissões</h4>
+                <div class="row" style="align-items:flex-end; gap:10px;">
+                    <div class="form-group"><label>Início</label><input type="date" id="rel-inicio"></div>
+                    <div class="form-group"><label>Fim</label><input type="date" id="rel-fim"></div>
+                    <div class="form-group" style="flex:2"><label>Colaborador</label><select id="rel-colaborador"><option value="todos">Todos</option></select></div>
+                    <div class="form-group"><button class="btn-primary" onclick="gerarRelatorioComissoes()"><span class="material-icons">search</span> Filtrar</button></div>
+                </div>
+                <div style="margin-top: 15px; border-top:1px solid #fed7aa; padding-top:10px; display:flex; justify-content:flex-end;">
+                    <button class="btn-secondary" onclick="excluirRelatoriosSelecionados()" style="background:#ef4444; color:white; width:auto;"><span class="material-icons" style="margin-right:5px;">delete_sweep</span> Excluir Selecionados</button>
                 </div>
             </div>
+            <div class="card"><div style="overflow-x:auto;"><table id="tabela-relatorio"><thead><tr><th>Peça</th><th>Local</th><th>Atual</th><th>Mínimo</th><th>Status</th></tr></thead><tbody></tbody></table></div></div>
         </section>
 
     </main>
 
-    <div id="cupom-impressao" class="print-container"></div>
+    <div id="modal-detalhes" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="document.getElementById('modal-detalhes').style.display='none'">&times;</span>
+            <div id="conteudo-modal-detalhes"></div>
+        </div>
+    </div>
 
+    <div id="modal-camera" class="modal" style="display:none;">
+        <div class="modal-content" style="text-align:center;">
+            <h3>Escaneando Código de Barras...</h3>
+            <div id="leitor-camera" style="width: 100%; min-height: 300px;"></div>
+            <button class="btn-secondary" onclick="fecharCamera()" style="margin-top:15px; background: #ef4444; width:100%; justify-content:center;">Fechar Câmera</button>
+        </div>
+    </div>
+
+    <div id="cupom-impressao" class="print-container"></div>
     <script type="module" src="app.js"></script>
 </body>
 </html>

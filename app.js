@@ -16,7 +16,9 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Estado
+// ==========================================
+// ESTADO GLOBAL DA APLICAÇÃO
+// ==========================================
 window.carrinho = [];
 window.itensEntrada = [];
 window.boletosEntrada = [];
@@ -26,8 +28,15 @@ let idProdutoEditando = null;
 window.todosClientes = []; 
 window.todosProdutos = []; 
 window.todasVendas = [];
+window.equipe = []; 
+window.tempVeiculosCadastro = []; // Array temporário para cadastro de veículos
+// Variáveis da Câmera
+let html5QrcodeScanner = null;
+let destinoCamera = null;
 
-// --- FUNÇÃO MENU MOBILE ---
+// ==========================================
+// FUNÇÃO MENU MOBILE
+// ==========================================
 window.alternarMenu = () => {
     const sidebar = document.getElementById('sidebar-principal');
     const overlay = document.getElementById('overlay-menu');
@@ -35,7 +44,9 @@ window.alternarMenu = () => {
     if(sidebar.classList.contains('menu-aberto')) overlay.style.display = 'block'; else overlay.style.display = 'none';
 }
 
-// --- AUTENTICAÇÃO ---
+// ==========================================
+// AUTENTICAÇÃO
+// ==========================================
 onAuthStateChanged(auth, (user) => {
     const loginTela = document.getElementById('tela-login');
     const sidebar = document.getElementById('sidebar-principal');
@@ -46,6 +57,7 @@ onAuthStateChanged(auth, (user) => {
         if(window.innerWidth > 768) sidebar.style.display = 'flex'; else { sidebar.style.display = 'flex'; btnMenu.style.display = 'block'; }
         conteudo.style.display = 'block';
         window.mostrarTela('dashboard');
+        window.carregarColaboradores();
     } else {
         loginTela.style.display = 'flex'; sidebar.style.display = 'none'; conteudo.style.display = 'none'; if(btnMenu) btnMenu.style.display = 'none';
     }
@@ -59,7 +71,9 @@ window.fazerLogin = async () => {
 }
 window.fazerLogout = async () => { if(confirm("Sair?")) await signOut(auth); }
 
-// --- NAVEGAÇÃO ---
+// ==========================================
+// NAVEGAÇÃO ENTRE TELAS
+// ==========================================
 window.mostrarTela = (telaId) => {
     document.querySelectorAll('.tela').forEach(t => t.style.display = 'none');
     document.querySelectorAll('.sidebar button').forEach(b => b.classList.remove('active'));
@@ -70,21 +84,24 @@ window.mostrarTela = (telaId) => {
     
     if(window.innerWidth <= 768) { document.getElementById('sidebar-principal').classList.remove('menu-aberto'); document.getElementById('overlay-menu').style.display = 'none'; }
 
-    // CARREGAMENTOS ESPECÍFICOS
+    // Carregamentos Específicos por Tela
     if(telaId === 'vendas') { 
         document.getElementById('pdv-busca').focus(); 
         window.carregarClientes(); 
-        window.carregarEstoque(); 
+        window.carregarEstoque();
+        window.carregarColaboradores().then(() => window.carregarOpcoesEquipePDV());
     }
     if(telaId === 'cadastro' || telaId === 'entrada') window.carregarEstoque();
     if(telaId === 'historico') window.carregarHistorico('vendas');
     if(telaId === 'clientes') window.carregarClientes();
+    if(telaId === 'equipe') window.carregarColaboradores();
+    if(telaId === 'relatorio') window.carregarOpcoesRelatorio();
     if(telaId === 'dashboard') window.carregarDashboard();
     if(telaId === 'financeiro') window.carregarContasPagar();
 }
 
 // ==========================================
-// FUNÇÃO: Alternar Peça / Serviço
+// FUNÇÕES AUXILIARES DE INTERFACE
 // ==========================================
 window.alternarCamposCadastro = () => {
     const tipo = document.querySelector('input[name="tipo_produto"]:checked').value;
@@ -95,7 +112,158 @@ window.alternarCamposCadastro = () => {
 }
 
 // ==========================================
-// CONTAS A PAGAR
+// CÂMERA E SCANNER
+// ==========================================
+window.abrirCamera = (destino) => {
+    destinoCamera = destino; // 'pdv' ou 'cadastro'
+    const modal = document.getElementById('modal-camera');
+    modal.style.display = 'block';
+
+    if(!html5QrcodeScanner) {
+        html5QrcodeScanner = new Html5QrcodeScanner(
+            "leitor-camera",
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            /* verbose= */ false
+        );
+        html5QrcodeScanner.render(window.onScanSuccess, window.onScanFailure);
+    }
+}
+
+window.onScanSuccess = (decodedText, decodedResult) => {
+    // 1. SE FOR NO PDV
+    if(destinoCamera === 'pdv') {
+        const inputBusca = document.getElementById('pdv-busca');
+        inputBusca.value = decodedText;
+        window.filtrarProdutosPDV(); 
+        
+        // Tenta adicionar direto ao carrinho
+        const produtoExato = window.todosProdutos.find(p => p.codigo_barras === decodedText);
+        if(produtoExato) {
+            window.adicionarAoCarrinho(produtoExato.id, produtoExato);
+            inputBusca.value = ""; 
+            alert("Produto adicionado: " + produtoExato.nome);
+        } else {
+            alert("Código lido: " + decodedText + ". Produto não encontrado.");
+        }
+
+    // 2. SE FOR NO CADASTRO
+    } else if (destinoCamera === 'cadastro') {
+        document.getElementById('cad-codigo').value = decodedText;
+        alert("Código capturado!");
+    }
+    
+    window.fecharCamera();
+}
+
+window.onScanFailure = (error) => {
+    // console.warn(`Erro de leitura = ${error}`);
+}
+
+window.fecharCamera = () => {
+    const modal = document.getElementById('modal-camera');
+    modal.style.display = 'none';
+    
+    if(html5QrcodeScanner) {
+        html5QrcodeScanner.clear().catch(error => {
+            console.error("Erro ao fechar camera.", error);
+        });
+        html5QrcodeScanner = null;
+    }
+}
+
+// ==========================================
+// GESTÃO DE EQUIPE (CRUD)
+// ==========================================
+window.carregarColaboradores = async () => {
+    const tbody = document.getElementById('lista-equipe');
+    if(tbody) tbody.innerHTML = "<tr><td colspan='4'>Carregando...</td></tr>";
+    
+    try {
+        const q = query(collection(db, "equipe"), orderBy("nome"));
+        const snapshot = await getDocs(q);
+        window.equipe = [];
+        
+        if(tbody) tbody.innerHTML = "";
+        if(snapshot.empty && tbody) { 
+            tbody.innerHTML = "<tr><td colspan='4'>Nenhum colaborador cadastrado.</td></tr>"; 
+        }
+
+        snapshot.forEach(doc => {
+            const c = { id: doc.id, ...doc.data() };
+            window.equipe.push(c); 
+            if(tbody) {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${c.nome}</strong></td>
+                        <td><span class="badge" style="background:#e0f2fe; color:#0369a1;">${c.cargo.toUpperCase()}</span></td>
+                        <td>${c.telefone || '-'}</td>
+                        <td><button onclick="excluirColaborador('${c.id}')" class="btn-secondary" style="color:red">Excluir</button></td>
+                    </tr>
+                `;
+            }
+        });
+    } catch(e) { console.error("Erro ao carregar equipe:", e); }
+}
+
+window.carregarOpcoesEquipePDV = () => {
+    const container = document.getElementById('pdv-opcoes-equipe-pneu');
+    if(!container) return;
+    
+    container.innerHTML = "";
+    if(window.equipe.length === 0) {
+        container.innerHTML = "<small style='color:red;'>Cadastre a equipe no menu lateral!</small>";
+        return;
+    }
+
+    window.equipe.forEach(colab => {
+        const div = document.createElement('div');
+        div.style.display = "flex";
+        div.style.alignItems = "center";
+        div.style.gap = "8px";
+        div.innerHTML = `
+            <input type="checkbox" name="equipe_pneu" value="${colab.nome}" id="chk_${colab.id}" style="width:18px; height:18px;">
+            <label for="chk_${colab.id}" style="font-size:14px; cursor:pointer;">${colab.nome} <small style="color:#666">(${colab.cargo})</small></label>
+        `;
+        container.appendChild(div);
+    });
+}
+
+window.carregarOpcoesRelatorio = async () => {
+    if(window.equipe.length === 0) await window.carregarColaboradores();
+    const select = document.getElementById('rel-colaborador');
+    if(!select) return;
+    
+    select.innerHTML = '<option value="todos">Todos</option>';
+    window.equipe.forEach(c => {
+        select.innerHTML += `<option value="${c.nome}">${c.nome}</option>`;
+    });
+}
+
+window.salvarColaborador = async () => {
+    const nome = document.getElementById('eq-nome').value;
+    const cargo = document.getElementById('eq-cargo').value;
+    const telefone = document.getElementById('eq-fone').value;
+
+    if(!nome) { alert("Digite o nome."); return; }
+
+    try {
+        await addDoc(collection(db, "equipe"), { nome, cargo, telefone });
+        alert("Colaborador Cadastrado!");
+        document.getElementById('eq-nome').value = "";
+        document.getElementById('eq-fone').value = "";
+        window.carregarColaboradores();
+    } catch(e) { alert(e.message); }
+}
+
+window.excluirColaborador = async (id) => {
+    if(confirm("Remover este colaborador da equipe?")) {
+        await deleteDoc(doc(db, "equipe", id));
+        window.carregarColaboradores();
+    }
+}
+
+// ==========================================
+// CONTAS A PAGAR (FINANCEIRO)
 // ==========================================
 window.carregarContasPagar = async () => {
     const tbody = document.getElementById('lista-contas-pagar');
@@ -131,7 +299,7 @@ window.darBaixaConta = async (id) => { if(confirm("Confirmar pagamento desta con
 window.excluirConta = async (id) => { if(confirm("Excluir registro?")) { await deleteDoc(doc(db, "contas_pagar", id)); window.carregarContasPagar(); } }
 
 // ==========================================
-// IMPORTAÇÃO XML
+// IMPORTAÇÃO XML (NFe)
 // ==========================================
 window.importarXML = (input) => {
     const file = input.files[0];
@@ -252,22 +420,33 @@ window.salvarEntrada = async () => {
     } catch(e) { alert("Erro: " + e.message); }
 }
 
-// --- CLIENTES ---
-window.carregarClientes = async () => {
-    const tbody = document.getElementById('lista-clientes');
-    const selectPdv = document.getElementById('pdv-cliente-select');
-    try {
-        const q = query(collection(db, "clientes"), orderBy("nome"));
-        const querySnapshot = await getDocs(q);
-        window.todosClientes = [];
-        if(selectPdv) selectPdv.innerHTML = '<option value="consumidor">Consumidor Final</option>';
-        querySnapshot.forEach((doc) => {
-            const c = { id: doc.id, ...doc.data() };
-            window.todosClientes.push(c);
-            if(selectPdv) selectPdv.innerHTML += `<option value="${c.nome}|${doc.id}">${c.nome}</option>`;
-        });
-        if(tbody) window.filtrarClientes();
-    } catch (e) { console.error(e); }
+// ==========================================
+// CLIENTES (COM MULTI-VEÍCULOS)
+// ==========================================
+window.addVeiculoNaLista = () => {
+    const mod = document.getElementById('tmp-modelo').value;
+    const pla = document.getElementById('tmp-placa').value;
+    const ano = document.getElementById('tmp-ano').value;
+    if(!mod) return alert("Digite o modelo do carro.");
+    
+    window.tempVeiculosCadastro.push({ modelo: mod, placa: pla, ano: ano });
+    window.renderizarListaVeiculosCadastro();
+    
+    document.getElementById('tmp-modelo').value = "";
+    document.getElementById('tmp-placa').value = "";
+    document.getElementById('tmp-ano').value = "";
+}
+
+window.renderizarListaVeiculosCadastro = () => {
+    const ul = document.getElementById('lista-veiculos-cadastro');
+    if(!ul) return;
+    ul.innerHTML = "";
+    window.tempVeiculosCadastro.forEach((v, i) => {
+        ul.innerHTML += `<li style="background:white; padding:5px; margin-bottom:5px; border:1px solid #ddd; display:flex; justify-content:space-between;">
+            <span>🚗 ${v.modelo} (${v.placa})</span>
+            <button onclick="window.tempVeiculosCadastro.splice(${i},1); window.renderizarListaVeiculosCadastro()" style="color:red; border:none; background:none;">X</button>
+        </li>`;
+    });
 }
 
 window.salvarCliente = async() => {
@@ -276,18 +455,38 @@ window.salvarCliente = async() => {
             nome: document.getElementById('cli-nome').value, 
             telefone: document.getElementById('cli-fone').value, 
             documento: document.getElementById('cli-doc').value, 
-            email: document.getElementById('cli-email').value,
-            cep: document.getElementById('cli-cep').value,
+            email: document.getElementById('cli-email').value, 
+            cep: document.getElementById('cli-cep').value, 
             endereco: document.getElementById('cli-endereco').value,
-            carro_modelo: document.getElementById('cli-carro').value,
-            carro_placa: document.getElementById('cli-placa').value,
-            carro_ano: document.getElementById('cli-ano').value
+            veiculos: window.tempVeiculosCadastro
         };
+        
+        if(window.tempVeiculosCadastro.length > 0) {
+            dados.carro_modelo = window.tempVeiculosCadastro[0].modelo;
+            dados.carro_placa = window.tempVeiculosCadastro[0].placa;
+        }
+
         await addDoc(collection(db, "clientes"), dados); 
-        alert("Salvo!"); 
+        alert("Cliente Salvo!"); 
         document.querySelectorAll('#tela-clientes input').forEach(i => i.value = ""); 
+        window.tempVeiculosCadastro = [];
+        window.renderizarListaVeiculosCadastro();
         window.carregarClientes();
     } catch(e) { alert(e.message); }
+}
+
+window.carregarClientes = async () => {
+    const tbody = document.getElementById('lista-clientes');
+    try {
+        const q = query(collection(db, "clientes"), orderBy("nome"));
+        const querySnapshot = await getDocs(q);
+        window.todosClientes = [];
+        querySnapshot.forEach((doc) => {
+            const c = { id: doc.id, ...doc.data() };
+            window.todosClientes.push(c);
+        });
+        if(tbody) window.filtrarClientes();
+    } catch (e) { console.error(e); }
 }
 
 window.filtrarClientes = () => {
@@ -296,15 +495,21 @@ window.filtrarClientes = () => {
     tbody.innerHTML = "";
     const filtrados = window.todosClientes.filter(c => c.nome.toLowerCase().includes(termo));
     filtrados.forEach(c => { 
-        tbody.innerHTML += `
-            <tr>
-                <td><strong>${c.nome}</strong><br><small>${c.email || ''}</small></td>
-                <td>${c.telefone||'-'}</td>
-                <td>${c.carro_modelo || '-'} (${c.carro_placa || ''})</td>
-                <td><button class="btn-secondary" style="color:red" onclick="excluirCliente('${c.id}')">X</button></td>
-            </tr>`; 
+        let veiculosStr = "Nenhum";
+        if(c.veiculos && c.veiculos.length > 0) {
+            veiculosStr = c.veiculos.map(v => `${v.modelo} (${v.placa})`).join(", ");
+        } else if (c.carro_modelo) {
+            veiculosStr = `${c.carro_modelo} (${c.carro_placa || ''})`;
+        }
+        tbody.innerHTML += `<tr><td><strong>${c.nome}</strong><br><small>${c.telefone||''}</small></td><td>${c.documento||'-'}</td><td>${veiculosStr}</td><td><button class="btn-secondary" style="color:red" onclick="excluirCliente('${c.id}')">X</button></td></tr>`; 
     });
 }
+window.excluirCliente = async(id) => { if(confirm("Excluir?")) { await deleteDoc(doc(db,"clientes",id)); window.carregarClientes(); } }
+
+
+// ==========================================
+// PDV INTELIGENTE (MULTI-VEÍCULOS)
+// ==========================================
 window.filtrarClientesPDV = () => {
     const termo = document.getElementById('pdv-busca-cliente').value.toLowerCase();
     const selectPdv = document.getElementById('pdv-cliente-select');
@@ -312,9 +517,56 @@ window.filtrarClientesPDV = () => {
     const filtrados = window.todosClientes.filter(c => c.nome.toLowerCase().includes(termo));
     filtrados.forEach(c => { selectPdv.innerHTML += `<option value="${c.nome}|${c.id}">${c.nome}</option>`; });
 }
-window.excluirCliente = async(id) => { if(confirm("Excluir?")) { await deleteDoc(doc(db,"clientes",id)); window.carregarClientes(); } }
 
-// --- DASHBOARD ---
+window.carregarVeiculosNoPDV = () => {
+    const selectCli = document.getElementById('pdv-cliente-select');
+    const selectVeic = document.getElementById('pdv-veiculo-select');
+    selectVeic.innerHTML = '<option value="">Sem Veículo / Avulso</option>';
+    
+    if(selectCli.value === 'consumidor') return;
+    
+    const idCliente = selectCli.value.split('|')[1];
+    const cliente = window.todosClientes.find(c => c.id === idCliente);
+    
+    if(cliente) {
+        if(cliente.veiculos && cliente.veiculos.length > 0) {
+            cliente.veiculos.forEach(v => {
+                selectVeic.innerHTML += `<option value="${v.modelo}|${v.placa}">${v.modelo} - ${v.placa}</option>`;
+            });
+        } else if (cliente.carro_modelo) {
+            selectVeic.innerHTML += `<option value="${cliente.carro_modelo}|${cliente.carro_placa}">${cliente.carro_modelo} - ${cliente.carro_placa}</option>`;
+        }
+    }
+}
+
+window.adicionarCarroRapido = async () => {
+    const selectCli = document.getElementById('pdv-cliente-select');
+    if(selectCli.value === 'consumidor') return alert("Selecione um cliente cadastrado primeiro.");
+    
+    const modelo = prompt("Modelo do Veículo:");
+    if(!modelo) return;
+    const placa = prompt("Placa do Veículo:");
+    
+    const idCliente = selectCli.value.split('|')[1];
+    const clienteRef = doc(db, "clientes", idCliente);
+    const cliente = window.todosClientes.find(c => c.id === idCliente);
+    let veiculosAtuais = cliente.veiculos || [];
+    
+    if(veiculosAtuais.length === 0 && cliente.carro_modelo) {
+        veiculosAtuais.push({ modelo: cliente.carro_modelo, placa: cliente.carro_placa || '', ano: '' });
+    }
+    veiculosAtuais.push({ modelo, placa, ano: '' });
+    
+    try {
+        await updateDoc(clienteRef, { veiculos: veiculosAtuais });
+        alert("Veículo adicionado!");
+        window.carregarClientes().then(() => window.carregarVeiculosNoPDV());
+    } catch(e) { alert("Erro ao salvar: " + e.message); }
+}
+
+// ==========================================
+// DASHBOARD
+// ==========================================
 window.carregarDashboard = async () => {
     try {
         const hojeInicio = new Date(); hojeInicio.setHours(0,0,0,0);
@@ -350,6 +602,9 @@ window.carregarDashboard = async () => {
     } catch(e) { console.error("Erro dashboard:", e); }
 }
 
+// ==========================================
+// ESTOQUE / CADASTRO DE PRODUTOS
+// ==========================================
 window.carregarEstoque = async () => {
     const tbody = document.getElementById('lista-produtos-estoque');
     try {
@@ -374,7 +629,6 @@ window.filtrarEstoque = () => {
     });
 }
 
-// 1. ATUALIZAÇÃO NO CADASTRO PARA SALVAR CATEGORIA
 window.salvarProduto = async () => {
     try {
         const tipoSelecionado = document.querySelector('input[name="tipo_produto"]:checked').value;
@@ -440,6 +694,9 @@ window.prepararEdicao = (id, dadosJson) => {
 }
 window.excluirProduto = async(id) => { if(confirm("Excluir?")) { await deleteDoc(doc(db,"produtos",id)); window.carregarEstoque(); } }
 
+// ==========================================
+// HISTÓRICO DE VENDAS
+// ==========================================
 window.carregarHistorico = async (tipo) => {
     const tbody = document.getElementById('lista-historico'); const thead = document.getElementById('head-historico'); if(!tbody) return;
     tbody.innerHTML = "<tr><td colspan='5'>Carregando...</td></tr>";
@@ -510,7 +767,7 @@ window.excluirEntrada = async (id) => {
 window.verDetalhesVenda = (jsonVenda) => {
     const venda = JSON.parse(decodeURIComponent(jsonVenda));
 
-    // Converter datas (que vêm do banco como Timestamp ou String) para Objeto Date
+    // Converter datas
     let dataVenda = new Date();
     if(venda.data && venda.data.seconds) dataVenda = new Date(venda.data.seconds * 1000);
     else if(venda.data) dataVenda = new Date(venda.data);
@@ -525,128 +782,9 @@ window.verDetalhesVenda = (jsonVenda) => {
 
 window.cobrarZap = (cliente, valor) => { window.open(`https://wa.me/?text=Olá ${cliente}, lembrete de pagamento R$ ${valor}`, '_blank'); }
 
-// RELATÓRIOS
-window.gerarRelatorio = async () => {
-    const tbody = document.querySelector('#tabela-relatorio tbody'); 
-    const thead = document.querySelector('#tabela-relatorio thead');
-    
-    // Reseta cabeçalho padrão
-    thead.innerHTML = `<tr><th>Peça</th><th>Local</th><th>Atual</th><th>Mínimo</th><th>Status</th></tr>`;
-    tbody.innerHTML = "<tr><td colspan='5'>Carregando...</td></tr>";
-    
-    try {
-        const q = await getDocs(collection(db, "produtos")); tbody.innerHTML = "";
-        q.forEach((doc) => { const p = doc.data(); if (p.estoque_atual <= p.estoque_minimo && p.tipo !== 'servico') tbody.innerHTML += `<tr><td>${p.nome}</td><td>${p.localizacao||'-'}</td><td>${p.estoque_atual}</td><td>${p.estoque_minimo}</td><td style="color:red; font-weight:bold">REPOR</td></tr>`; });
-    } catch (e) { console.error(e); }
-}
-
-// === FUNÇÃO PARA ALTERNAR STATUS DE PAGAMENTO DA COMISSÃO ===
-window.alternarStatusComissao = async (id, statusAtual) => {
-    try {
-        const novoStatus = !statusAtual;
-        // Atualiza no banco
-        await updateDoc(doc(db, "vendas", id), {
-            comissao_paga: novoStatus
-        });
-        // Atualiza a tela (recarrega o relatório)
-        window.gerarRelatorioComissoes();
-    } catch(e) {
-        alert("Erro ao atualizar: " + e.message);
-    }
-}
-
-window.gerarRelatorioComissoes = async () => {
-    const tbody = document.querySelector('#tabela-relatorio tbody');
-    const header = document.querySelector('#tabela-relatorio thead');
-    
-    tbody.innerHTML = "<tr><td colspan='8'>Carregando vendas dos últimos 30 dias...</td></tr>";
-    
-    try {
-        // FILTRO: ÚLTIMOS 30 DIAS
-        const dataLimite = new Date();
-        dataLimite.setDate(dataLimite.getDate() - 30);
-        dataLimite.setHours(0,0,0,0);
-        
-        // Ordena por data (mais recente primeiro)
-        const q = query(collection(db, "vendas"), where("data", ">=", dataLimite), orderBy("data", "desc"));
-        const snapshot = await getDocs(q);
-        
-        let totalEvandro = 0, totalTico = 0, totalGustavo = 0, totalEmpresa = 0;
-        
-        // Atualiza cabeçalho para a visão detalhada COM COLUNA DE CHECK
-        header.innerHTML = `
-            <tr style="background:#1e293b; color:white;">
-                <th>Status</th>
-                <th>Data / Hora</th>
-                <th>Cliente</th>
-                <th>Total Venda</th>
-                <th>Evandro</th>
-                <th>Tico</th>
-                <th>Gustavo</th>
-                <th>Loja (Caixa)</th>
-            </tr>
-        `;
-        
-        tbody.innerHTML = ""; // Limpa carregando
-
-        snapshot.forEach(docSnap => {
-            const v = docSnap.data();
-            const idVenda = docSnap.id;
-            const dataVenda = v.data?.toDate ? v.data.toDate().toLocaleString('pt-BR') : "--";
-            
-            // Pega valores ou 0 se não existir
-            const comissao = v.valores_comissao || { evandro: 0, tico: 0, gustavo: 0, empresa: 0 };
-            
-            // Soma nos totais gerais
-            totalEvandro += comissao.evandro || 0;
-            totalTico += comissao.tico || 0;
-            totalGustavo += comissao.gustavo || 0;
-            totalEmpresa += comissao.empresa || 0;
-
-            // VERIFICA SE ESTÁ PAGO
-            const isPago = v.comissao_paga === true;
-            
-            // Define o estilo (riscado se pago)
-            const estiloLinha = isPago ? "text-decoration: line-through; color: #9ca3af; background-color: #f3f4f6;" : "border-bottom: 1px solid #eee;";
-            const iconeBtn = isPago ? "undo" : "check";
-            const corBtn = isPago ? "#9ca3af" : "#22c55e";
-            const titleBtn = isPago ? "Desfazer Pagamento" : "Marcar como Pago";
-
-            // Adiciona Linha da Venda
-            tbody.innerHTML += `
-                <tr style="${estiloLinha}">
-                    <td style="text-align:center;">
-                        <button onclick="alternarStatusComissao('${idVenda}', ${isPago})" 
-                                style="border:none; background:transparent; cursor:pointer; color:${corBtn};" 
-                                title="${titleBtn}">
-                            <span class="material-icons">${iconeBtn}</span>
-                        </button>
-                    </td>
-                    <td style="font-size:12px;">${dataVenda}</td>
-                    <td>${v.cliente}</td>
-                    <td>R$ ${v.total.toFixed(2)}</td>
-                    <td style="color:${isPago ? 'inherit' : '#16a34a'};">R$ ${(comissao.evandro || 0).toFixed(2)}</td>
-                    <td style="color:${isPago ? 'inherit' : '#16a34a'};">R$ ${(comissao.tico || 0).toFixed(2)}</td>
-                    <td style="color:${isPago ? 'inherit' : '#16a34a'};">R$ ${(comissao.gustavo || 0).toFixed(2)}</td>
-                    <td style="color:${isPago ? 'inherit' : '#0369a1'};">R$ ${(comissao.empresa || 0).toFixed(2)}</td>
-                </tr>
-            `;
-        });
-
-        // LINHA DE TOTAIS NO FINAL
-        tbody.innerHTML += `
-            <tr style="background:#f0f9ff; font-weight:bold; border-top: 2px solid #000;">
-                <td colspan="4" style="text-align:right;">TOTAIS (30 DIAS):</td>
-                <td style="color:#16a34a; font-size:16px;">R$ ${totalEvandro.toFixed(2)}</td>
-                <td style="color:#16a34a; font-size:16px;">R$ ${totalTico.toFixed(2)}</td>
-                <td style="color:#16a34a; font-size:16px;">R$ ${totalGustavo.toFixed(2)}</td>
-                <td style="color:#0369a1; font-size:16px;">R$ ${totalEmpresa.toFixed(2)}</td>
-            </tr>
-        `;
-        
-    } catch (e) { console.error(e); alert("Erro ao gerar relatório: " + e.message); }
-}
-
+// ==========================================
+// VENDAS (PDV) E COMISSÃO (CORRIGIDA E BLINDADA)
+// ==========================================
 const inputBusca = document.getElementById('pdv-busca');
 if(inputBusca) {
     inputBusca.addEventListener('keydown', async (event) => {
@@ -662,7 +800,7 @@ if(inputBusca) {
                 querySnapshot.forEach((doc) => { adicionarAoCarrinho(doc.id, doc.data()); });
                 inputBusca.value = "";
                 document.getElementById('sugestoes-pdv').style.display = 'none';
-                feedbackVisual('sucesso');
+                
             } else {
                 // 2. Se não achou código, tenta achar nome exato na memória
                 const matchNome = window.todosProdutos.find(p => p.nome.toLowerCase() === termo.toLowerCase());
@@ -670,10 +808,10 @@ if(inputBusca) {
                     adicionarAoCarrinho(matchNome.id, matchNome);
                     inputBusca.value = "";
                     document.getElementById('sugestoes-pdv').style.display = 'none';
-                    feedbackVisual('sucesso');
+                    
                 } else {
                     document.getElementById('status-busca').innerText = "Não encontrado!"; 
-                    feedbackVisual('erro');
+                    
                 }
             }
         }
@@ -690,7 +828,6 @@ window.filtrarProdutosPDV = () => {
         return; 
     }
 
-    // Filtra no cache local (window.todosProdutos)
     const filtrados = window.todosProdutos.filter(p => 
         p.nome.toLowerCase().includes(termo) || 
         (p.codigo_barras && p.codigo_barras.includes(termo)) || 
@@ -761,34 +898,39 @@ window.removerItem = (index) => { window.carrinho.splice(index, 1); window.atual
 // 2. ATUALIZAÇÃO DA FINALIZAÇÃO DE VENDA (COMISSÃO INTELIGENTE)
 window.finalizarVenda = async () => {
     if(window.carrinho.length === 0) return;
+    
+    // Recarrega equipe para garantir que temos os dados mais recentes
+    if(window.equipe.length === 0) await window.carregarColaboradores();
+
     window.recalcularDescontoPeloTotal();
     const totalFinal = subtotalVenda - descontoGlobal;
     
-    // CAPTURA A ESCOLHA DO SELETOR DE PNEUS
-    const responsavelPneu = document.getElementById('pdv-responsavel-pneu').value;
+    // Captura Executantes Pneu
+    const containerPneu = document.getElementById('pdv-opcoes-equipe-pneu');
+    let executantesPneu = [];
+    if(containerPneu) {
+        const checkboxes = containerPneu.querySelectorAll('input[type="checkbox"]:checked');
+        checkboxes.forEach(chk => executantesPneu.push(chk.value));
+    }
     
-    // CAPTURA KM E VEICULO
+    // Captura KM e Carro
     const kmAtual = document.getElementById('pdv-km').value || "";
+    let carroCliente = "", placaCliente = "";
     
-    let carroCliente = "";
-    let placaCliente = "";
+    const veiculoSelect = document.getElementById('pdv-veiculo-select').value;
+    if(veiculoSelect) {
+        const parts = veiculoSelect.split('|');
+        carroCliente = parts[0];
+        placaCliente = parts[1];
+    }
     
     const clienteSelect = document.getElementById('pdv-cliente-select').value;
-    if (clienteSelect !== "consumidor") {
-        const idCliente = clienteSelect.split('|')[1];
-        const clienteObj = window.todosClientes.find(c => c.id === idCliente);
-        if (clienteObj) {
-            carroCliente = clienteObj.carro_modelo || "";
-            placaCliente = clienteObj.carro_placa || "";
-        }
-    }
+    let nomeCliente = "Consumidor Final";
+    if (clienteSelect !== "consumidor") nomeCliente = clienteSelect.split('|')[0];
 
     if(!confirm(`Confirmar venda de R$ ${totalFinal.toFixed(2)}?`)) return;
 
     try {
-        let nomeCliente = "Consumidor Final";
-        if(clienteSelect !== "consumidor") nomeCliente = clienteSelect.split('|')[0];
-        
         const formaPagamento = document.getElementById('pdv-forma-pagamento').value;
         let dataVencimento = null;
         let statusVenda = "pago";
@@ -799,61 +941,91 @@ window.finalizarVenda = async () => {
             dataVencimento = hoje;
         }
 
-        // --- LÓGICA INTELIGENTE DE COMISSÃO ITEM A ITEM ---
-        let comissoes = { evandro: 0, tico: 0, gustavo: 0, empresa: 0 };
+        // --- LÓGICA BLINDADA DE COMISSÃO ---
+        let comissoes = { "Empresa (Caixa)": 0 };
         
         window.carrinho.forEach(item => {
             const totalItem = item.preco * item.qtd;
 
             if (item.tipo === 'servico') {
-                const cat = item.categoria_comissao || 'outros';
+                let cat = item.categoria_comissao || 'outros';
+                
+                // CORREÇÃO INTELIGENTE: Se esqueceu de categorizar, tenta adivinhar pelo nome
+                const nome = item.nome.toLowerCase();
+                if (cat === 'outros') {
+                    if (nome.includes('alinhamento')) cat = 'alinhamento';
+                    else if (nome.includes('pneu') || nome.includes('balanceamento')) cat = 'pneu';
+                    else cat = 'mecanica'; // Assume Mecânica Geral para o resto
+                }
+                
+                const metadeEmpresa = totalItem * 0.50;
+                const metadeMaoDeObra = totalItem * 0.50;
+
+                comissoes["Empresa (Caixa)"] += metadeEmpresa; // 50% Garantido Empresa
 
                 if(cat === 'mecanica') {
-                    // Evandro 20%, Tico 20%, Gustavo 10% (do total)
-                    comissoes.evandro += totalItem * 0.20;
-                    comissoes.tico += totalItem * 0.20;
-                    comissoes.gustavo += totalItem * 0.10;
-                    comissoes.empresa += totalItem * 0.50; 
+                    const gestor = window.equipe.find(e => e.cargo === 'gestor');
+                    const mecanico = window.equipe.find(e => e.cargo === 'mecanico');
+                    const auxiliar = window.equipe.find(e => e.cargo === 'auxiliar');
+
+                    let valorDistribuido = 0;
+
+                    if(gestor) {
+                        if(!comissoes[gestor.nome]) comissoes[gestor.nome] = 0;
+                        const valor = metadeMaoDeObra * 0.40;
+                        comissoes[gestor.nome] += valor;
+                        valorDistribuido += valor;
+                    }
+                    if(mecanico) {
+                        if(!comissoes[mecanico.nome]) comissoes[mecanico.nome] = 0;
+                        const valor = metadeMaoDeObra * 0.40;
+                        comissoes[mecanico.nome] += valor;
+                        valorDistribuido += valor;
+                    }
+                    if(auxiliar) {
+                        if(!comissoes[auxiliar.nome]) comissoes[auxiliar.nome] = 0;
+                        const valor = metadeMaoDeObra * 0.20;
+                        comissoes[auxiliar.nome] += valor;
+                        valorDistribuido += valor;
+                    }
+
+                    // Se sobrar, volta para o caixa
+                    const sobra = metadeMaoDeObra - valorDistribuido;
+                    if(sobra > 0.01) {
+                        comissoes["Empresa (Caixa)"] += sobra;
+                    }
                 } 
                 else if (cat === 'alinhamento') {
-                    // Evandro 50%
-                    comissoes.evandro += totalItem * 0.50;
-                    comissoes.empresa += totalItem * 0.50;
+                    // REGRA BLINDADA: Tenta achar Evandro, se não, cria "Evandro"
+                    const beneficiario = window.equipe.find(e => e.cargo === 'gestor' || e.nome.toLowerCase().includes('evandro'));
+                    const nomeBeneficiario = beneficiario ? beneficiario.nome : "Evandro";
+                    
+                    if(!comissoes[nomeBeneficiario]) comissoes[nomeBeneficiario] = 0;
+                    comissoes[nomeBeneficiario] += metadeMaoDeObra;
                 }
                 else if (cat === 'pneu') {
-                    // Verifica o Seletor (Gustavo Sozinho, Tico Sozinho ou Dupla)
-                    if(responsavelPneu === 'gustavo') {
-                        comissoes.gustavo += totalItem * 0.50;
-                    } 
-                    else if (responsavelPneu === 'tico') {
-                        comissoes.tico += totalItem * 0.50;
+                    if(executantesPneu.length > 0) {
+                        const valorPorCabeca = metadeMaoDeObra / executantesPneu.length;
+                        executantesPneu.forEach(nome => {
+                            if(!comissoes[nome]) comissoes[nome] = 0;
+                            comissoes[nome] += valorPorCabeca;
+                        });
+                    } else {
+                        comissoes["Empresa (Caixa)"] += metadeMaoDeObra;
                     }
-                    else if (responsavelPneu === 'dupla') {
-                        comissoes.gustavo += totalItem * 0.25;
-                        comissoes.tico += totalItem * 0.25;
-                    }
-                    comissoes.empresa += totalItem * 0.50;
                 }
                 else {
-                    comissoes.empresa += totalItem;
+                    comissoes["Empresa (Caixa)"] += metadeMaoDeObra;
                 }
             } else {
-                // PEÇA: 100% Lucro dividido
-                const custoTotal = (item.preco_custo || 0) * item.qtd;
-                const lucro = totalItem - custoTotal;
-
-                if (lucro > 0) {
-                    comissoes.evandro += lucro * 0.50;
-                    comissoes.empresa += custoTotal + (lucro * 0.50);
-                } else {
-                    comissoes.empresa += totalItem;
-                }
+                // PEÇA: 100% PARA EMPRESA
+                comissoes["Empresa (Caixa)"] += totalItem;
             }
         });
         
-        // Aplica o desconto global na parte da empresa (opcional, ajustável)
+        // Descontos saem do caixa da empresa
         if (descontoGlobal > 0) {
-            comissoes.empresa -= descontoGlobal;
+            comissoes["Empresa (Caixa)"] -= descontoGlobal;
         }
 
         await addDoc(collection(db, "vendas"), {
@@ -867,12 +1039,13 @@ window.finalizarVenda = async () => {
             vencimento: dataVencimento, 
             itens: window.carrinho,
             valores_comissao: comissoes,
-            comissao_paga: false, // PADRÃO: NÃO PAGO
-            km: kmAtual,          // SALVA O KM
-            carro: carroCliente,  // SALVA O CARRO
-            placa: placaCliente   // SALVA A PLACA
+            comissao_paga: false,
+            km: kmAtual,
+            carro: carroCliente,
+            placa: placaCliente
         });
 
+        // Baixa Estoque
         for (const item of window.carrinho) {
             if(item.tipo !== 'servico') {
                 const itemRef = doc(db, "produtos", item.id);
@@ -882,118 +1055,315 @@ window.finalizarVenda = async () => {
         }
 
         if(confirm("Deseja imprimir?")) window.imprimirCupom(nomeCliente, window.carrinho, totalFinal, descontoGlobal, new Date(), dataVencimento, kmAtual, carroCliente, placaCliente);
+        
         alert("Venda Realizada com Sucesso!");
+        
         window.carrinho = []; subtotalVenda = 0; descontoGlobal = 0; window.atualizarTabela();
         document.getElementById('valor-total-input').value = "0.00";
         document.getElementById('pdv-km').value = "";
+        const chks = document.querySelectorAll('#pdv-opcoes-equipe-pneu input');
+        chks.forEach(c => c.checked = false);
+
     } catch(e) { alert("Erro: " + e.message); }
 }
 
-// 3. ATUALIZAÇÃO DA IMPRESSÃO (AGORA RECEBE KM E VEÍCULO)
+// ==========================================
+// RELATÓRIOS INTELIGENTES (NORMALIZAÇÃO)
+// ==========================================
+
+// Função auxiliar para normalizar nomes
+const normalizarNome = (nome) => {
+    if(!nome) return "Desconhecido";
+    return nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
+}
+
+window.alternarStatusComissao = async (id, statusAtual) => {
+    try {
+        await updateDoc(doc(db, "vendas", id), { comissao_paga: !statusAtual });
+        window.gerarRelatorioComissoes();
+    } catch(e) { alert("Erro: " + e.message); }
+}
+
+// NOVO: SELEÇÃO EM MASSA
+window.toggleTodasComissoes = (source) => {
+    document.querySelectorAll('.check-comissao').forEach(c => c.checked = source.checked);
+}
+
+// NOVO: EXCLUSÃO EM MASSA
+window.excluirRelatoriosSelecionados = async () => {
+    const selecionados = document.querySelectorAll('.check-comissao:checked');
+    if(selecionados.length === 0) return alert("Nenhum item selecionado.");
+    
+    if(confirm(`ATENÇÃO: Você vai excluir ${selecionados.length} vendas do sistema.\nIsso não pode ser desfeito.\n\nDeseja continuar?`)) {
+        try {
+            for(const chk of selecionados) {
+                await deleteDoc(doc(db, "vendas", chk.value));
+            }
+            window.gerarRelatorioComissoes(); // Atualiza a tabela
+            alert("Registros excluídos com sucesso!");
+        } catch(e) { alert("Erro ao excluir: " + e.message); }
+    }
+}
+
+// FUNÇÃO PARA MOSTRAR DETALHES (MODAL)
+window.mostrarDetalhesComissao = (vendaJSON) => {
+    const v = JSON.parse(decodeURIComponent(vendaJSON));
+    const modal = document.getElementById('modal-detalhes');
+    const conteudo = document.getElementById('conteudo-modal-detalhes');
+    
+    let html = `
+        <h2 style="color:var(--primary); border-bottom:2px solid #eee; padding-bottom:10px;">Detalhes da Venda</h2>
+        <p><strong>Cliente:</strong> ${v.cliente}</p>
+        <p><strong>Data:</strong> ${new Date(v.data.seconds * 1000).toLocaleString()}</p>
+        <p><strong>Veículo:</strong> ${v.carro || '-'} (${v.placa || '-'})</p>
+        
+        <h4 style="margin-top:20px;">Itens Vendidos:</h4>
+        <ul style="list-style:none; padding:0;">
+    `;
+    
+    // Lista os itens e explica a regra
+    v.itens.forEach(item => {
+        let regraTexto = "Peça (100% Empresa)";
+        if(item.tipo === 'servico') {
+            const cat = item.categoria_comissao || 'Outros';
+            regraTexto = `Serviço (${cat.toUpperCase()})`;
+        }
+        
+        html += `
+            <li style="padding:10px; border-bottom:1px solid #eee;">
+                <strong>${item.qtd}x ${item.nome}</strong> - R$ ${(item.preco * item.qtd).toFixed(2)}<br>
+                <small style="color:#666;">Regra aplicada: ${regraTexto}</small>
+            </li>
+        `;
+    });
+    
+    html += `</ul><h4 style="margin-top:20px;">Distribuição Financeira:</h4><table class="pdv-table">`;
+    
+    // Mostra quem ganhou o que
+    let comissoes = v.valores_comissao || {};
+    for (const [nome, valor] of Object.entries(comissoes)) {
+        html += `<tr><td>${normalizarNome(nome)}</td><td><strong>R$ ${valor.toFixed(2)}</strong></td></tr>`;
+    }
+    
+    html += `</table><div style="margin-top:20px; text-align:right;"><button class="btn-secondary" onclick="document.getElementById('modal-detalhes').style.display='none'">Fechar</button></div>`;
+    
+    conteudo.innerHTML = html;
+    modal.style.display = 'block';
+}
+
+window.gerarRelatorioComissoes = async () => {
+    const tbody = document.querySelector('#tabela-relatorio tbody');
+    const header = document.querySelector('#tabela-relatorio thead');
+    tbody.innerHTML = "<tr><td colspan='8'>Calculando...</td></tr>";
+    
+    // LER FILTROS DA TELA
+    const inputInicio = document.getElementById('rel-inicio');
+    const inputFim = document.getElementById('rel-fim');
+    const selectColab = document.getElementById('rel-colaborador');
+
+    let dataInicio, dataFim;
+
+    if (inputInicio && inputInicio.value) {
+        dataInicio = new Date(inputInicio.value + "T00:00:00");
+    } else {
+        // Padrão: 30 dias atrás
+        dataInicio = new Date();
+        dataInicio.setDate(dataInicio.getDate() - 30);
+        dataInicio.setHours(0,0,0,0);
+    }
+
+    if (inputFim && inputFim.value) {
+        dataFim = new Date(inputFim.value + "T23:59:59");
+    } else {
+        // Padrão: Hoje
+        dataFim = new Date();
+        dataFim.setHours(23,59,59,999);
+    }
+
+    const colaboradorFiltro = (selectColab && selectColab.value !== 'todos') ? selectColab.value : null;
+
+    try {
+        const q = query(collection(db, "vendas"), where("data", ">=", dataInicio), where("data", "<=", dataFim), orderBy("data", "desc"));
+        const snapshot = await getDocs(q);
+        
+        let totais = { "Empresa (Caixa)": 0 };
+        let colunasSet = new Set(["Empresa (Caixa)"]);
+        let dadosProcessados = [];
+
+        snapshot.forEach(docSnap => {
+            const v = docSnap.data();
+            let rawComissao = v.valores_comissao || { "Empresa (Caixa)": 0 };
+            let comissaoNormalizada = {};
+
+            // Normaliza chaves para evitar duplicatas
+            Object.keys(rawComissao).forEach(key => {
+                let nomeCorreto = key;
+                // Padroniza a empresa
+                if(key.toLowerCase().includes('empresa') || key.toLowerCase() === 'loja') nomeCorreto = "Empresa (Caixa)";
+                else if(key === "Empresa (Caixa)") nomeCorreto = "Empresa (Caixa)";
+                else nomeCorreto = normalizarNome(key);
+
+                if(!comissaoNormalizada[nomeCorreto]) comissaoNormalizada[nomeCorreto] = 0;
+                comissaoNormalizada[nomeCorreto] += rawComissao[key];
+                
+                colunasSet.add(nomeCorreto);
+                if(!totais[nomeCorreto]) totais[nomeCorreto] = 0;
+                totais[nomeCorreto] += rawComissao[key];
+            });
+
+            dadosProcessados.push({ id: docSnap.id, ...v, comissao: comissaoNormalizada });
+        });
+
+        // Ordena colunas (Empresa no final)
+        let colunas = Array.from(colunasSet).sort().filter(c => c !== "Empresa (Caixa)");
+        colunas.push("Empresa (Caixa)");
+
+        // SE TIVER FILTRO DE COLABORADOR, FILTRA AS COLUNAS
+        if(colaboradorFiltro) {
+            // Normaliza o filtro também
+            const filtroNorm = normalizarNome(colaboradorFiltro);
+            // Mantém apenas a coluna do colaborador e a data/cliente
+            colunas = [filtroNorm]; 
+        }
+
+        // Renderiza Cabeçalho Dinâmico (COM CHECKBOX MESTRE)
+        let htmlHeader = `<tr style="background:#1e293b; color:white;">
+            <th style="width:30px; text-align:center;"><input type="checkbox" onchange="toggleTodasComissoes(this)"></th>
+            <th>Status</th><th>Data</th><th>Cliente</th><th>Total</th>`;
+        colunas.forEach(c => htmlHeader += `<th>${c}</th>`);
+        htmlHeader += `</tr>`;
+        header.innerHTML = htmlHeader;
+
+        // Renderiza Linhas
+        tbody.innerHTML = "";
+        let encontrouAlgo = false;
+
+        dadosProcessados.forEach(v => {
+            // Se filtrado, verifica se esse colaborador ganhou algo nessa venda
+            if(colaboradorFiltro) {
+                const filtroNorm = normalizarNome(colaboradorFiltro);
+                if(!v.comissao[filtroNorm] || v.comissao[filtroNorm] === 0) return; // Pula venda se ele não ganhou nada
+            }
+
+            encontrouAlgo = true;
+            const dataStr = v.data?.toDate ? v.data.toDate().toLocaleDateString('pt-BR') : "--";
+            const isPago = v.comissao_paga === true;
+            const styleRow = isPago ? "text-decoration:line-through; color:#999; background:#f3f4f6;" : "border-bottom:1px solid #eee;";
+            const btnIcon = isPago ? "undo" : "check_circle";
+            const btnColor = isPago ? "#999" : "#16a34a";
+            const vendaJSON = encodeURIComponent(JSON.stringify(v));
+            
+            let htmlRow = `<tr style="${styleRow}">
+                <td style="text-align:center;"><input type="checkbox" class="check-comissao" value="${v.id}"></td>
+                <td style="text-align:center; min-width:80px;">
+                    <button onclick="alternarStatusComissao('${v.id}', ${isPago})" title="Marcar Pago" style="border:none; background:transparent; cursor:pointer; color:${btnColor}">
+                        <span class="material-icons">${btnIcon}</span>
+                    </button>
+                    <button onclick="mostrarDetalhesComissao('${vendaJSON}')" title="Ver Detalhes" style="border:none; background:transparent; cursor:pointer; color:#2563eb; margin-left:5px;">
+                        <span class="material-icons">visibility</span>
+                    </button>
+                </td>
+                <td style="font-size:12px;">${dataStr}</td>
+                <td>${v.cliente}</td>
+                <td>R$ ${v.total.toFixed(2)}</td>`;
+            
+            colunas.forEach(c => {
+                let val = v.comissao[c] || 0;
+                const cor = (c === 'Empresa (Caixa)') ? '#0369a1' : (isPago ? 'inherit' : '#16a34a');
+                htmlRow += `<td style="color:${cor};">R$ ${val.toFixed(2)}</td>`;
+            });
+            htmlRow += `</tr>`;
+            tbody.innerHTML += htmlRow;
+        });
+
+        if(!encontrouAlgo) {
+            tbody.innerHTML = "<tr><td colspan='9'>Nenhum registro encontrado para este período/filtro.</td></tr>";
+        } else {
+            // Renderiza Totais
+            let htmlTotal = `<tr style="background:#e0f2fe; font-weight:bold; border-top:2px solid #000;"><td colspan="5" style="text-align:right;">TOTAIS:</td>`;
+            colunas.forEach(c => {
+                htmlTotal += `<td style="color:${c==='Empresa (Caixa)'?'#0369a1':'#16a34a'}">R$ ${totais[c].toFixed(2)}</td>`;
+            });
+            htmlTotal += `</tr>`;
+            tbody.innerHTML += htmlTotal;
+        }
+
+    } catch(e) { console.error(e); alert("Erro ao gerar relatório: " + e.message); }
+}
+
+// ==========================================
+// IMPRESSÃO E RELATÓRIO DE ESTOQUE
+// ==========================================
 window.imprimirCupom = (nomeCliente, itens, total, desconto, data, vencimento, km, carro, placa) => {
     const printArea = document.querySelector('.print-container');
     const dataStr = data.toLocaleDateString('pt-BR');
-    
-    // LINHA EXTRA DO VEÍCULO E KM
     let infoVeiculo = "";
-    if(carro || placa || km) {
-        infoVeiculo = `
-            <tr>
-                <td colspan="5" style="border-bottom: 1px solid #000; font-size:11px;">
-                    <strong>VEÍCULO:</strong> ${carro || ''} (${placa || ''}) &nbsp;&nbsp; <strong>KM:</strong> ${km || '--'}
-                </td>
-            </tr>
-        `;
-    }
-
-    const totalLinhas = 10;
-    const itensVazios = totalLinhas - itens.length;
-    let linhasVaziasHTML = "";
-    for(let i = 0; i < itensVazios; i++) {
-        linhasVaziasHTML += `<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>`;
-    }
+    if(carro || placa || km) infoVeiculo = `<tr><td colspan="5" style="border-bottom:1px solid #000; font-size:11px;"><strong>VEÍCULO:</strong> ${carro||''} (${placa||''}) <strong>KM:</strong> ${km||'--'}</td></tr>`;
 
     let itensHTML = "";
-    let subtotal = 0;
     itens.forEach(item => {
-        subtotal += item.preco * item.qtd;
-        const cod = item.codigo_barras && item.codigo_barras !== "SEM GTIN" ? item.codigo_barras : (item.id.substring(0,6).toUpperCase());
-        itensHTML += `
-            <tr>
-                <td class="nota-center">${item.qtd}</td>
-                <td>${cod}</td>
-                <td>${item.nome}</td>
-                <td class="nota-right">${item.preco.toFixed(2)}</td>
-                <td class="nota-right">${(item.preco * item.qtd).toFixed(2)}</td>
-            </tr>
-        `;
+        const cod = item.codigo_barras && item.codigo_barras !== "SEM GTIN" ? item.codigo_barras : item.id.substring(0,6).toUpperCase();
+        itensHTML += `<tr><td class="nota-center">${item.qtd}</td><td>${cod}</td><td>${item.nome}</td><td class="nota-right">${item.preco.toFixed(2)}</td><td class="nota-right">${(item.preco*item.qtd).toFixed(2)}</td></tr>`;
     });
 
-    const gerarNotaHTML = (tituloVia) => `
-        <div class="cupom-via">
-            <div class="corte-texto" style="text-align: center; margin-bottom: 5px;">${tituloVia}</div>
-            <div class="nota-box">
-                <table class="nota-table" style="border-bottom: none;">
-                    <tr>
-                        <td colspan="5" style="text-align: center; border-bottom: 1px solid #000;">
-                            <strong>STIR AUTO PEÇAS</strong><br>
-                            CNPJ: 00.000.000/0001-00 - IE: ISENTO<br>
-                            Rua Exemplo, 123 - Centro - Cidade/UF<br>
-                            Tel: (XX) 99999-9999
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colspan="5" style="border-bottom: 1px solid #000;">
-                            <strong>DATA:</strong> ${dataStr} &nbsp;&nbsp;&nbsp; <strong>CLIENTE:</strong> ${nomeCliente}
-                        </td>
-                    </tr>
-                    ${infoVeiculo}
-                    <tr style="background: #eee;">
-                        <th style="width: 50px;" class="nota-center">QTD</th>
-                        <th style="width: 100px;">CÓDIGO</th>
-                        <th>DESCRIÇÃO DA PEÇA / SERVIÇO</th>
-                        <th style="width: 80px;" class="nota-right">V. UNIT</th>
-                        <th style="width: 80px;" class="nota-right">V. TOTAL</th>
-                    </tr>
-                </table>
-                
-                <table class="nota-table" style="border-top: none; border-bottom: none;">
-                    ${itensHTML}
-                    ${linhasVaziasHTML}
-                </table>
+    for(let i=itens.length; i<10; i++) itensHTML += `<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td></tr>`;
 
-                <table class="nota-table" style="border-top: 1px solid #000;">
+    const html = `
+        <div class="cupom-via">
+            <div class="nota-box">
+                <table class="nota-table" style="border-bottom:none;">
+                    <tr><td colspan="5" style="text-align:center; border-bottom:1px solid #000;"><strong>STIR AUTO PEÇAS</strong><br>CNPJ: 35.213.658/0001-66<br>Tel: (14) 99794-8553</td></tr>
+                    <tr><td colspan="5" style="border-bottom:1px solid #000;"><strong>DATA:</strong> ${dataStr} <strong>CLIENTE:</strong> ${nomeCliente}</td></tr>
+                    ${infoVeiculo}
+                    <tr style="background:#eee;"><th class="nota-center">QTD</th><th>CÓD</th><th>DESCRIÇÃO</th><th class="nota-right">UNIT</th><th class="nota-right">TOTAL</th></tr>
+                </table>
+                <table class="nota-table" style="border-top:none; border-bottom:none;">${itensHTML}</table>
+                <table class="nota-table" style="border-top:1px solid #000;">
                     <tr>
-                        <td colspan="3" style="vertical-align: top; height: 50px;">
-                            <strong>OBSERVAÇÕES:</strong><br>
-                            ${vencimento ? 'Vencimento: ' + vencimento.toLocaleDateString('pt-BR') : ''}
-                            <br><br>
-                            ASSINATURA: __________________________________________
-                        </td>
-                        <td colspan="2" style="vertical-align: top;">
-                            <div style="display: flex; justify-content: space-between;">
-                                <span>SUBTOTAL:</span> <span>R$ ${subtotal.toFixed(2)}</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between;">
-                                <span>DESCONTO:</span> <span>R$ ${desconto.toFixed(2)}</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; font-weight: bold; border-top: 1px solid #000; margin-top: 5px; padding-top: 5px;">
-                                <span>TOTAL:</span> <span>R$ ${total.toFixed(2)}</span>
-                            </div>
+                        <td colspan="3" style="vertical-align:top; height:50px;"><strong>OBS:</strong><br>${vencimento ? 'Vencimento: '+vencimento.toLocaleDateString('pt-BR') : ''}<br><br>ASS: __________________</td>
+                        <td colspan="2" style="vertical-align:top;">
+                            <div style="display:flex; justify-content:space-between;"><span>SUB:</span><span>R$ ${(total+desconto).toFixed(2)}</span></div>
+                            <div style="display:flex; justify-content:space-between;"><span>DESC:</span><span>R$ ${desconto.toFixed(2)}</span></div>
+                            <div style="display:flex; justify-content:space-between; font-weight:bold; border-top:1px solid #000;"><span>TOTAL:</span><span>R$ ${total.toFixed(2)}</span></div>
                         </td>
                     </tr>
                 </table>
             </div>
-        </div>
-    `;
+        </div>`;
+    
+    printArea.innerHTML = `${html}<div class="corte-linha">--- CORTE AQUI ---</div>${html}`;
+    setTimeout(() => window.print(), 500);
+}
 
-    printArea.innerHTML = `
-        ${gerarNotaHTML("(VIA DA LOJA)")}
-        <div class="corte-linha"><span class="corte-texto">CORTE AQUI</span></div>
-        ${gerarNotaHTML("(VIA DO CLIENTE)")}
-    `;
-
-    setTimeout(() => { window.print(); }, 500);
+window.recalcularDescontoPeloTotal = () => {
+    const inputTotal = document.getElementById('valor-total-input');
+    const novoTotal = parseFloat(inputTotal.value) || 0;
+    descontoGlobal = (novoTotal < subtotalVenda) ? subtotalVenda - novoTotal : 0;
+    inputTotal.value = novoTotal.toFixed(2);
+}
+window.atualizarQtd = (i, q) => { if(q>0) { window.carrinho[i].qtd = parseInt(q); window.atualizarTabela(); } }
+window.removerItem = (i) => { window.carrinho.splice(i, 1); window.atualizarTabela(); }
+window.gerarRelatorio = async () => { 
+    const tbody = document.querySelector('#tabela-relatorio tbody'); 
+    const thead = document.querySelector('#tabela-relatorio thead');
+    thead.innerHTML = `<tr><th>Peça</th><th>Local</th><th>Atual</th><th>Mínimo</th><th>Status</th></tr>`;
+    tbody.innerHTML = "<tr><td colspan='5'>Carregando...</td></tr>";
+    try {
+        const q = await getDocs(collection(db, "produtos")); 
+        tbody.innerHTML = "";
+        q.forEach((doc) => { 
+            const p = doc.data(); 
+            if (p.estoque_atual <= p.estoque_minimo && p.tipo !== 'servico') {
+                tbody.innerHTML += `<tr><td>${p.nome}</td><td>${p.localizacao||'-'}</td><td>${p.estoque_atual}</td><td>${p.estoque_minimo}</td><td style="color:red; font-weight:bold">REPOR</td></tr>`; 
+            }
+        });
+    } catch(e) { console.error(e); }
+}
+window.verDetalhesVenda = (jsonVenda) => { 
+    const venda = JSON.parse(decodeURIComponent(jsonVenda)); 
+    let d = new Date(); if(venda.data?.seconds) d = new Date(venda.data.seconds*1000); 
+    let v = null; if(venda.vencimento?.seconds) v = new Date(venda.vencimento.seconds*1000); 
+    window.imprimirCupom(venda.cliente, venda.itens, venda.total, venda.desconto||0, d, v, venda.km, venda.carro, venda.placa); 
 }
 
 window.addEventListener('DOMContentLoaded', () => { window.mostrarTela('dashboard'); });
