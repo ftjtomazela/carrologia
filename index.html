@@ -2,463 +2,267 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CARROLOGIA CENTER CAR</title>
+    <title>Cessna Mobile Flight</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' rel='stylesheet' />
     
-    <link rel="stylesheet" href="style.css">
+    <style>
+        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: sans-serif; touch-action: none; }
+        #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+        /* HUD AVIÃO */
+        #plane-hud {
+            position: absolute; bottom: 15%; left: 50%; 
+            width: 400px; height: 300px; transform: translateX(-50%);
+            z-index: 10; pointer-events: none;
+            display: flex; justify-content: center; align-items: flex-end;
+        }
+        /* Ajuste para celular */
+        @media (max-width: 600px) {
+            #plane-hud { width: 300px; height: 200px; bottom: 20%; }
+        }
+
+        #plane-img { width: 100%; will-change: transform; }
+        
+        #prop-blur {
+            position: absolute; bottom: 35%; left: 50%; width: 200px; height: 200px;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+            transform: translateX(-50%); border-radius: 50%; display: none;
+        }
+
+        /* CONTROLE MOBILE - SLIDER DE ACELERAÇÃO */
+        #mobile-controls {
+            position: absolute; left: 20px; bottom: 50px; height: 200px; width: 60px;
+            z-index: 50; display: none; /* Aparece só se tocar na tela */
+            flex-direction: column; align-items: center;
+        }
+        input[type=range][orient=vertical] {
+            writing-mode: bt-lr; /* IE */
+            -webkit-appearance: slider-vertical; /* Webkit */
+            width: 100%; height: 100%;
+        }
+        .label-thr { color: white; font-weight: bold; text-shadow: 1px 1px 0 #000; margin-bottom: 5px; }
+
+        /* DADOS DE VOO */
+        #ui-layer {
+            position: absolute; top: 10px; right: 10px;
+            background: rgba(0,0,0,0.6); padding: 10px;
+            color: white; border-radius: 8px; font-weight: bold;
+            font-family: monospace; font-size: 14px;
+            border-left: 4px solid cyan; display: flex; gap: 10px; z-index: 20;
+        }
+        .data-block { display: flex; flex-direction: column; justify-content: center; }
+        #alt-container { width: 10px; height: 80px; background: rgba(0,0,0,0.5); border: 1px solid #555; position: relative; display: flex; align-items: flex-end; }
+        #alt-bar { width: 100%; height: 0%; background: cyan; }
+
+        /* LOADING & START */
+        #overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #111; z-index: 100;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: white; text-align: center;
+        }
+        button { padding: 20px 40px; font-size: 18px; background: cyan; border: none; cursor: pointer; margin-top: 20px; font-weight: bold; color: black; border-radius: 50px;}
+        #instruction { color: #aaa; margin-top: 10px; font-size: 14px; max-width: 80%; }
+    </style>
 </head>
 <body>
 
-    <section id="tela-login">
-        <div class="login-box">
-            <img src="IMG_9034.png" alt="Logo Stir" class="login-logo">
-            <h2 style="color:#1e293b; margin-bottom:20px;">Acesso Restrito</h2>
-            <input type="email" id="login-email" placeholder="E-mail" style="margin-bottom:15px;">
-            <input type="password" id="login-senha" placeholder="Senha" style="margin-bottom:20px;">
-            <button class="btn-primary" onclick="fazerLogin()">ENTRAR NO SISTEMA</button>
-            <p id="msg-erro-login" style="color:red; margin-top:10px; font-size:14px;"></p>
-        </div>
-    </section>
+    <div id="map"></div>
 
-    <button id="btn-menu-mobile" onclick="alternarMenu()">
-        <span class="material-icons">menu</span>
-    </button>
-
-    <nav class="sidebar" id="sidebar-principal" style="display:none;">
-        <div class="logo">
-            <img src="IMG_9034.png" alt="Logo Stir Auto Peças" class="logo-img">
-        </div>
-        <button onclick="mostrarTela('dashboard')" class="active" id="btn-dashboard">
-            <span class="material-icons">dashboard</span> Visão Geral
-        </button>
-        <button onclick="mostrarTela('vendas')" id="btn-vendas">
-            <span class="material-icons">point_of_sale</span> PDV / Vendas
-        </button>
-        <button onclick="mostrarTela('financeiro')" id="btn-financeiro">
-            <span class="material-icons">payments</span> Contas a Pagar
-        </button>
-        <button onclick="mostrarTela('entrada')" id="btn-entrada">
-            <span class="material-icons">local_shipping</span> Entrada de Nota
-        </button>
-        <button onclick="mostrarTela('cadastro')" id="btn-cadastro">
-            <span class="material-icons">inventory_2</span> Cadastro de Itens
-        </button>
-        <button onclick="mostrarTela('equipe')" id="btn-equipe">
-            <span class="material-icons">groups</span> Equipe
-        </button>
-        <button onclick="mostrarTela('historico')" id="btn-historico">
-            <span class="material-icons">history</span> Movimentações
-        </button>
-        <button onclick="mostrarTela('clientes')" id="btn-clientes">
-            <span class="material-icons">people</span> Clientes
-        </button>
-        <button onclick="mostrarTela('relatorio')" id="btn-relatorio">
-            <span class="material-icons">assessment</span> Relatórios
-        </button>
-        
-        <div style="margin-top:auto; border-top:1px solid #334155; padding-top:10px;">
-            <button onclick="fazerLogout()" style="color:#ef4444;">
-                <span class="material-icons">logout</span> Sair
-            </button>
-        </div>
-    </nav>
-
-    <div id="overlay-menu" onclick="alternarMenu()"></div>
-
-    <main class="content" id="conteudo-principal" style="display:none;">
-        
-        <section id="tela-dashboard" class="tela">
-            <header>
-                <h1>Financeiro & Visão Geral</h1>
-                <button class="btn-secondary" onclick="carregarDashboard()">
-                    <span class="material-icons">refresh</span> Atualizar
-                </button>
-            </header>
-            
-            <div class="dashboard-grid">
-                <div class="card dash-card" style="border-left: 5px solid var(--success);">
-                    <h3>Entradas Hoje (Caixa)</h3>
-                    <div class="dash-value">R$ <span id="dash-total">0.00</span></div>
-                    <p><span id="dash-qtd">0</span> vendas realizadas</p>
-                </div>
-                <div class="card dash-card" style="border-left: 5px solid #f59e0b;">
-                    <h3>A Receber (Clientes)</h3>
-                    <div class="dash-value" style="color:#d97706">R$ <span id="dash-receber">0.00</span></div>
-                    <p><span id="dash-qtd-receber">0</span> pendentes</p>
-                </div>
-                <div class="card dash-card" style="border-left: 5px solid #ef4444;">
-                    <h3>A Pagar (Fornecedores)</h3>
-                    <div class="dash-value" style="color:#ef4444">R$ <span id="dash-pagar">0.00</span></div>
-                    <p><span id="dash-qtd-pagar">0</span> boletos abertos</p>
-                </div>
-            </div>
-
-            <div class="card" style="margin-top:20px;">
-                <h3 style="color:#b91c1c; margin-bottom:15px;">Clientes Devedores (A Receber)</h3>
-                <div style="overflow-x:auto;">
-                    <table class="pdv-table">
-                        <thead><tr><th>Vencimento</th><th>Cliente</th><th>Valor</th><th>Ação</th></tr></thead>
-                        <tbody id="lista-cobranca"></tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <section id="tela-financeiro" class="tela" style="display:none;">
-            <header>
-                <h1>Contas a Pagar (Fornecedores)</h1>
-                <button class="btn-secondary" onclick="carregarContasPagar()">
-                    <span class="material-icons">refresh</span> Atualizar
-                </button>
-            </header>
-
-            <div class="card" style="margin-bottom:20px; border:1px solid #e2e8f0;">
-                <h4>Adicionar Conta Manualmente</h4>
-                <div class="row" style="align-items:flex-end;">
-                    <div class="form-group" style="flex:2"><label>Fornecedor</label><input type="text" id="pagar-fornecedor"></div>
-                    <div class="form-group"><label>Nº Doc / Boleto</label><input type="text" id="pagar-doc"></div>
-                    <div class="form-group"><label>Vencimento</label><input type="date" id="pagar-venc"></div>
-                    <div class="form-group"><label>Valor (R$)</label><input type="number" id="pagar-valor"></div>
-                    <div class="form-group"><button class="btn-primary" onclick="salvarContaManual()">Adicionar</button></div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div style="overflow-x:auto;">
-                    <table class="pdv-table">
-                        <thead>
-                            <tr>
-                                <th>Vencimento</th>
-                                <th>Fornecedor</th>
-                                <th>Documento</th>
-                                <th>Valor</th>
-                                <th>Status</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="lista-contas-pagar"></tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <section id="tela-entrada" class="tela" style="display:none;">
-            <header><h1>Entrada de Nota (Importação XML)</h1></header>
-            
-            <div class="card" style="background:#f0f9ff; border:1px solid #bae6fd;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                        <h3 style="margin:0; color:#0369a1;">Carregar XML (NFe)</h3>
-                        <p style="margin:5px 0 0 0; font-size:12px; color:#0c4a6e;">Importa produtos e gera Contas a Pagar automaticamente</p>
-                    </div>
-                    <div>
-                        <input type="file" id="input-xml" accept=".xml" style="display:none;" onchange="importarXML(this)">
-                        <button class="btn-secondary" onclick="document.getElementById('input-xml').click()" style="background:#0284c7; color:white;">
-                            <span class="material-icons">upload_file</span> Escolher Arquivo
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card form-container">
-                <h4 style="color:var(--primary); margin-bottom:10px;">Dados da Nota</h4>
-                <div class="row">
-                    <div class="form-group"><label>Nº Nota</label><input type="text" id="ent-nota"></div>
-                    <div class="form-group" style="flex:2"><label>Fornecedor</label><input type="text" id="ent-fornecedor"></div>
-                    <div class="form-group"><label>Emissão</label><input type="date" id="ent-data"></div>
-                </div>
-
-                <div id="area-financeira-entrada" style="margin: 15px 0; background: #fff1f2; padding: 15px; border-radius: 8px; border: 1px solid #fda4af; display:none;">
-                    <h4 style="margin:0 0 10px 0; color:#be123c;">Financeiro (Boletos Identificados no XML)</h4>
-                    <ul id="lista-boletos-xml" style="list-style:none; padding:0; margin:0; font-size:14px; color:#881337;"></ul>
-                </div>
-
-                <h4 style="color:var(--primary); margin:20px 0 10px 0;">Produtos</h4>
-                <div class="search-bar-container">
-                    <span class="material-icons">search</span>
-                    <input type="text" id="busca-entrada" placeholder="Buscar produto manual..." onkeyup="filtrarProdutosEntrada()">
-                </div>
-                <div id="sugestoes-entrada" style="max-height:150px; overflow-y:auto; border:1px solid #ddd; display:none; margin-bottom:15px;"></div>
-
-                <div class="row" style="align-items:flex-end;">
-                    <div class="form-group" style="flex:2">
-                        <label>Produto</label>
-                        <input type="text" id="ent-prod-nome" disabled style="background:#f3f4f6;">
-                        <input type="hidden" id="ent-prod-id">
-                    </div>
-                    <div class="form-group"><label>Qtd</label><input type="number" id="ent-prod-qtd" min="1"></div>
-                    <div class="form-group"><label>Custo</label><input type="number" id="ent-prod-custo"></div>
-                    <div class="form-group"><button class="btn-secondary" onclick="adicionarItemEntrada()">+ Add</button></div>
-                </div>
-
-                <div style="overflow-x:auto; margin-top:15px;">
-                    <table class="pdv-table">
-                        <thead><tr><th>Cód</th><th>Produto</th><th>Qtd</th><th>Custo</th><th>Total</th><th></th></tr></thead>
-                        <tbody id="tabela-entrada"></tbody>
-                    </table>
-                </div>
-
-                <div style="margin-top:20px; text-align:right;">
-                    <h3 style="display:inline-block; margin-right:20px;">Total: R$ <span id="ent-total">0.00</span></h3>
-                    <button class="btn-primary" onclick="salvarEntrada()" style="width:auto; padding:15px 30px;">
-                        <span class="material-icons">save</span> LANÇAR NO SISTEMA
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <section id="tela-vendas" class="tela">
-            <div class="pdv-layout">
-                <div class="pdv-lista-container">
-                    <div class="pdv-lista-header"><span>ITEM</span><span>QTD</span><span>PREÇO</span><span></span></div>
-                    <div class="pdv-lista-scroll"><table class="pdv-table"><tbody id="tabela-carrinho"></tbody></table></div>
-                </div>
-                <div class="pdv-painel-controles">
-                    <div class="box-total">
-                        <small>Total a Pagar</small>
-                        <div style="display:flex; justify-content:flex-end; align-items:center;">
-                            <span style="font-size:32px; color:#4ade80; margin-right:5px;">R$</span>
-                            <input type="number" id="valor-total-input" value="0.00" onchange="recalcularDescontoPeloTotal()" style="width:150px;">
-                        </div>
-                        <small id="info-subtotal" style="font-size:12px; margin-top:5px; color:#64748b;">Subtotal: R$ 0.00</small>
-                    </div>
-                    
-                    <div class="box-input scan-area" style="position: relative; display: flex; gap: 10px; align-items: center; border: 1px solid #ddd; padding: 5px;">
-                        <input type="text" id="pdv-busca" placeholder="Bipe, Digite ou..." onkeyup="filtrarProdutosPDV()" autocomplete="off" style="flex:1; border: none; background: transparent; text-align: left; padding: 10px;">
-                        
-                        <button onclick="abrirCamera('pdv')" style="background: #2563eb; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-                            <span class="material-icons">photo_camera</span>
-                        </button>
-                        
-                        <div id="sugestoes-pdv" class="lista-sugestoes" style="display:none;"></div>
-                    </div>
-
-                    <div class="box-options" style="background: #f0f9ff; border: 1px solid #bae6fd;">
-                        <label>Cliente</label>
-                        <input type="text" id="pdv-busca-cliente" placeholder="Buscar Cliente..." onkeyup="filtrarClientesPDV()" style="margin-bottom:5px;">
-                        <select id="pdv-cliente-select" onchange="carregarVeiculosNoPDV()"><option value="consumidor">Consumidor Final</option></select>
-                        
-                        <label style="margin-top:10px;">Veículo & KM</label>
-                        <div style="display:flex; gap:5px;">
-                            <select id="pdv-veiculo-select" style="flex:1;">
-                                <option value="">Sem Veículo / Avulso</option>
-                            </select>
-                            <button onclick="adicionarCarroRapido()" class="btn-secondary" style="padding: 0 10px;" title="Novo Carro">+</button>
-                        </div>
-                        <input type="number" id="pdv-km" placeholder="KM Atual" style="margin-top:5px;" title="Quilometragem do Veículo">
-                    </div>
-
-                    <div class="box-options" style="background: #fff7ed; border:1px solid #fed7aa;">
-                        <label style="color:#c2410c;">Quem realizou Pneus/Balanceamento?</label>
-                        <div id="pdv-opcoes-equipe-pneu" style="display:flex; flex-direction:column; gap:8px; max-height:80px; overflow-y:auto;">
-                            <small>Carregando...</small>
-                        </div>
-                    </div>
-
-                    <div class="box-options">
-                        <label>Pagamento</label>
-                        <select id="pdv-forma-pagamento">
-                            <option value="dinheiro">💵 Dinheiro</option>
-                            <option value="pix">💠 PIX</option>
-                            <option value="credito">💳 Crédito</option>
-                            <option value="debito">💳 Débito</option>
-                            <option value="prazo" style="color:red; font-weight:bold;">📅 A Prazo (30 Dias)</option>
-                        </select>
-                    </div>
-                    <button class="btn-finalizar-pro" onclick="finalizarVenda()">FINALIZAR</button>
-                </div>
-            </div>
-        </section>
-
-        <section id="tela-historico" class="tela" style="display:none;">
-            <header>
-                <h1>Histórico de Movimentações</h1>
-                <button class="btn-secondary" onclick="carregarHistorico('vendas')">
-                    <span class="material-icons">refresh</span> Atualizar
-                </button>
-            </header>
-            <div style="display:flex; gap:10px; margin-bottom:20px;">
-                <button class="btn-secondary" onclick="carregarHistorico('vendas')" style="flex:1; justify-content:center;">VENDAS (SAÍDAS)</button>
-                <button class="btn-secondary" onclick="carregarHistorico('entradas')" style="flex:1; justify-content:center; background:#0e7490;">COMPRAS (ENTRADAS)</button>
-            </div>
-            <div class="search-bar-container">
-                <span class="material-icons">search</span>
-                <input type="text" id="busca-historico" placeholder="Filtrar..." onkeyup="filtrarHistorico()">
-            </div>
-            <div class="card">
-                <div style="overflow-x:auto;">
-                    <table id="tabela-historico"><thead id="head-historico"></thead><tbody id="lista-historico"></tbody></table>
-                </div>
-            </div>
-        </section>
-
-        <section id="tela-cadastro" class="tela" style="display:none;">
-            <header><h1>Cadastro de Itens e Serviços</h1></header>
-            <div class="card form-container">
-                <div style="margin-bottom: 20px; padding-bottom:15px; border-bottom:1px solid #eee;">
-                    <label style="margin-right: 20px; font-weight: bold; cursor: pointer;">
-                        <input type="radio" name="tipo_produto" value="peca" checked onchange="alternarCamposCadastro()"> 📦 Peça Física
-                    </label>
-                    <label style="font-weight: bold; cursor: pointer;">
-                        <input type="radio" name="tipo_produto" value="servico" onchange="alternarCamposCadastro()"> 🔧 Serviço / Mão de Obra
-                    </label>
-                </div>
-                <div class="row">
-                    <div class="form-group campo-peca" style="position:relative;">
-                        <label>Cód. Barras</label>
-                        <div style="display:flex; gap:5px;">
-                            <input type="text" id="cad-codigo">
-                            <button onclick="abrirCamera('cadastro')" style="background: #2563eb; color: white; border: none; border-radius: 6px; width: 45px; cursor: pointer;">
-                                <span class="material-icons">photo_camera</span>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="form-group campo-peca"><label>OEM</label><input type="text" id="cad-oem"></div>
-                    <div class="form-group campo-peca"><label>NCM (Fiscal)</label><input type="text" id="cad-ncm" placeholder="Ex: 8708.99.90"></div>
-                </div>
-                <div class="row">
-                    <div class="form-group" style="flex:2;"><label>Nome / Descrição do Serviço</label><input type="text" id="cad-nome"></div>
-                    <div class="form-group"><label>Preço Venda</label><input type="number" id="cad-preco"></div>
-                </div>
-                <div class="row">
-                    <div class="form-group"><label>Custo (Opcional)</label><input type="number" id="cad-custo"></div>
-                    <div class="form-group campo-servico" style="display:none; flex:2;"><label>Cód. Serviço (LC 116)</label><input type="text" id="cad-cod-servico" placeholder="Ex: 14.01 - Manutenção"></div>
-                    <div class="form-group campo-servico" style="display:none; flex:2; border:1px solid #16a34a; padding:5px; border-radius:5px;">
-                        <label style="color:#166534; font-weight:bold;">Regra de Comissão</label>
-                        <select id="cad-cat-comissao">
-                            <option value="mecanica">🔧 Mecânica (Evandro/Tico/Gustavo)</option>
-                            <option value="pneu">🛞 Pneu e Balanceamento (Equipe)</option>
-                            <option value="alinhamento">📐 Alinhamento (Evandro)</option>
-                            <option value="outros">🚫 Sem Comissão Extra</option>
-                        </select>
-                    </div>
-                    <div class="form-group campo-peca"><label>Marca</label><input type="text" id="cad-marca"></div>
-                </div>
-                <div class="row campo-peca">
-                    <div class="form-group"><label>Estoque</label><input type="number" id="cad-estoque"></div>
-                    <div class="form-group"><label>Mínimo</label><input type="number" id="cad-minimo"></div>
-                    <div class="form-group"><label>Local</label><input type="text" id="cad-local"></div>
-                </div>
-                <div class="row">
-                    <div class="form-group" style="flex:2;"><label>Carros Compatíveis</label><input type="text" id="cad-carros"></div>
-                    <div class="form-group campo-peca"><label>Fornecedor</label><input type="text" id="cad-fornecedor"></div>
-                </div>
-                <button class="btn-primary" onclick="salvarProduto()" style="margin-top:10px;">Salvar Item</button>
-                <hr>
-                <input type="text" id="busca-estoque" placeholder="Buscar no sistema..." onkeyup="filtrarEstoque()" style="margin-bottom:10px;">
-                <div style="overflow-x:auto;"><table id="tabela-estoque"><thead><tr><th>Item</th><th>Preço</th><th>Qtd/Tipo</th><th>Ação</th></tr></thead><tbody id="lista-produtos-estoque"></tbody></table></div>
-            </div>
-        </section>
-
-        <section id="tela-equipe" class="tela" style="display:none;">
-            <header><h1>Gestão de Equipe</h1></header>
-            <div class="card form-container">
-                <div class="row">
-                    <div class="form-group" style="flex:2"><label>Nome Completo</label><input type="text" id="eq-nome"></div>
-                    <div class="form-group">
-                        <label>Cargo / Função</label>
-                        <select id="eq-cargo">
-                            <option value="gestor">Gestor / Dono</option>
-                            <option value="mecanico">Mecânico</option>
-                            <option value="auxiliar">Auxiliar</option>
-                            <option value="borracheiro">Borracheiro / Pneus</option>
-                        </select>
-                    </div>
-                    <div class="form-group"><label>Telefone / PIX</label><input type="text" id="eq-fone"></div>
-                </div>
-                <button class="btn-primary" onclick="salvarColaborador()">Cadastrar Colaborador</button>
-            </div>
-            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
-            <h3>Equipe Ativa</h3>
-            <div class="card"><div style="overflow-x:auto;"><table id="tabela-equipe" class="pdv-table"><thead><tr><th>Nome</th><th>Cargo</th><th>Contato</th><th>Ação</th></tr></thead><tbody id="lista-equipe"></tbody></table></div></div>
-        </section>
-
-        <section id="tela-clientes" class="tela" style="display:none;">
-            <header><h1>Gestão de Clientes (Multi-Veículos)</h1></header>
-            <div class="card form-container">
-                <h4 style="color:var(--primary); margin-bottom:10px;">Dados Pessoais</h4>
-                <div class="row">
-                    <div class="form-group" style="flex:2"><label>Nome Completo / Razão Social</label><input type="text" id="cli-nome"></div>
-                    <div class="form-group"><label>Celular / Zap</label><input type="text" id="cli-fone"></div>
-                </div>
-                <div class="row">
-                    <div class="form-group"><label>CPF / CNPJ</label><input type="text" id="cli-doc"></div>
-                    <div class="form-group"><label>Email</label><input type="email" id="cli-email"></div>
-                </div>
-                <h4 style="color:var(--primary); margin:20px 0 10px 0;">Endereço</h4>
-                <div class="row">
-                    <div class="form-group"><label>CEP</label><input type="text" id="cli-cep"></div>
-                    <div class="form-group" style="flex:2"><label>Endereço</label><input type="text" id="cli-endereco"></div>
-                </div>
-
-                <h4 style="color:var(--primary); margin:20px 0 10px 0;">Garagem (Adicionar Veículos)</h4>
-                <div class="row" style="align-items:flex-end; background:#f8fafc; padding:10px; border-radius:8px;">
-                    <div class="form-group"><label>Modelo</label><input type="text" id="tmp-modelo" placeholder="Ex: Gol G5"></div>
-                    <div class="form-group"><label>Placa</label><input type="text" id="tmp-placa" placeholder="ABC-1234"></div>
-                    <div class="form-group"><label>Ano</label><input type="text" id="tmp-ano"></div>
-                    <div class="form-group"><button class="btn-secondary" onclick="addVeiculoNaLista()">+ Incluir Carro</button></div>
-                </div>
-                <ul id="lista-veiculos-cadastro" style="margin:10px 0; padding:0; list-style:none;"></ul>
-
-                <button class="btn-primary" onclick="salvarCliente()" style="margin-top:20px;">Salvar Cliente com Veículos</button>
-            </div>
-
-            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
-            <h3>Base de Clientes</h3>
-            <div class="search-bar-container">
-                <span class="material-icons">search</span>
-                <input type="text" id="busca-clientes" placeholder="Buscar Cliente..." onkeyup="filtrarClientes()">
-            </div>
-            <div class="card">
-                <div style="overflow-x:auto;">
-                    <table id="tabela-clientes"><thead><tr><th>Nome</th><th>Contato</th><th>Veículos</th><th>Ação</th></tr></thead><tbody id="lista-clientes"></tbody></table>
-                </div>
-            </div>
-        </section>
-
-        <section id="tela-relatorio" class="tela" style="display:none;">
-            <header>
-                <h1>Relatórios Gerenciais</h1>
-                <div><button class="btn-secondary" onclick="gerarRelatorio()">📉 Estoque Baixo</button></div>
-            </header>
-            <div class="card" style="background:#fff7ed; border:1px solid #fed7aa; margin-top:10px;">
-                <h4 style="color:#c2410c; margin-top:0;">Extrato de Comissões</h4>
-                <div class="row" style="align-items:flex-end; gap:10px;">
-                    <div class="form-group"><label>Início</label><input type="date" id="rel-inicio"></div>
-                    <div class="form-group"><label>Fim</label><input type="date" id="rel-fim"></div>
-                    <div class="form-group" style="flex:2"><label>Colaborador</label><select id="rel-colaborador"><option value="todos">Todos</option></select></div>
-                    <div class="form-group"><button class="btn-primary" onclick="gerarRelatorioComissoes()"><span class="material-icons">search</span> Filtrar</button></div>
-                </div>
-                <div style="margin-top: 15px; border-top:1px solid #fed7aa; padding-top:10px; display:flex; justify-content:flex-end;">
-                    <button class="btn-secondary" onclick="excluirRelatoriosSelecionados()" style="background:#ef4444; color:white; width:auto;"><span class="material-icons" style="margin-right:5px;">delete_sweep</span> Excluir Selecionados</button>
-                </div>
-            </div>
-            <div class="card"><div style="overflow-x:auto;"><table id="tabela-relatorio"><thead><tr><th>Peça</th><th>Local</th><th>Atual</th><th>Mínimo</th><th>Status</th></tr></thead><tbody></tbody></table></div></div>
-        </section>
-
-    </main>
-
-    <div id="modal-detalhes" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" onclick="document.getElementById('modal-detalhes').style.display='none'">&times;</span>
-            <div id="conteudo-modal-detalhes"></div>
-        </div>
+    <div id="plane-hud">
+        <div id="prop-blur"></div>
+        <img id="plane-img" src="https://i.imgur.com/3N40j5c.png">
     </div>
 
-    <div id="modal-camera" class="modal" style="display:none;">
-        <div class="modal-content" style="text-align:center;">
-            <h3>Escaneando Código de Barras...</h3>
-            <div id="leitor-camera" style="width: 100%; min-height: 300px;"></div>
-            <button class="btn-secondary" onclick="fecharCamera()" style="margin-top:15px; background: #ef4444; width:100%; justify-content:center;">Fechar Câmera</button>
-        </div>
+    <div id="mobile-controls">
+        <div class="label-thr">THR</div>
+        <input type="range" id="throttle-slider" min="0" max="100" value="0" orient="vertical">
     </div>
 
-    <div id="cupom-impressao" class="print-container"></div>
-    <script type="module" src="app.js"></script>
+    <div id="ui-layer">
+        <div class="data-block">
+            SPD: <span id="val-spd" style="color:cyan">0</span><br>
+            ALT: <span id="val-alt" style="color:lime">0</span>
+        </div>
+        <div id="alt-container"><div id="alt-bar"></div></div>
+    </div>
+
+    <div id="overlay">
+        <h1 style="color:cyan">FLIGHT SIM MOBILE</h1>
+        <p id="status-txt">Carregando satélite...</p>
+        <button id="btn-start" onclick="requestMobilePermission()" disabled>AGUARDE...</button>
+        <p id="instruction">No iPhone: Use modo Paisagem (Deitado).<br>Incline para pilotar.</p>
+    </div>
+
+    <script>
+        // CONFIG
+        const START_LNG = -47.998; const START_LAT = -23.008; const START_HEADING = 300;
+        mapboxgl.accessToken = 'pk.eyJ1IjoiZnRqZGNhbHYiLCJhIjoiY21rY3ZlZXh4MDVzMzNlb3I0djI5NjkwaSJ9.epfqpPvDDLYINXoBJO7iMw'; 
+
+        const map = new mapboxgl.Map({
+            container: 'map', style: 'mapbox://styles/mapbox/satellite-streets-v12',
+            center: [START_LNG, START_LAT], zoom: 17, pitch: 75, bearing: START_HEADING,
+            antialias: true, interactive: false 
+        });
+
+        map.on('load', () => {
+            map.addSource('mapbox-dem', { 'type': 'raster-dem', 'url': 'mapbox://mapbox.mapbox-terrain-dem-v1', 'tileSize': 512, 'maxzoom': 14 });
+            map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.0 });
+            map.addLayer({ 'id': 'sky', 'type': 'sky', 'paint': { 'sky-type': 'atmosphere', 'sky-atmosphere-sun': [0.0, 90.0], 'sky-atmosphere-sun-intensity': 15 } });
+
+            document.getElementById('status-txt').innerText = "PRONTO PARA DECOLAR";
+            const btn = document.getElementById('btn-start');
+            btn.innerText = "INICIAR VOO"; btn.disabled = false;
+        });
+
+        // INPUTS
+        let sim = { lng: START_LNG, lat: START_LAT, head: START_HEADING, spd: 0, alt: 0, thr: 0, pitch: 0, roll: 0, ground: true };
+        let mobileTilt = { pitch: 0, roll: 0 };
+        let isMobile = false;
+
+        // 1. SOLICITAÇÃO DE PERMISSÃO IOS (Obrigatório)
+        function requestMobilePermission() {
+            // Mostra o slider se for mobile
+            if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){
+                isMobile = true;
+                document.getElementById('mobile-controls').style.display = 'flex';
+            }
+
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                // iOS 13+ precisa disso
+                DeviceOrientationEvent.requestPermission()
+                    .then(response => {
+                        if (response === 'granted') {
+                            window.addEventListener('deviceorientation', handleOrientation);
+                            startSim();
+                        } else {
+                            alert("Permissão negada. O giroscópio não funcionará.");
+                            startSim(); // Inicia mesmo sem sensor
+                        }
+                    })
+                    .catch(console.error);
+            } else {
+                // Android ou iOS antigo
+                window.addEventListener('deviceorientation', handleOrientation);
+                startSim();
+            }
+        }
+
+        function handleOrientation(event) {
+            // Ajuste para modo paisagem (Landscape)
+            // Beta: Inclinação frente/trás (-180 a 180)
+            // Gamma: Inclinação esq/dir (-90 a 90)
+            
+            let pitchRaw = event.beta; 
+            let rollRaw = event.gamma;
+
+            // Calibração simples (assumindo que o usuário segura o cel inclinado a 45 graus)
+            // Se o usuário estiver segurando confortável, beta é ~45.
+            // Queremos que 45 seja o "centro".
+            
+            if(window.innerHeight < window.innerWidth) {
+                // Modo Paisagem
+                mobileTilt.pitch = (pitchRaw) * 2; // Sensibilidade
+                if(mobileTilt.pitch > 40) mobileTilt.pitch = 40;
+                if(mobileTilt.pitch < -40) mobileTilt.pitch = -40;
+
+                mobileTilt.roll = rollRaw * 2; 
+            }
+        }
+
+        function startSim() { document.getElementById('overlay').style.display = 'none'; loop(); }
+
+        function physics() {
+            // INPUT HÍBRIDO: Aceita Joystick OU Celular
+            let inputPitch = 0;
+            let inputRoll = 0;
+            let inputThr = -1;
+
+            // A. Tenta ler Gamepad (PC)
+            const gps = navigator.getGamepads ? navigator.getGamepads() : [];
+            const gp = gps[0];
+            if (gp) {
+                if(Math.abs(gp.axes[1]) > 0.05) inputPitch = gp.axes[1] * 25;
+                if(Math.abs(gp.axes[0]) > 0.05) inputRoll = gp.axes[0] * 30;
+                let axThr = gp.axes[2] ?? gp.axes[5] ?? gp.axes[6] ?? -1;
+                if(axThr > -1.1) inputThr = ((axThr * -1) + 1) / 2 * 100;
+            }
+
+            // B. Tenta ler Mobile (Se estiver ativo)
+            if(isMobile) {
+                // O slider HTML controla a aceleração
+                let sliderVal = document.getElementById('throttle-slider').value;
+                inputThr = parseFloat(sliderVal);
+                
+                // Giroscópio
+                inputPitch = mobileTilt.pitch; 
+                inputRoll = mobileTilt.roll;
+            }
+
+            // APLICAÇÃO DOS INPUTS
+            sim.pitch += (inputPitch - sim.pitch) * 0.1;
+            sim.roll += (inputRoll - sim.roll) * 0.1;
+            
+            // Controle de Potência
+            if(inputThr > -1) {
+                sim.thr = inputThr;
+            }
+
+            // Atualiza Rotação (Heading) baseado no Roll
+            if(Math.abs(sim.roll) > 2) {
+                sim.head += (sim.roll / 40) * (sim.ground ? 0.5 : 1.5);
+            }
+
+            // FÍSICA DE VOO
+            let targetSpd = sim.thr * 1.5;
+            if(sim.ground) targetSpd *= 0.8; 
+            if(!sim.ground) { if(sim.pitch > 5) targetSpd -= 10; if(sim.pitch < -5) targetSpd += 20; }
+            sim.spd += (targetSpd - sim.spd) * 0.04;
+
+            if(sim.ground) {
+                sim.alt = 0;
+                if(sim.spd > 50 && sim.pitch > 5) { sim.ground = false; sim.alt += 5; }
+            } else {
+                let climbRate = (sim.pitch * 0.5) * (sim.spd / 80);
+                if(sim.spd < 45) climbRate *= 0.2;
+                sim.alt += climbRate;
+                if(sim.alt <= 0) { sim.alt = 0; sim.ground = true; }
+            }
+
+            if(sim.spd > 1) {
+                const dist = sim.spd * 0.000005; const rad = (sim.head * Math.PI) / 180;
+                sim.lng += Math.sin(rad) * dist; sim.lat += Math.cos(rad) * dist;
+            }
+        }
+
+        function draw() {
+            let targetZoom = 17 - (sim.alt / 800); if(targetZoom < 13) targetZoom = 13;
+            let targetPitch = Math.max(65, 75 - (sim.alt / 1000));
+
+            map.jumpTo({
+                center: [sim.lng, sim.lat], bearing: sim.head, pitch: targetPitch, zoom: targetZoom,
+                duration: 0, animate: false 
+            });
+
+            const plane = document.getElementById('plane-img');
+            const prop = document.getElementById('prop-blur');
+            
+            let visualPitch = -sim.pitch; 
+            plane.style.transform = `rotateZ(${sim.roll}deg) translateY(${visualPitch}px)`;
+            
+            if(sim.thr > 10) { prop.style.display = 'block'; prop.style.opacity = 0.6 - (sim.thr/200); } 
+            else { prop.style.display = 'none'; }
+
+            document.getElementById('val-spd').innerText = Math.floor(sim.spd);
+            document.getElementById('val-alt').innerText = Math.floor(sim.alt);
+            let altPercent = Math.min(100, (sim.alt / 3000) * 100);
+            document.getElementById('alt-bar').style.height = altPercent + "%";
+        }
+
+        function loop() { physics(); draw(); requestAnimationFrame(loop); }
+    </script>
 </body>
 </html>
