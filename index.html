@@ -2,14 +2,18 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Cessna Mobile Flight</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cessna Simulator</title>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
     
     <script src='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js'></script>
     <link href='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' rel='stylesheet' />
     
     <style>
-        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: sans-serif; touch-action: none; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; touch-action: none; }
         #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 
         /* HUD AVIÃO */
@@ -19,7 +23,6 @@
             z-index: 10; pointer-events: none;
             display: flex; justify-content: center; align-items: flex-end;
         }
-        /* Ajuste para celular */
         @media (max-width: 600px) {
             #plane-hud { width: 300px; height: 200px; bottom: 20%; }
         }
@@ -32,39 +35,49 @@
             transform: translateX(-50%); border-radius: 50%; display: none;
         }
 
-        /* CONTROLE MOBILE - SLIDER DE ACELERAÇÃO */
+        /* SLIDER DE ACELERAÇÃO */
         #mobile-controls {
-            position: absolute; left: 20px; bottom: 50px; height: 200px; width: 60px;
-            z-index: 50; display: none; /* Aparece só se tocar na tela */
+            position: absolute; left: 20px; bottom: 50px; height: 250px; width: 80px;
+            z-index: 50; display: none;
             flex-direction: column; align-items: center;
         }
         input[type=range][orient=vertical] {
-            writing-mode: bt-lr; /* IE */
-            -webkit-appearance: slider-vertical; /* Webkit */
+            writing-mode: bt-lr; 
+            -webkit-appearance: slider-vertical;
             width: 100%; height: 100%;
         }
         .label-thr { color: white; font-weight: bold; text-shadow: 1px 1px 0 #000; margin-bottom: 5px; }
 
-        /* DADOS DE VOO */
+        /* BOTÃO FULLSCREEN EXTRA */
+        #btn-fs {
+            position: absolute; top: 20px; left: 20px; z-index: 60;
+            background: rgba(0,0,0,0.5); color: white; border: 1px solid white;
+            padding: 5px 10px; font-size: 12px; cursor: pointer; display: none;
+        }
+
+        /* DADOS */
         #ui-layer {
             position: absolute; top: 10px; right: 10px;
             background: rgba(0,0,0,0.6); padding: 10px;
             color: white; border-radius: 8px; font-weight: bold;
             font-family: monospace; font-size: 14px;
             border-left: 4px solid cyan; display: flex; gap: 10px; z-index: 20;
+            /* Garante que não fique embaixo do notch no iPhone */
+            padding-top: env(safe-area-inset-top); 
+            padding-right: env(safe-area-inset-right);
         }
         .data-block { display: flex; flex-direction: column; justify-content: center; }
         #alt-container { width: 10px; height: 80px; background: rgba(0,0,0,0.5); border: 1px solid #555; position: relative; display: flex; align-items: flex-end; }
         #alt-bar { width: 100%; height: 0%; background: cyan; }
 
-        /* LOADING & START */
+        /* LOADING */
         #overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: #111; z-index: 100;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             color: white; text-align: center;
         }
-        button { padding: 20px 40px; font-size: 18px; background: cyan; border: none; cursor: pointer; margin-top: 20px; font-weight: bold; color: black; border-radius: 50px;}
+        button.start-btn { padding: 20px 40px; font-size: 18px; background: cyan; border: none; cursor: pointer; margin-top: 20px; font-weight: bold; color: black; border-radius: 50px;}
         #instruction { color: #aaa; margin-top: 10px; font-size: 14px; max-width: 80%; }
     </style>
 </head>
@@ -72,13 +85,15 @@
 
     <div id="map"></div>
 
+    <button id="btn-fs" onclick="forceFullScreen()">TELA CHEIA</button>
+
     <div id="plane-hud">
         <div id="prop-blur"></div>
         <img id="plane-img" src="https://i.imgur.com/3N40j5c.png">
     </div>
 
     <div id="mobile-controls">
-        <div class="label-thr">THR</div>
+        <div class="label-thr">POTÊNCIA</div>
         <input type="range" id="throttle-slider" min="0" max="100" value="0" orient="vertical">
     </div>
 
@@ -91,10 +106,10 @@
     </div>
 
     <div id="overlay">
-        <h1 style="color:cyan">FLIGHT SIM MOBILE</h1>
-        <p id="status-txt">Carregando satélite...</p>
-        <button id="btn-start" onclick="requestMobilePermission()" disabled>AGUARDE...</button>
-        <p id="instruction">No iPhone: Use modo Paisagem (Deitado).<br>Incline para pilotar.</p>
+        <h1 style="color:cyan">CESSNA SIM</h1>
+        <p id="status-txt">Calibrando...</p>
+        <button id="btn-start" class="start-btn" onclick="initSystem()" disabled>AGUARDE...</button>
+        <p id="instruction">DICA: Para Full Screen no iPhone, use "Adicionar à Tela de Início".</p>
     </div>
 
     <script>
@@ -113,75 +128,77 @@
             map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.0 });
             map.addLayer({ 'id': 'sky', 'type': 'sky', 'paint': { 'sky-type': 'atmosphere', 'sky-atmosphere-sun': [0.0, 90.0], 'sky-atmosphere-sun-intensity': 15 } });
 
-            document.getElementById('status-txt').innerText = "PRONTO PARA DECOLAR";
+            document.getElementById('status-txt').innerText = "PRONTO";
             const btn = document.getElementById('btn-start');
-            btn.innerText = "INICIAR VOO"; btn.disabled = false;
+            btn.innerText = "DECOLAR (FULL SCREEN)"; btn.disabled = false;
         });
+
+        // FULL SCREEN LOGIC
+        function forceFullScreen() {
+            let elem = document.documentElement;
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen();
+            } else if (elem.webkitRequestFullscreen) { /* Safari */
+                elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) { /* IE11 */
+                elem.msRequestFullscreen();
+            }
+        }
 
         // INPUTS
         let sim = { lng: START_LNG, lat: START_LAT, head: START_HEADING, spd: 0, alt: 0, thr: 0, pitch: 0, roll: 0, ground: true };
         let mobileTilt = { pitch: 0, roll: 0 };
         let isMobile = false;
 
-        // 1. SOLICITAÇÃO DE PERMISSÃO IOS (Obrigatório)
+        function initSystem() {
+            // Tenta ativar Fullscreen ao clicar em Iniciar
+            forceFullScreen();
+            requestMobilePermission();
+        }
+
         function requestMobilePermission() {
-            // Mostra o slider se for mobile
             if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){
                 isMobile = true;
                 document.getElementById('mobile-controls').style.display = 'flex';
+                document.getElementById('btn-fs').style.display = 'block'; // Mostra botão extra caso o auto falhe
             }
 
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                // iOS 13+ precisa disso
                 DeviceOrientationEvent.requestPermission()
                     .then(response => {
                         if (response === 'granted') {
                             window.addEventListener('deviceorientation', handleOrientation);
-                            startSim();
+                            startLoop();
                         } else {
-                            alert("Permissão negada. O giroscópio não funcionará.");
-                            startSim(); // Inicia mesmo sem sensor
+                            alert("Sem permissão de giroscópio.");
+                            startLoop();
                         }
                     })
                     .catch(console.error);
             } else {
-                // Android ou iOS antigo
                 window.addEventListener('deviceorientation', handleOrientation);
-                startSim();
+                startLoop();
             }
         }
 
         function handleOrientation(event) {
-            // Ajuste para modo paisagem (Landscape)
-            // Beta: Inclinação frente/trás (-180 a 180)
-            // Gamma: Inclinação esq/dir (-90 a 90)
-            
             let pitchRaw = event.beta; 
             let rollRaw = event.gamma;
 
-            // Calibração simples (assumindo que o usuário segura o cel inclinado a 45 graus)
-            // Se o usuário estiver segurando confortável, beta é ~45.
-            // Queremos que 45 seja o "centro".
-            
             if(window.innerHeight < window.innerWidth) {
-                // Modo Paisagem
-                mobileTilt.pitch = (pitchRaw) * 2; // Sensibilidade
+                mobileTilt.pitch = (pitchRaw) * 2;
+                mobileTilt.roll = -rollRaw * 2; // Invertido para realismo
+                
                 if(mobileTilt.pitch > 40) mobileTilt.pitch = 40;
                 if(mobileTilt.pitch < -40) mobileTilt.pitch = -40;
-
-                mobileTilt.roll = rollRaw * 2; 
             }
         }
 
-        function startSim() { document.getElementById('overlay').style.display = 'none'; loop(); }
+        function startLoop() { document.getElementById('overlay').style.display = 'none'; loop(); }
 
         function physics() {
-            // INPUT HÍBRIDO: Aceita Joystick OU Celular
-            let inputPitch = 0;
-            let inputRoll = 0;
-            let inputThr = -1;
+            let inputPitch = 0; let inputRoll = 0; let inputThr = -1;
 
-            // A. Tenta ler Gamepad (PC)
             const gps = navigator.getGamepads ? navigator.getGamepads() : [];
             const gp = gps[0];
             if (gp) {
@@ -191,49 +208,44 @@
                 if(axThr > -1.1) inputThr = ((axThr * -1) + 1) / 2 * 100;
             }
 
-            // B. Tenta ler Mobile (Se estiver ativo)
             if(isMobile) {
-                // O slider HTML controla a aceleração
                 let sliderVal = document.getElementById('throttle-slider').value;
                 inputThr = parseFloat(sliderVal);
-                
-                // Giroscópio
                 inputPitch = mobileTilt.pitch; 
                 inputRoll = mobileTilt.roll;
             }
 
-            // APLICAÇÃO DOS INPUTS
-            sim.pitch += (inputPitch - sim.pitch) * 0.1;
-            sim.roll += (inputRoll - sim.roll) * 0.1;
+            // Inércia (Peso)
+            sim.pitch += (inputPitch - sim.pitch) * 0.05;
+            sim.roll += (inputRoll - sim.roll) * 0.05;
             
-            // Controle de Potência
-            if(inputThr > -1) {
-                sim.thr = inputThr;
-            }
+            if(inputThr > -1) sim.thr = inputThr;
 
-            // Atualiza Rotação (Heading) baseado no Roll
+            // Curva Suave
             if(Math.abs(sim.roll) > 2) {
-                sim.head += (sim.roll / 40) * (sim.ground ? 0.5 : 1.5);
+                sim.head += (sim.roll / 60) * (sim.ground ? 0.5 : 1.0);
             }
 
-            // FÍSICA DE VOO
-            let targetSpd = sim.thr * 1.5;
+            // Velocidade Realista
+            let targetSpd = sim.thr * 1.2;
             if(sim.ground) targetSpd *= 0.8; 
-            if(!sim.ground) { if(sim.pitch > 5) targetSpd -= 10; if(sim.pitch < -5) targetSpd += 20; }
-            sim.spd += (targetSpd - sim.spd) * 0.04;
+            if(!sim.ground) { if(sim.pitch > 5) targetSpd -= 5; if(sim.pitch < -5) targetSpd += 15; }
+            sim.spd += (targetSpd - sim.spd) * 0.02;
 
             if(sim.ground) {
                 sim.alt = 0;
                 if(sim.spd > 50 && sim.pitch > 5) { sim.ground = false; sim.alt += 5; }
             } else {
                 let climbRate = (sim.pitch * 0.5) * (sim.spd / 80);
-                if(sim.spd < 45) climbRate *= 0.2;
+                if(sim.spd < 40) climbRate -= 2;
                 sim.alt += climbRate;
                 if(sim.alt <= 0) { sim.alt = 0; sim.ground = true; }
             }
 
             if(sim.spd > 1) {
-                const dist = sim.spd * 0.000005; const rad = (sim.head * Math.PI) / 180;
+                // Velocidade de mapa lenta (escala real)
+                const dist = sim.spd * 0.000002; 
+                const rad = (sim.head * Math.PI) / 180;
                 sim.lng += Math.sin(rad) * dist; sim.lat += Math.cos(rad) * dist;
             }
         }
