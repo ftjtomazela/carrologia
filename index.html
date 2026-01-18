@@ -1,280 +1,136 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <title>Cessna Simulator</title>
-    
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#000000">
-    
-    <script src='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js'></script>
-    <link href='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' rel='stylesheet' />
-    
-    <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; touch-action: none; }
-        #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-
-        /* HUD AVIÃO */
-        #plane-hud {
-            position: absolute; bottom: 15%; left: 50%; 
-            width: 400px; height: 300px; transform: translateX(-50%);
-            z-index: 10; pointer-events: none;
-            display: flex; justify-content: center; align-items: flex-end;
-        }
-        @media (max-width: 600px) {
-            #plane-hud { width: 300px; height: 200px; bottom: 20%; }
-        }
-
-        #plane-img { width: 100%; will-change: transform; }
-        
-        #prop-blur {
-            position: absolute; bottom: 35%; left: 50%; width: 200px; height: 200px;
-            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
-            transform: translateX(-50%); border-radius: 50%; display: none;
-        }
-
-        /* SLIDER DE ACELERAÇÃO */
-        #mobile-controls {
-            position: absolute; left: 20px; bottom: 50px; height: 250px; width: 80px;
-            z-index: 50; display: none;
-            flex-direction: column; align-items: center;
-        }
-        input[type=range][orient=vertical] {
-            writing-mode: bt-lr; 
-            -webkit-appearance: slider-vertical;
-            width: 100%; height: 100%;
-        }
-        .label-thr { color: white; font-weight: bold; text-shadow: 1px 1px 0 #000; margin-bottom: 5px; }
-
-        /* BOTÃO FULLSCREEN EXTRA */
-        #btn-fs {
-            position: absolute; top: 20px; left: 20px; z-index: 60;
-            background: rgba(0,0,0,0.5); color: white; border: 1px solid white;
-            padding: 5px 10px; font-size: 12px; cursor: pointer; display: none;
-        }
-
-        /* DADOS */
-        #ui-layer {
-            position: absolute; top: 10px; right: 10px;
-            background: rgba(0,0,0,0.6); padding: 10px;
-            color: white; border-radius: 8px; font-weight: bold;
-            font-family: monospace; font-size: 14px;
-            border-left: 4px solid cyan; display: flex; gap: 10px; z-index: 20;
-            /* Garante que não fique embaixo do notch no iPhone */
-            padding-top: env(safe-area-inset-top); 
-            padding-right: env(safe-area-inset-right);
-        }
-        .data-block { display: flex; flex-direction: column; justify-content: center; }
-        #alt-container { width: 10px; height: 80px; background: rgba(0,0,0,0.5); border: 1px solid #555; position: relative; display: flex; align-items: flex-end; }
-        #alt-bar { width: 100%; height: 0%; background: cyan; }
-
-        /* LOADING */
-        #overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #111; z-index: 100;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            color: white; text-align: center;
-        }
-        button.start-btn { padding: 20px 40px; font-size: 18px; background: cyan; border: none; cursor: pointer; margin-top: 20px; font-weight: bold; color: black; border-radius: 50px;}
-        #instruction { color: #aaa; margin-top: 10px; font-size: 14px; max-width: 80%; }
-    </style>
+<meta charset="UTF-8">
+<title>Decisão Piscina</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background:#f2f2f2;
+  padding:20px;
+}
+input, select, button {
+  width:100%;
+  padding:12px;
+  margin:8px 0;
+  font-size:16px;
+}
+button {
+  background:#007bff;
+  color:white;
+  border:none;
+  border-radius:4px;
+}
+.resultado {
+  background:white;
+  padding:15px;
+  margin-top:15px;
+  border-radius:5px;
+}
+.erro {
+  color:red;
+  font-weight:bold;
+}
+</style>
 </head>
+
 <body>
 
-    <div id="map"></div>
+<h2>App Decisão de Piscina</h2>
 
-    <button id="btn-fs" onclick="forceFullScreen()">TELA CHEIA</button>
+<input type="number" id="volume" placeholder="Volume da piscina (litros)">
+<input type="number" step="0.1" id="ph" placeholder="pH">
+<input type="number" id="alc" placeholder="Alcalinidade (ppm)">
 
-    <div id="plane-hud">
-        <div id="prop-blur"></div>
-        <img id="plane-img" src="https://i.imgur.com/3N40j5c.png">
-    </div>
+<select id="agua">
+  <option value="">Selecione o aspecto da água</option>
+  <option value="azul">Azul</option>
+  <option value="turva">Turva</option>
+  <option value="verde_clara">Verde clara</option>
+  <option value="verde_escura">Verde escura</option>
+</select>
 
-    <div id="mobile-controls">
-        <div class="label-thr">POTÊNCIA</div>
-        <input type="range" id="throttle-slider" min="0" max="100" value="0" orient="vertical">
-    </div>
+<button onclick="analisar()">ANALISAR</button>
 
-    <div id="ui-layer">
-        <div class="data-block">
-            SPD: <span id="val-spd" style="color:cyan">0</span><br>
-            ALT: <span id="val-alt" style="color:lime">0</span>
-        </div>
-        <div id="alt-container"><div id="alt-bar"></div></div>
-    </div>
+<div class="resultado" id="resultado"></div>
 
-    <div id="overlay">
-        <h1 style="color:cyan">CESSNA SIM</h1>
-        <p id="status-txt">Calibrando...</p>
-        <button id="btn-start" class="start-btn" onclick="initSystem()" disabled>AGUARDE...</button>
-        <p id="instruction">DICA: Para Full Screen no iPhone, use "Adicionar à Tela de Início".</p>
-    </div>
+<script>
+function analisar(){
 
-    <script>
-        // CONFIG
-        const START_LNG = -47.998; const START_LAT = -23.008; const START_HEADING = 300;
-        mapboxgl.accessToken = 'pk.eyJ1IjoiZnRqZGNhbHYiLCJhIjoiY21rY3ZlZXh4MDVzMzNlb3I0djI5NjkwaSJ9.epfqpPvDDLYINXoBJO7iMw'; 
+  let volume = document.getElementById("volume").value;
+  let ph = document.getElementById("ph").value;
+  let alc = document.getElementById("alc").value;
+  let agua = document.getElementById("agua").value;
 
-        const map = new mapboxgl.Map({
-            container: 'map', style: 'mapbox://styles/mapbox/satellite-streets-v12',
-            center: [START_LNG, START_LAT], zoom: 17, pitch: 75, bearing: START_HEADING,
-            antialias: true, interactive: false 
-        });
+  let resultado = document.getElementById("resultado");
+  resultado.innerHTML = "";
 
-        map.on('load', () => {
-            map.addSource('mapbox-dem', { 'type': 'raster-dem', 'url': 'mapbox://mapbox.mapbox-terrain-dem-v1', 'tileSize': 512, 'maxzoom': 14 });
-            map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.0 });
-            map.addLayer({ 'id': 'sky', 'type': 'sky', 'paint': { 'sky-type': 'atmosphere', 'sky-atmosphere-sun': [0.0, 90.0], 'sky-atmosphere-sun-intensity': 15 } });
+  if(volume === "" || ph === "" || alc === "" || agua === ""){
+    resultado.innerHTML = "<div class='erro'>Preencha TODOS os campos.</div>";
+    return;
+  }
 
-            document.getElementById('status-txt').innerText = "PRONTO";
-            const btn = document.getElementById('btn-start');
-            btn.innerText = "DECOLAR (FULL SCREEN)"; btn.disabled = false;
-        });
+  ph = parseFloat(ph);
+  alc = parseInt(alc);
 
-        // FULL SCREEN LOGIC
-        function forceFullScreen() {
-            let elem = document.documentElement;
-            if (elem.requestFullscreen) {
-                elem.requestFullscreen();
-            } else if (elem.webkitRequestFullscreen) { /* Safari */
-                elem.webkitRequestFullscreen();
-            } else if (elem.msRequestFullscreen) { /* IE11 */
-                elem.msRequestFullscreen();
-            }
-        }
+  let r = "<h3>Correções</h3>";
 
-        // INPUTS
-        let sim = { lng: START_LNG, lat: START_LAT, head: START_HEADING, spd: 0, alt: 0, thr: 0, pitch: 0, roll: 0, ground: true };
-        let mobileTilt = { pitch: 0, roll: 0 };
-        let isMobile = false;
+  // pH
+  if(ph > 7.8){
+    r += "• pH ALTO → Aplicar ÁCIDO e filtrar 1–2h<br>";
+  } else if(ph < 7.0){
+    r += "• pH BAIXO → Aplicar BARRILHA e filtrar 1–2h<br>";
+  } else {
+    r += "• pH OK<br>";
+  }
 
-        function initSystem() {
-            // Tenta ativar Fullscreen ao clicar em Iniciar
-            forceFullScreen();
-            requestMobilePermission();
-        }
+  // Alcalinidade
+  if(alc > 120){
+    r += "• Alcalinidade ALTA → Aplicar ÁCIDO com água parada 2–3h<br>";
+  } else if(alc < 80){
+    r += "• Alcalinidade BAIXA → Aplicar BICARBONATO e filtrar 2h<br>";
+  } else {
+    r += "• Alcalinidade OK<br>";
+  }
 
-        function requestMobilePermission() {
-            if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){
-                isMobile = true;
-                document.getElementById('mobile-controls').style.display = 'flex';
-                document.getElementById('btn-fs').style.display = 'block'; // Mostra botão extra caso o auto falhe
-            }
+  r += "<h3>Tratamento da Água</h3>";
 
-            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                DeviceOrientationEvent.requestPermission()
-                    .then(response => {
-                        if (response === 'granted') {
-                            window.addEventListener('deviceorientation', handleOrientation);
-                            startLoop();
-                        } else {
-                            alert("Sem permissão de giroscópio.");
-                            startLoop();
-                        }
-                    })
-                    .catch(console.error);
-            } else {
-                window.addEventListener('deviceorientation', handleOrientation);
-                startLoop();
-            }
-        }
+  if(agua === "azul"){
+    r += "Piscina AZUL → Cloro manutenção<br>";
+    r += "Filtrar 4–6h<br>";
+    r += "Próxima visita: Aspirar FILTRANDO<br>";
+  }
 
-        function handleOrientation(event) {
-            let pitchRaw = event.beta; 
-            let rollRaw = event.gamma;
+  if(agua === "turva"){
+    r += "Piscina TURVA → Ajustar pH para 7,2<br>";
+    r += "Aplicar SULFATO DE ALUMÍNIO<br>";
+    r += "Filtrar 30–40 min<br>";
+    r += "Desligar bomba e decantar 8–12h<br>";
+    r += "Próxima visita: Aspirar DRENANDO<br>";
+  }
 
-            if(window.innerHeight < window.innerWidth) {
-                mobileTilt.pitch = (pitchRaw) * 2;
-                mobileTilt.roll = -rollRaw * 2; // Invertido para realismo
-                
-                if(mobileTilt.pitch > 40) mobileTilt.pitch = 40;
-                if(mobileTilt.pitch < -40) mobileTilt.pitch = -40;
-            }
-        }
+  if(agua === "verde_clara"){
+    r += "Piscina VERDE CLARA → Ajustar pH para 7,2<br>";
+    r += "Aplicar CLORO CHOQUE<br>";
+    r += "Escovar bem<br>";
+    r += "Filtrar 6–8h<br>";
+    r += "Se turvar → aplicar SULFATO e decantar<br>";
+    r += "Próxima visita: Aspirar DRENANDO<br>";
+  }
 
-        function startLoop() { document.getElementById('overlay').style.display = 'none'; loop(); }
+  if(agua === "verde_escura"){
+    r += "Piscina VERDE ESCURA → Ajustar pH para 7,0–7,2<br>";
+    r += "Aplicar CLORO CHOQUE FORTE<br>";
+    r += "Escovar tudo<br>";
+    r += "Filtrar 12–24h<br>";
+    r += "Aplicar SULFATO<br>";
+    r += "Decantar 12h<br>";
+    r += "Próxima visita: Aspirar DRENANDO<br>";
+  }
 
-        function physics() {
-            let inputPitch = 0; let inputRoll = 0; let inputThr = -1;
+  resultado.innerHTML = r;
+}
+</script>
 
-            const gps = navigator.getGamepads ? navigator.getGamepads() : [];
-            const gp = gps[0];
-            if (gp) {
-                if(Math.abs(gp.axes[1]) > 0.05) inputPitch = gp.axes[1] * 25;
-                if(Math.abs(gp.axes[0]) > 0.05) inputRoll = gp.axes[0] * 30;
-                let axThr = gp.axes[2] ?? gp.axes[5] ?? gp.axes[6] ?? -1;
-                if(axThr > -1.1) inputThr = ((axThr * -1) + 1) / 2 * 100;
-            }
-
-            if(isMobile) {
-                let sliderVal = document.getElementById('throttle-slider').value;
-                inputThr = parseFloat(sliderVal);
-                inputPitch = mobileTilt.pitch; 
-                inputRoll = mobileTilt.roll;
-            }
-
-            // Inércia (Peso)
-            sim.pitch += (inputPitch - sim.pitch) * 0.05;
-            sim.roll += (inputRoll - sim.roll) * 0.05;
-            
-            if(inputThr > -1) sim.thr = inputThr;
-
-            // Curva Suave
-            if(Math.abs(sim.roll) > 2) {
-                sim.head += (sim.roll / 60) * (sim.ground ? 0.5 : 1.0);
-            }
-
-            // Velocidade Realista
-            let targetSpd = sim.thr * 1.2;
-            if(sim.ground) targetSpd *= 0.8; 
-            if(!sim.ground) { if(sim.pitch > 5) targetSpd -= 5; if(sim.pitch < -5) targetSpd += 15; }
-            sim.spd += (targetSpd - sim.spd) * 0.02;
-
-            if(sim.ground) {
-                sim.alt = 0;
-                if(sim.spd > 50 && sim.pitch > 5) { sim.ground = false; sim.alt += 5; }
-            } else {
-                let climbRate = (sim.pitch * 0.5) * (sim.spd / 80);
-                if(sim.spd < 40) climbRate -= 2;
-                sim.alt += climbRate;
-                if(sim.alt <= 0) { sim.alt = 0; sim.ground = true; }
-            }
-
-            if(sim.spd > 1) {
-                // Velocidade de mapa lenta (escala real)
-                const dist = sim.spd * 0.000002; 
-                const rad = (sim.head * Math.PI) / 180;
-                sim.lng += Math.sin(rad) * dist; sim.lat += Math.cos(rad) * dist;
-            }
-        }
-
-        function draw() {
-            let targetZoom = 17 - (sim.alt / 800); if(targetZoom < 13) targetZoom = 13;
-            let targetPitch = Math.max(65, 75 - (sim.alt / 1000));
-
-            map.jumpTo({
-                center: [sim.lng, sim.lat], bearing: sim.head, pitch: targetPitch, zoom: targetZoom,
-                duration: 0, animate: false 
-            });
-
-            const plane = document.getElementById('plane-img');
-            const prop = document.getElementById('prop-blur');
-            
-            let visualPitch = -sim.pitch; 
-            plane.style.transform = `rotateZ(${sim.roll}deg) translateY(${visualPitch}px)`;
-            
-            if(sim.thr > 10) { prop.style.display = 'block'; prop.style.opacity = 0.6 - (sim.thr/200); } 
-            else { prop.style.display = 'none'; }
-
-            document.getElementById('val-spd').innerText = Math.floor(sim.spd);
-            document.getElementById('val-alt').innerText = Math.floor(sim.alt);
-            let altPercent = Math.min(100, (sim.alt / 3000) * 100);
-            document.getElementById('alt-bar').style.height = altPercent + "%";
-        }
-
-        function loop() { physics(); draw(); requestAnimationFrame(loop); }
-    </script>
 </body>
 </html>
