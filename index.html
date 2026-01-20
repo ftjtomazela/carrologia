@@ -2,131 +2,163 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Decisão Piscina</title>
+<title>Decisão de Piscina</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
 body {
-  font-family: Arial, sans-serif;
-  background:#f2f2f2;
+  font-family: -apple-system, BlinkMacSystemFont, Arial;
+  background: linear-gradient(135deg, #0ea5e9, #22c55e);
   padding:20px;
+  color:#033;
 }
+
+.container {
+  background:#fff;
+  border-radius:16px;
+  padding:20px;
+  max-width:480px;
+  margin:auto;
+  box-shadow:0 10px 25px rgba(0,0,0,0.2);
+}
+
+h1 {
+  text-align:center;
+  color:#0369a1;
+}
+
 input, select, button {
   width:100%;
-  padding:12px;
-  margin:8px 0;
+  padding:14px;
+  margin-top:10px;
+  border-radius:10px;
+  border:1px solid #ccc;
   font-size:16px;
 }
+
 button {
-  background:#007bff;
+  background:#0284c7;
   color:white;
   border:none;
-  border-radius:4px;
-}
-.resultado {
-  background:white;
-  padding:15px;
   margin-top:15px;
-  border-radius:5px;
-}
-.erro {
-  color:red;
   font-weight:bold;
+}
+
+.resultado {
+  margin-top:20px;
+}
+
+.box {
+  background:#f0f9ff;
+  border-left:6px solid #0284c7;
+  padding:12px;
+  margin-top:12px;
+  border-radius:8px;
+}
+
+.visita {
+  background:#ecfeff;
+  border-left:6px solid #06b6d4;
+}
+
+strong {
+  color:#065f46;
 }
 </style>
 </head>
 
 <body>
 
-<h2>App Decisão de Piscina</h2>
+<div class="container">
+<h1>🧠 Decisão de Piscina</h1>
 
-<input type="number" id="volume" placeholder="Volume da piscina (litros)">
-<input type="number" step="0.1" id="ph" placeholder="pH">
+<input type="number" id="volume" placeholder="Volume da piscina (ex: 45000)">
+<input type="number" step="0.1" id="ph" placeholder="pH (ex: 8.2)">
 <input type="number" id="alc" placeholder="Alcalinidade (ppm)">
 
 <select id="agua">
-  <option value="">Selecione o aspecto da água</option>
-  <option value="azul">Azul</option>
-  <option value="turva">Turva</option>
-  <option value="verde_clara">Verde clara</option>
-  <option value="verde_escura">Verde escura</option>
+  <option value="">Aspecto da água</option>
+  <option value="azul">🔵 Azul</option>
+  <option value="turva">🟡 Turva</option>
+  <option value="verde_clara">🟢 Verde clara</option>
+  <option value="verde_escura">🟢 Verde escura</option>
 </select>
 
 <button onclick="analisar()">ANALISAR</button>
 
 <div class="resultado" id="resultado"></div>
+</div>
 
 <script>
 function analisar(){
 
-  let volume = document.getElementById("volume").value;
-  let ph = document.getElementById("ph").value;
-  let alc = document.getElementById("alc").value;
+  let v = parseFloat(volume.value);
+  let ph = parseFloat(document.getElementById("ph").value);
+  let alc = parseInt(document.getElementById("alc").value);
   let agua = document.getElementById("agua").value;
+  let r = "";
 
-  let resultado = document.getElementById("resultado");
-  resultado.innerHTML = "";
-
-  if(volume === "" || ph === "" || alc === "" || agua === ""){
-    resultado.innerHTML = "<div class='erro'>Preencha TODOS os campos.</div>";
+  if(!v || !ph || !alc || !agua){
+    resultado.innerHTML = "<div class='box'>⚠️ Preencha todos os campos.</div>";
     return;
   }
 
-  ph = parseFloat(ph);
-  alc = parseInt(alc);
+  // CÁLCULOS BASE
+  let sulfato = (v / 1000) * 35; // g
+  let cloroChoque = (v / 1000) * 12; // g
+  let cloroMan = (v / 1000) * 3; // g
+  let bicarbonato = (v / 1000) * 17; // g
+  let barrilha = (v / 1000) * 10; // g
 
-  let r = "<h3>Correções</h3>";
+  r += "<div class='box'><strong>🔢 Quantidade de Produtos</strong><br>";
 
   // pH
   if(ph > 7.8){
-    r += "• pH ALTO → Aplicar ÁCIDO e filtrar 1–2h<br>";
+    r += "• pH ALTO → Ácido (dose fracionada)<br>";
   } else if(ph < 7.0){
-    r += "• pH BAIXO → Aplicar BARRILHA e filtrar 1–2h<br>";
+    r += "• pH BAIXO → Barrilha: <strong>"+barrilha.toFixed(0)+" g</strong><br>";
   } else {
     r += "• pH OK<br>";
   }
 
   // Alcalinidade
-  if(alc > 120){
-    r += "• Alcalinidade ALTA → Aplicar ÁCIDO com água parada 2–3h<br>";
-  } else if(alc < 80){
-    r += "• Alcalinidade BAIXA → Aplicar BICARBONATO e filtrar 2h<br>";
+  if(alc < 80){
+    r += "• Alcalinidade baixa → Bicarbonato: <strong>"+bicarbonato.toFixed(0)+" g</strong><br>";
+  } else if(alc > 120){
+    r += "• Alcalinidade alta → Ácido com água parada<br>";
   } else {
     r += "• Alcalinidade OK<br>";
   }
 
-  r += "<h3>Tratamento da Água</h3>";
-
+  // Água
   if(agua === "azul"){
-    r += "Piscina AZUL → Cloro manutenção<br>";
-    r += "Filtrar 4–6h<br>";
-    r += "Próxima visita: Aspirar FILTRANDO<br>";
+    r += "• Cloro manutenção: <strong>"+cloroMan.toFixed(0)+" g</strong><br>";
+  } else {
+    r += "• Cloro choque: <strong>"+cloroChoque.toFixed(0)+" g</strong><br>";
+    r += "• Sulfato de alumínio: <strong>"+sulfato.toFixed(0)+" g</strong><br>";
   }
 
-  if(agua === "turva"){
-    r += "Piscina TURVA → Ajustar pH para 7,2<br>";
-    r += "Aplicar SULFATO DE ALUMÍNIO<br>";
-    r += "Filtrar 30–40 min<br>";
-    r += "Desligar bomba e decantar 8–12h<br>";
-    r += "Próxima visita: Aspirar DRENANDO<br>";
-  }
+  r += "</div>";
 
-  if(agua === "verde_clara"){
-    r += "Piscina VERDE CLARA → Ajustar pH para 7,2<br>";
-    r += "Aplicar CLORO CHOQUE<br>";
-    r += "Escovar bem<br>";
-    r += "Filtrar 6–8h<br>";
-    r += "Se turvar → aplicar SULFATO e decantar<br>";
-    r += "Próxima visita: Aspirar DRENANDO<br>";
-  }
+  // VISITA 1
+  r += "<div class='box visita'><strong>📅 VISITA 1 – TRATAMENTO</strong><br>";
+  r += "✔️ Peneirar<br>✔️ Escovar paredes e fundo<br>✔️ Corrigir pH<br>";
 
-  if(agua === "verde_escura"){
-    r += "Piscina VERDE ESCURA → Ajustar pH para 7,0–7,2<br>";
-    r += "Aplicar CLORO CHOQUE FORTE<br>";
-    r += "Escovar tudo<br>";
-    r += "Filtrar 12–24h<br>";
-    r += "Aplicar SULFATO<br>";
-    r += "Decantar 12h<br>";
-    r += "Próxima visita: Aspirar DRENANDO<br>";
+  if(agua !== "azul"){
+    r += "✔️ Aplicar cloro choque<br>✔️ Filtrar<br>✔️ Aplicar sulfato<br>✔️ Desligar bomba (decantar)<br>";
+  } else {
+    r += "✔️ Cloro manutenção<br>✔️ Filtrar 4–6h<br>";
   }
+  r += "</div>";
+
+  // VISITA 2
+  r += "<div class='box visita'><strong>🚿 VISITA 2 – FINALIZAÇÃO</strong><br>";
+  if(agua !== "azul"){
+    r += "✔️ Aspirar DRENANDO devagar<br>";
+  } else {
+    r += "✔️ Aspirar FILTRANDO<br>";
+  }
+  r += "✔️ Completar água<br>✔️ Retrolavar filtro<br>✔️ Ajustar pH<br>✔️ Cloro manutenção<br></div>";
 
   resultado.innerHTML = r;
 }
