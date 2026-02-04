@@ -1,168 +1,172 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<title>Decisão de Piscina</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<style>
-body {
-  font-family: -apple-system, BlinkMacSystemFont, Arial;
-  background: linear-gradient(135deg, #0ea5e9, #22c55e);
-  padding:20px;
-  color:#033;
-}
-
-.container {
-  background:#fff;
-  border-radius:16px;
-  padding:20px;
-  max-width:480px;
-  margin:auto;
-  box-shadow:0 10px 25px rgba(0,0,0,0.2);
-}
-
-h1 {
-  text-align:center;
-  color:#0369a1;
-}
-
-input, select, button {
-  width:100%;
-  padding:14px;
-  margin-top:10px;
-  border-radius:10px;
-  border:1px solid #ccc;
-  font-size:16px;
-}
-
-button {
-  background:#0284c7;
-  color:white;
-  border:none;
-  margin-top:15px;
-  font-weight:bold;
-}
-
-.resultado {
-  margin-top:20px;
-}
-
-.box {
-  background:#f0f9ff;
-  border-left:6px solid #0284c7;
-  padding:12px;
-  margin-top:12px;
-  border-radius:8px;
-}
-
-.visita {
-  background:#ecfeff;
-  border-left:6px solid #06b6d4;
-}
-
-strong {
-  color:#065f46;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coco Caramelizado Premium | Sabor de Conchas-SP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            light: '#F3E5AB', /* Cor Creme/Baunilha */
+                            main: '#D4A373',  /* Cor Caramelo Dourado */
+                            dark: '#6F4E37',  /* Cor Café/Coco Queimado */
+                            accent: '#25D366', /* Verde WhatsApp/Compra */
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Helvetica', 'Arial', 'sans-serif'],
+                        serif: ['Georgia', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
 </head>
+<body class="bg-gray-50 text-gray-800">
 
-<body>
+    <div class="bg-brand-dark text-white text-center py-2 text-sm font-semibold tracking-wide">
+        🚚 FRETE GRÁTIS PARA CONCHAS-SP E REGIÃO NA COMPRA DE 2 KITS
+    </div>
 
-<div class="container">
-<h1>🧠 Decisão de Piscina</h1>
+    <header class="relative bg-white overflow-hidden">
+        <div class="max-w-7xl mx-auto">
+            <div class="relative z-10 pb-8 bg-white sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32">
+                <main class="mt-10 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28">
+                    <div class="sm:text-center lg:text-left">
+                        <h1 class="text-4xl tracking-tight font-extrabold text-brand-dark sm:text-5xl md:text-6xl font-serif">
+                            <span class="block xl:inline">O Doce da Infância,</span>
+                            <span class="block text-brand-main">Elevado à Perfeição.</span>
+                        </h1>
+                        <p class="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-auto">
+                            Coco caramelizado artesanal, selecionado e preparado em Conchas-SP. Crocância inigualável em lascas perfeitas. Leve o <strong>Kit Degustação (3x 80g)</strong> com desconto especial.
+                        </p>
+                        <div class="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start">
+                            <div class="rounded-md shadow">
+                                <a href="#oferta" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-brand-accent hover:bg-green-600 md:py-4 md:text-lg transition transform hover:scale-105">
+                                    QUERO PROVAR AGORA
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+        
+        <div class="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2 bg-gray-100 flex items-center justify-center h-64 lg:h-full">
+            <div class="w-full h-full relative group cursor-pointer bg-brand-main/20 flex flex-col items-center justify-center text-brand-dark">
+                <i class="fas fa-play-circle text-6xl mb-4 opacity-80 group-hover:scale-110 transition"></i>
+                <p class="font-semibold uppercase tracking-wider">Assista à Crocância</p>
+                <p class="text-xs text-gray-600 mt-2">(Aqui entra seu vídeo de 15s mostrando o produto)</p>
+                </div>
+        </div>
+    </header>
 
-<input type="number" id="volume" placeholder="Volume da piscina (ex: 45000)">
-<input type="number" step="0.1" id="ph" placeholder="pH (ex: 8.2)">
-<input type="number" id="alc" placeholder="Alcalinidade (ppm)">
+    <section class="py-12 bg-brand-light/30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h2 class="text-base text-brand-main font-semibold tracking-wide uppercase">Artesanal de Verdade</h2>
+                <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-brand-dark sm:text-4xl font-serif">
+                    Não é apenas um doce, é uma experiência.
+                </p>
+            </div>
 
-<select id="agua">
-  <option value="">Aspecto da água</option>
-  <option value="azul">🔵 Azul</option>
-  <option value="turva">🟡 Turva</option>
-  <option value="verde_clara">🟢 Verde clara</option>
-  <option value="verde_escura">🟢 Verde escura</option>
-</select>
+            <div class="mt-10">
+                <dl class="space-y-10 md:space-y-0 md:grid md:grid-cols-3 md:gap-x-8 md:gap-y-10">
+                    <div class="relative">
+                        <dt>
+                            <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-brand-main text-white">
+                                <i class="fas fa-leaf"></i>
+                            </div>
+                            <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Coco Selecionado</p>
+                        </dt>
+                        <dd class="mt-2 ml-16 text-base text-gray-500">
+                            Usamos apenas cocos frescos, cortados na espessura ideal para garantir a textura perfeita entre o macio e o crocante.
+                        </dd>
+                    </div>
 
-<button onclick="analisar()">ANALISAR</button>
+                    <div class="relative">
+                        <dt>
+                            <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-brand-main text-white">
+                                <i class="fas fa-fire"></i>
+                            </div>
+                            <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Torra Perfeita</p>
+                        </dt>
+                        <dd class="mt-2 ml-16 text-base text-gray-500">
+                            Caramelização lenta em tachos de cobre. O açúcar envolve o coco sem esconder o sabor natural da fruta.
+                        </dd>
+                    </div>
 
-<div class="resultado" id="resultado"></div>
-</div>
+                    <div class="relative">
+                        <dt>
+                            <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-brand-main text-white">
+                                <i class="fas fa-box-open"></i>
+                            </div>
+                            <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Embalagem de 80g</p>
+                        </dt>
+                        <dd class="mt-2 ml-16 text-base text-gray-500">
+                            A medida certa para o seu lanche da tarde, pré-treino ou para acompanhar aquele cafézinho.
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </section>
 
-<script>
-function analisar(){
+    <section id="oferta" class="py-16 bg-white">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="bg-brand-dark rounded-2xl shadow-xl overflow-hidden md:flex">
+                <div class="md:w-1/2 p-2 bg-white flex items-center justify-center">
+                    <div class="bg-gray-200 w-full h-64 md:h-full rounded-xl flex items-center justify-center text-gray-400">
+                        <span class="text-center p-4">Foto do Kit com 3 Pacotes<br>(80g cada)</span>
+                    </div>
+                </div>
+                <div class="md:w-1/2 p-8 text-white flex flex-col justify-center">
+                    <div class="uppercase tracking-wide text-sm text-brand-main font-bold">Oferta Exclusiva Online</div>
+                    <h2 class="mt-2 text-3xl font-extrabold font-serif">Kit Triplo Sabor</h2>
+                    <p class="mt-4 text-gray-300">
+                        Garanta 3 pacotes de 80g do nosso Coco Caramelizado Premium. Ideal para ter sempre à mão ou presentear alguém especial.
+                    </p>
+                    
+                    <div class="mt-6 flex items-baseline">
+                        <span class="text-3xl font-extrabold tracking-tight">R$ 49,90</span>
+                        <span class="ml-2 text-lg text-gray-400 line-through">R$ 65,00</span>
+                    </div>
+                    
+                    <div class="mt-8">
+                        <button class="w-full bg-brand-accent border border-transparent rounded-md py-4 px-4 flex items-center justify-center text-lg font-bold text-white hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 shadow-lg transition transform hover:-translate-y-1">
+                            <i class="fab fa-whatsapp mr-2"></i> PEDIR MEU KIT AGORA
+                        </button>
+                        <p class="mt-3 text-xs text-center text-gray-400">
+                            *Compra segura. Entrega rápida em Conchas e região.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-  let v = parseFloat(volume.value);
-  let ph = parseFloat(document.getElementById("ph").value);
-  let alc = parseInt(document.getElementById("alc").value);
-  let agua = document.getElementById("agua").value;
-  let r = "";
-
-  if(!v || !ph || !alc || !agua){
-    resultado.innerHTML = "<div class='box'>⚠️ Preencha todos os campos.</div>";
-    return;
-  }
-
-  // CÁLCULOS BASE
-  let sulfato = (v / 1000) * 35; // g
-  let cloroChoque = (v / 1000) * 12; // g
-  let cloroMan = (v / 1000) * 3; // g
-  let bicarbonato = (v / 1000) * 17; // g
-  let barrilha = (v / 1000) * 10; // g
-
-  r += "<div class='box'><strong>🔢 Quantidade de Produtos</strong><br>";
-
-  // pH
-  if(ph > 7.8){
-    r += "• pH ALTO → Ácido (dose fracionada)<br>";
-  } else if(ph < 7.0){
-    r += "• pH BAIXO → Barrilha: <strong>"+barrilha.toFixed(0)+" g</strong><br>";
-  } else {
-    r += "• pH OK<br>";
-  }
-
-  // Alcalinidade
-  if(alc < 80){
-    r += "• Alcalinidade baixa → Bicarbonato: <strong>"+bicarbonato.toFixed(0)+" g</strong><br>";
-  } else if(alc > 120){
-    r += "• Alcalinidade alta → Ácido com água parada<br>";
-  } else {
-    r += "• Alcalinidade OK<br>";
-  }
-
-  // Água
-  if(agua === "azul"){
-    r += "• Cloro manutenção: <strong>"+cloroMan.toFixed(0)+" g</strong><br>";
-  } else {
-    r += "• Cloro choque: <strong>"+cloroChoque.toFixed(0)+" g</strong><br>";
-    r += "• Sulfato de alumínio: <strong>"+sulfato.toFixed(0)+" g</strong><br>";
-  }
-
-  r += "</div>";
-
-  // VISITA 1
-  r += "<div class='box visita'><strong>📅 VISITA 1 – TRATAMENTO</strong><br>";
-  r += "✔️ Peneirar<br>✔️ Escovar paredes e fundo<br>✔️ Corrigir pH<br>";
-
-  if(agua !== "azul"){
-    r += "✔️ Aplicar cloro choque<br>✔️ Filtrar<br>✔️ Aplicar sulfato<br>✔️ Desligar bomba (decantar)<br>";
-  } else {
-    r += "✔️ Cloro manutenção<br>✔️ Filtrar 4–6h<br>";
-  }
-  r += "</div>";
-
-  // VISITA 2
-  r += "<div class='box visita'><strong>🚿 VISITA 2 – FINALIZAÇÃO</strong><br>";
-  if(agua !== "azul"){
-    r += "✔️ Aspirar DRENANDO devagar<br>";
-  } else {
-    r += "✔️ Aspirar FILTRANDO<br>";
-  }
-  r += "✔️ Completar água<br>✔️ Retrolavar filtro<br>✔️ Ajustar pH<br>✔️ Cloro manutenção<br></div>";
-
-  resultado.innerHTML = r;
-}
-</script>
+    <footer class="bg-gray-900">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 md:flex md:items-center md:justify-between lg:px-8">
+            <div class="flex justify-center space-x-6 md:order-2">
+                <a href="#" class="text-gray-400 hover:text-gray-300">
+                    <i class="fab fa-instagram text-2xl"></i>
+                </a>
+                <a href="#" class="text-gray-400 hover:text-gray-300">
+                    <i class="fab fa-facebook text-2xl"></i>
+                </a>
+            </div>
+            <div class="mt-8 md:mt-0 md:order-1">
+                <p class="text-center text-base text-gray-400">
+                    &copy; 2026 Coco Premium Artesanal. Produzido com amor em Conchas, SP.
+                </p>
+            </div>
+        </div>
+    </footer>
 
 </body>
 </html>
