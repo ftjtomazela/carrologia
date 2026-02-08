@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ATC V13 - FULL FLIGHT</title>
+    <title>ATC V14 - BUGFIX EDITION</title>
     <style>
         :root {
             --bg: #000;
             --panel: #111;
-            --accent: #00e5ff; /* Ciano Neon */
+            --accent: #00e5ff;
             --atis: #ffca28;
             --gnd: #ff5252;
             --twr: #69f0ae;
@@ -101,7 +101,7 @@
         .inp-row { display: flex; gap: 8px; height: 45px; }
         input {
             flex: 1; background: #000; border: 1px solid #444; color: #fff;
-            padding: 0 10px; border-radius: 6px; font-size: 16px; /* Evita zoom no iOS */
+            padding: 0 10px; border-radius: 6px; font-size: 16px;
         }
         button.send {
             width: 70px; background: var(--accent); color: #000; border: none;
@@ -118,10 +118,10 @@
 <body>
 
 <div id="setup">
-    <h1 style="color:#fff; text-align:center;">FULL FLIGHT V13</h1>
+    <h1 style="color:#fff; text-align:center;">ATC V14 (FIXED)</h1>
     <input type="text" id="sb-user" class="setup-in" placeholder="SimBrief Username">
     <button class="setup-btn" onclick="importData()">IMPORTAR DADOS</button>
-    <button class="setup-btn" style="background:#333; margin-top:10px;" onclick="startSim()">VOO PADRÃO</button>
+    <button class="setup-btn" style="background:#333; margin-top:10px;" onclick="startSim()">VOO LIVRE</button>
 </div>
 
 <header>
@@ -159,7 +159,7 @@
 <script>
     // --- DADOS ---
     let f = { 
-        callsign: 'PT-IOS', 
+        callsign: 'N172SB', 
         dep: 'SBMT', arr: 'SBGL', 
         rwy_dep: '12', rwy_arr: '10', 
         sid: 'VETOR', star: 'PIRA1A',
@@ -171,11 +171,10 @@
     
     let step = 0;
     let hasATIS = false;
-    let phase = 'DEP'; // DEP ou ARR
+    let phase = 'DEP'; 
 
-    // --- ROTEIRO COMPLETO ---
+    // --- ROTEIRO COMPLETO (Corrigido para evitar [object]) ---
     const script = [
-        // 1. SOLO (SAÍDA)
         { 
             role: 'gnd', hint: 'Requer ATIS', 
             pilot: () => `Solo, ${f.callsign}, informação ${f.atis_dep}, solicita autorização ${f.arr}.`, 
@@ -195,8 +194,6 @@
             reply: () => `${f.callsign}, taxie ponto de espera ${f.rwy_dep}. Chame Torre ${f.freqs.twr}.`,
             act: 'twr'
         },
-        
-        // 2. TORRE (SAÍDA)
         { 
             role: 'twr', hint: 'Decolagem', 
             pilot: () => `Torre, ${f.callsign}, pronto ponto de espera ${f.rwy_dep}.`, 
@@ -210,8 +207,6 @@
             reply: () => `${f.callsign}, contate Controle Saída ${f.freqs.app}.`,
             act: 'app'
         },
-
-        // 3. CONTROLE (SUBIDA)
         { 
             role: 'app', hint: 'Subida', 
             pilot: () => `Controle, ${f.callsign}, passando 3000 pés.`, 
@@ -225,8 +220,6 @@
             reply: () => `${f.callsign}, chame Centro ${f.freqs.acc}.`,
             act: 'acc'
         },
-
-        // 4. CENTRO (CRUZEIRO & DESCIDA)
         { 
             role: 'acc', hint: 'Cruzeiro', 
             pilot: () => `Centro, ${f.callsign}, nível de cruzeiro.`, 
@@ -238,12 +231,10 @@
             pilot: () => `Centro, ${f.callsign}, solicita descida.`, 
             key: ['descida'], 
             reply: () => `${f.callsign}, autorizado descida nível 100. Chame Controle ${f.freqs.app}.`,
-            act: 'app_arr' // Ação especial para mudar ATIS
+            act: 'app_arr' 
         },
-
-        // 5. CONTROLE (APROXIMAÇÃO)
         { 
-            role: 'app', hint: 'Descida Inicial (Ouça ATIS Chegada)', 
+            role: 'app', hint: 'Descida Inicial', 
             pilot: () => `Controle, ${f.callsign}, descendo nível 100, info ${f.atis_arr}.`, 
             key: ['descendo','bravo'], 
             reply: () => `${f.callsign}, ciente. Espere vetoração ILS pista ${f.rwy_arr}.`
@@ -261,8 +252,6 @@
             reply: () => `${f.callsign}, chame Torre ${f.freqs.twr}.`,
             act: 'twr'
         },
-
-        // 6. TORRE (POUSO)
         { 
             role: 'twr', hint: 'Final', 
             pilot: () => `Torre, ${f.callsign}, na final ${f.rwy_arr}.`, 
@@ -276,8 +265,6 @@
             reply: () => `${f.callsign}, bem vindo. Contate Solo ${f.freqs.gnd}.`,
             act: 'gnd'
         },
-
-        // 7. SOLO (GATE)
         { 
             role: 'gnd', hint: 'Táxi Gate', 
             pilot: () => `Solo, ${f.callsign}, livrou pista, solicita táxi pátio.`, 
@@ -286,23 +273,64 @@
         }
     ];
 
-    // --- FUNÇÕES ---
+    // --- FUNÇÕES DE IMPORTAÇÃO (CORREÇÃO DE BUG) ---
     async function importData() {
         const u = document.getElementById('sb-user').value;
+        const btn = document.querySelector('.setup-btn');
         if(!u) return alert("Digite usuário");
+        
+        btn.innerText = "CARREGANDO...";
+        
         try {
             const r = await fetch(`https://www.simbrief.com/api/xml.fetcher.php?username=${u}&json=1`);
             const d = await r.json();
             
-            f.callsign = d.general.icao_airline + d.general.flight_number;
-            f.dep = d.origin.icao_code;
-            f.arr = d.destination.icao_code;
-            f.rwy_dep = d.origin.plan_rwy;
-            f.rwy_arr = d.destination.plan_rwy;
-            f.alt = "FL" + Math.round(d.general.cruise_altitude/100);
+            // --- AQUI ESTÁ A CORREÇÃO DO [OBJECT OBJECT] ---
+            
+            // 1. Tenta pegar a sigla da cia (GOL, TAM)
+            let airline = d.general.icao_airline;
+            if(typeof airline === 'object' || !airline) airline = ""; // Se for objeto vazio, vira string vazia
+            
+            // 2. Tenta pegar o número do voo
+            let fltNum = d.general.flight_number;
+            if(typeof fltNum === 'object' || !fltNum) fltNum = "";
+
+            // 3. Monta o Callsign
+            if(airline !== "") {
+                f.callsign = airline + fltNum;
+            } else {
+                // Se não tem airline (Aviação Geral), usa a matrícula
+                let reg = d.aircraft.reg_num;
+                if(typeof reg === 'object' || !reg) reg = "PT-SIM";
+                f.callsign = reg;
+            }
+
+            // Resto dos dados (com proteção)
+            f.dep = safeStr(d.origin.icao_code, "SBMT");
+            f.arr = safeStr(d.destination.icao_code, "SBGL");
+            f.rwy_dep = safeStr(d.origin.plan_rwy, "12");
+            f.rwy_arr = safeStr(d.destination.plan_rwy, "10");
+            
+            // Altitude
+            let altRaw = d.general.cruise_altitude;
+            if(altRaw && typeof altRaw !== 'object') {
+                f.alt = "FL" + Math.round(parseInt(altRaw)/100);
+            } else {
+                f.alt = "FL100";
+            }
             
             startSim();
-        } catch(e) { alert("Erro SimBrief"); }
+        } catch(e) { 
+            console.error(e);
+            alert("Erro ao importar. Verifique se o SimBrief gerou o plano."); 
+            btn.innerText = "IMPORTAR DADOS";
+        }
+    }
+
+    // Função auxiliar para evitar object
+    function safeStr(val, fallback) {
+        if(typeof val === 'string' || typeof val === 'number') return val;
+        return fallback;
     }
 
     function startSim() {
@@ -379,12 +407,12 @@
 
     function changeMode(act) {
         if(act === 'app_arr') {
-            phase = 'ARR'; // Muda para fase de chegada
+            phase = 'ARR'; 
             setFreq('app');
             const btn = document.getElementById('atis-btn');
             btn.innerText = "🔊 OUVIR ATIS (CHEGADA)";
             btn.style.background = "#ff9100";
-            addLog(">>> INICIANDO DESCIDA / MUDANÇA DE ATIS <<<", 'msg sys');
+            addLog(">>> INICIANDO DESCIDA <<<", 'msg sys');
         } else {
             setFreq(act);
         }
@@ -393,14 +421,14 @@
     function setFreq(r) {
         const d = document.getElementById('freq-disp');
         const l = document.getElementById('stn-lbl');
-        let c='#fff', n='', f='';
+        let c='#fff', n='', v='';
         
-        if(r==='gnd'){c='var(--gnd)'; n='SOLO'; f=f.freqs.gnd;}
-        if(r==='twr'){c='var(--twr)'; n='TORRE'; f=f.freqs.twr;}
-        if(r==='app'){c='var(--app)'; n='CONTROLE'; f=f.freqs.app;}
-        if(r==='acc'){c='var(--acc)'; n='CENTRO'; f=f.freqs.acc;}
+        if(r==='gnd'){c='var(--gnd)'; n='SOLO'; v=f.freqs.gnd;}
+        if(r==='twr'){c='var(--twr)'; n='TORRE'; v=f.freqs.twr;}
+        if(r==='app'){c='var(--app)'; n='CONTROLE'; v=f.freqs.app;}
+        if(r==='acc'){c='var(--acc)'; n='CENTRO'; v=f.freqs.acc;}
 
-        d.style.color=c; d.innerText=f; l.innerText=n;
+        d.style.color=c; d.innerText=v; l.innerText=n;
         if(audioCtx) playSquelch();
     }
 
@@ -417,7 +445,9 @@
         const d = document.createElement('div');
         d.className = `msg ${type}`; d.innerText = t;
         const l = document.getElementById('log');
-        l.appendChild(d); l.scrollTop = l.scrollHeight;
+        if(!l.classList.contains('hidden')) {
+            l.appendChild(d); l.scrollTop = l.scrollHeight;
+        }
     }
 
     /* AUDIO ENGINE */
