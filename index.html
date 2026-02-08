@@ -1,172 +1,488 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coco Caramelizado Premium | Sabor de Conchas-SP</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            light: '#F3E5AB', /* Cor Creme/Baunilha */
-                            main: '#D4A373',  /* Cor Caramelo Dourado */
-                            dark: '#6F4E37',  /* Cor Café/Coco Queimado */
-                            accent: '#25D366', /* Verde WhatsApp/Compra */
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Helvetica', 'Arial', 'sans-serif'],
-                        serif: ['Georgia', 'serif'],
+    <title>ATC V11 - STABLE & FULL FLIGHT</title>
+    <style>
+        :root {
+            --bg: #101010;
+            --panel: #1e1e1e;
+            --border: #333;
+            --text: #ddd;
+            
+            /* Cores de Frequência */
+            --c-atis: #ffd700; /* Amarelo Ouro */
+            --c-gnd: #ef5350;  /* Vermelho */
+            --c-twr: #66bb6a;  /* Verde */
+            --c-app: #29b6f6;  /* Azul Claro */
+            --c-acc: #ab47bc;  /* Roxo (Centro) */
+        }
+
+        body {
+            font-family: 'Consolas', 'Courier New', monospace;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* HEADER */
+        header {
+            background: #000;
+            padding: 15px;
+            border-bottom: 2px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .flight-info { font-size: 0.9rem; color: #666; }
+        .callsign-box { font-size: 1.5rem; font-weight: bold; color: #fff; letter-spacing: 1px; }
+
+        .radio-box { text-align: right; }
+        .freq-val { font-size: 2rem; font-weight: bold; color: #444; transition: color 0.3s; }
+        .freq-lbl { font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase; color: #666; }
+
+        /* ATIS BAR */
+        #atis-bar {
+            background: #252525;
+            padding: 10px 20px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .atis-btn {
+            background: var(--c-atis); color: #000; border: none; padding: 6px 12px;
+            font-weight: bold; cursor: pointer; border-radius: 4px; font-size: 0.8rem;
+        }
+        .atis-marquee { font-size: 0.8rem; color: var(--c-atis); font-style: italic; white-space: nowrap; overflow: hidden; max-width: 60%; }
+
+        /* CHAT AREA */
+        main {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .msg { padding: 12px; border-radius: 6px; max-width: 85%; font-size: 0.95rem; line-height: 1.4; animation: popIn 0.3s ease; }
+        @keyframes popIn { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .msg.pilot { align-self: flex-end; border-right: 4px solid #fff; background: rgba(255,255,255,0.05); text-align: right; color: #fff; }
+        
+        /* Estilos ATC */
+        .msg.gnd { border-left: 4px solid var(--c-gnd); color: var(--c-gnd); background: rgba(239, 83, 80, 0.08); }
+        .msg.twr { border-left: 4px solid var(--c-twr); color: var(--c-twr); background: rgba(102, 187, 106, 0.08); }
+        .msg.app { border-left: 4px solid var(--c-app); color: var(--c-app); background: rgba(41, 182, 246, 0.08); }
+        .msg.acc { border-left: 4px solid var(--c-acc); color: var(--c-acc); background: rgba(171, 71, 188, 0.08); }
+
+        /* CONTROL DECK */
+        #deck {
+            background: var(--panel);
+            padding: 15px;
+            border-top: 1px solid #333;
+        }
+        
+        .sug-box {
+            background: rgba(255,255,255,0.03); border: 1px dashed #444; padding: 10px;
+            margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+        }
+        .sug-box:hover { background: rgba(255,255,255,0.08); border-color: #666; }
+        
+        .input-row { display: flex; gap: 10px; }
+        input[type="text"] {
+            flex: 1; background: #000; border: 1px solid #444; color: #fff; padding: 12px; font-family: inherit; font-size: 1rem;
+        }
+        button.send-btn {
+            background: #eee; color: #000; border: none; padding: 0 25px; font-weight: bold; cursor: pointer;
+        }
+
+        /* SETUP OVERLAY */
+        #setup { position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 100; display: flex; align-items: center; justify-content: center; }
+        .setup-card { background: #151515; padding: 30px; width: 320px; text-align: center; border: 1px solid #333; border-radius: 8px; }
+        input.setup-in { width: 100%; box-sizing: border-box; margin-bottom: 10px; text-align: center; }
+        button.setup-btn { width: 100%; padding: 12px; background: var(--c-app); color: #000; font-weight: bold; border: none; cursor: pointer; margin-top: 5px; }
+        
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div id="setup">
+    <div class="setup-card">
+        <h2 style="color:#fff; margin-top:0;">FLIGHT BRIEFING</h2>
+        <div style="font-size:0.8rem; color:#aaa; margin-bottom:5px;">SIMBRIEF USERNAME</div>
+        <input type="text" id="sb-user" class="setup-in" placeholder="Ex: JSmith">
+        <button class="setup-btn" onclick="fetchSimBrief()">IMPORTAR PLANO</button>
+        
+        <hr style="border-color:#333; margin:15px 0;">
+        
+        <div style="font-size:0.8rem; color:#aaa; margin-bottom:5px;">DADOS MANUAIS (OPCIONAL)</div>
+        <input type="text" id="manual-icao" class="setup-in" value="SBGR" placeholder="Origem">
+        <input type="text" id="manual-callsign" class="setup-in" value="TAM3304" placeholder="Callsign">
+        <button class="setup-btn" style="background:#444; color:#fff;" onclick="startSim()">INICIAR VOO</button>
+    </div>
+</div>
+
+<header>
+    <div>
+        <div class="flight-info">FLIGHT DECK</div>
+        <div class="callsign-box" id="disp-callsign">---</div>
+    </div>
+    <div class="radio-box">
+        <div class="freq-lbl" id="disp-station">OFFLINE</div>
+        <div class="freq-val" id="disp-freq">---.---</div>
+    </div>
+</header>
+
+<div id="atis-bar">
+    <button class="atis-btn" onclick="playATIS()">🔊 OUVIR ATIS</button>
+    <div class="atis-marquee" id="atis-text">Aguardando sintonização...</div>
+</div>
+
+<main id="chat-log"></main>
+
+<div id="deck">
+    <div class="sug-box" onclick="copySug()">
+        <div>
+            <div style="font-size:0.7rem; color:#666; font-weight:bold;">SUGESTÃO (CLIQUE):</div>
+            <div style="color:#ccc; font-style:italic;" id="sug-text">...</div>
+        </div>
+        <span>📋</span>
+    </div>
+    <div class="input-row">
+        <input type="text" id="inp" placeholder="Mensagem..." onkeypress="if(event.key==='Enter') send()">
+        <button class="send-btn" onclick="send()">ENV</button>
+    </div>
+</div>
+
+<script>
+    // --- ESTADO GLOBAL ---
+    let flight = {
+        callsign: 'TAM3304',
+        dep: 'SBGR',
+        arr: 'SBGL',
+        rwy: '09L',
+        sid: 'VETOR',
+        alt: 'FL180',
+        squawk: '2000',
+        atis: 'Alpha',
+        qnh: '1013',
+        freqs: { gnd: '121.90', twr: '118.10', app: '129.50', acc: '124.30' }
+    };
+    
+    let step = 0;
+    let hasATIS = false;
+    let audioCtx, noiseNode;
+
+    // --- ROTEIRO INTELIGENTE (Script) ---
+    const script = [
+        // FASE 1: SOLO (GND)
+        { 
+            role: 'gnd',
+            hint: 'Solicitar Autorização (Requer ATIS)',
+            pilot: () => `Solo, ${flight.callsign}, com informação ${flight.atis}, solicita autorização para ${flight.arr}.`,
+            key: ['autorização', 'solicita', 'alpha'],
+            reply: () => `${flight.callsign}, autorizado ${flight.arr}, saída ${flight.sid}, nível inicial 060, transponder ${flight.squawk}.`
+        },
+        { 
+            role: 'gnd',
+            hint: 'Cotejamento',
+            pilot: () => `Autorizado ${flight.arr}, saída ${flight.sid}, 060, squawk ${flight.squawk}, ${flight.callsign}.`,
+            key: ['autorizado', flight.squawk],
+            reply: () => `${flight.callsign}, cotejamento correto. Chame pronto para acionamento.`
+        },
+        { 
+            role: 'gnd',
+            hint: 'Acionamento e Pushback',
+            pilot: () => `${flight.callsign}, pronto para acionamento e pushback.`,
+            key: ['acionamento', 'pushback'],
+            reply: () => `${flight.callsign}, acionamento e pushback aprovado. Cauda livre.`
+        },
+        { 
+            role: 'gnd',
+            hint: 'Táxi',
+            pilot: () => `${flight.callsign}, pronto para táxi.`,
+            key: ['táxi', 'pronto'],
+            reply: () => `${flight.callsign}, taxie via Alfa até o ponto de espera pista ${flight.rwy}. Monitorando Torre em ${flight.freqs.twr}.`,
+            action: 'switch_twr'
+        },
+        // FASE 2: TORRE (TWR)
+        { 
+            role: 'twr',
+            hint: 'Ponto de Espera',
+            pilot: () => `Torre, ${flight.callsign}, ponto de espera ${flight.rwy}, pronto.`,
+            key: ['torre', 'espera'],
+            reply: () => `${flight.callsign}, autorizado decolagem pista ${flight.rwy}, vento calmo.`
+        },
+        // FASE 3: CONTROLE (APP)
+        { 
+            role: 'twr',
+            hint: 'Troca de Frequência (Handoff)',
+            pilot: () => `Decolado, ${flight.callsign}.`,
+            key: ['decolado', 'livrando'],
+            reply: () => `${flight.callsign}, contate Controle Saída em ${flight.freqs.app}.`,
+            action: 'switch_app'
+        },
+        { 
+            role: 'app',
+            hint: 'Chamada Inicial Controle',
+            pilot: () => `Controle, ${flight.callsign}, passando 2500 pés.`,
+            key: ['controle', 'passando'],
+            reply: () => `${flight.callsign}, contato radar. Subida livre para nível de cruzeiro ${flight.alt}.`
+        },
+        // FASE 4: CENTRO (ACC) - CRUZEIRO
+        { 
+            role: 'app',
+            hint: 'Troca para Centro (Cruzeiro)',
+            pilot: () => `Nível ${flight.alt}, ${flight.callsign}.`,
+            key: ['nível', 'cruzando', 'mantendo'],
+            reply: () => `${flight.callsign}, chame Centro Brasília em ${flight.freqs.acc}. Bom voo.`,
+            action: 'switch_acc'
+        },
+        { 
+            role: 'acc',
+            hint: 'Chamada Inicial Centro',
+            pilot: () => `Centro Brasília, ${flight.callsign}, mantendo nível ${flight.alt}.`,
+            key: ['centro', 'mantendo'],
+            reply: () => `${flight.callsign}, ciente. Mantenha vigilância. Reporte pronto para descida.`
+        },
+        // ... Fim da simulação por enquanto ...
+        { 
+            role: 'acc',
+            hint: 'Fim do Voo',
+            pilot: () => `(Voo em Cruzeiro...)`,
+            key: ['xyz'],
+            reply: () => `Fim da Simulação.`
+        }
+    ];
+
+    // --- FUNÇÕES DE IMPORTAÇÃO (BUG FIX) ---
+    async function fetchSimBrief() {
+        const user = document.getElementById('sb-user').value;
+        const btn = document.querySelector('.setup-btn');
+        
+        if(!user) return alert("Digite o usuário do SimBrief!");
+        
+        btn.innerText = "CARREGANDO...";
+        
+        try {
+            const url = `https://www.simbrief.com/api/xml.fetcher.php?username=${user}&json=1`;
+            const req = await fetch(url);
+            const json = await req.json();
+
+            // PARSER SEGURO (Evita [object Object])
+            // Usamos o operador ?. (Optional Chaining) para não quebrar se algo faltar
+            
+            flight.callsign = (json.general?.icao_airline || "") + (json.general?.flight_number || "GEN");
+            if(flight.callsign === "GEN") flight.callsign = json.general?.callsign || "PT-SIM"; // Fallback
+
+            flight.dep = json.origin?.icao_code || "SBGR";
+            flight.arr = json.destination?.icao_code || "SBGL";
+            flight.rwy = json.origin?.plan_rwy || "09L";
+            
+            // Tenta pegar SID da rota (primeira palavra)
+            const rawRoute = json.general?.route || "VETOR";
+            flight.sid = rawRoute.split(' ')[0];
+            
+            // Altitude (Converter pés para FL)
+            const alt = json.general?.initial_altitude || "18000";
+            flight.alt = "FL" + Math.round(parseInt(alt) / 100);
+
+            flight.squawk = "47" + Math.floor(Math.random() * 90 + 10); // Gera Squawk Random
+
+            alert(`Plano Carregado!\nDe: ${flight.dep}\nPara: ${flight.arr}\nAltitude: ${flight.alt}`);
+            startSim();
+
+        } catch (e) {
+            console.error(e);
+            alert("Erro ao ler SimBrief. Verifique se você gerou o OFP recentemente.");
+            btn.innerText = "IMPORTAR PLANO";
+        }
+    }
+
+    function startSim() {
+        // Se não veio do SimBrief, pega dos inputs manuais
+        if(document.getElementById('setup').style.display !== 'none') {
+            const manCall = document.getElementById('manual-callsign').value;
+            if(manCall) flight.callsign = manCall.toUpperCase();
+        }
+
+        document.getElementById('setup').style.display = 'none';
+        document.getElementById('disp-callsign').innerText = flight.callsign;
+        
+        initAudio();
+        setFreq('gnd'); // Inicia no Solo
+        updateSug();
+        addLog(`BEM VINDO AO COCKPIT, ${flight.callsign}.`, 'sys');
+    }
+
+    // --- LÓGICA DE CHAT ---
+    function send() {
+        const inp = document.getElementById('inp');
+        const txt = inp.value.trim();
+        if(!txt) return;
+
+        addLog(txt, 'pilot');
+
+        if(step < script.length) {
+            const st = script[step];
+            
+            // Validações
+            if(st.hint.includes("Requer ATIS") && !hasATIS) {
+                setTimeout(() => addLog("SISTEMA: Ouça o ATIS primeiro!", 'sys'), 500);
+                inp.value = '';
+                return;
+            }
+
+            // Verifica keywords
+            const hit = st.key.some(k => txt.toLowerCase().includes(k));
+            
+            if(hit || txt.length > 8) {
+                setTimeout(() => {
+                    const reply = st.reply();
+                    speak(reply, st.role);
+                    addLog(reply, st.role);
+
+                    if(st.action) {
+                        setTimeout(() => triggerAction(st.action), 4000);
                     }
-                }
+                    
+                    step++;
+                    updateSug();
+                }, 1000);
             }
         }
-    </script>
-</head>
-<body class="bg-gray-50 text-gray-800">
+        inp.value = '';
+    }
 
-    <div class="bg-brand-dark text-white text-center py-2 text-sm font-semibold tracking-wide">
-        🚚 FRETE GRÁTIS PARA CONCHAS-SP E REGIÃO NA COMPRA DE 2 KITS
-    </div>
+    function triggerAction(act) {
+        if(act === 'switch_twr') setFreq('twr');
+        if(act === 'switch_app') setFreq('app');
+        if(act === 'switch_acc') setFreq('acc');
+    }
 
-    <header class="relative bg-white overflow-hidden">
-        <div class="max-w-7xl mx-auto">
-            <div class="relative z-10 pb-8 bg-white sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32">
-                <main class="mt-10 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28">
-                    <div class="sm:text-center lg:text-left">
-                        <h1 class="text-4xl tracking-tight font-extrabold text-brand-dark sm:text-5xl md:text-6xl font-serif">
-                            <span class="block xl:inline">O Doce da Infância,</span>
-                            <span class="block text-brand-main">Elevado à Perfeição.</span>
-                        </h1>
-                        <p class="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-auto">
-                            Coco caramelizado artesanal, selecionado e preparado em Conchas-SP. Crocância inigualável em lascas perfeitas. Leve o <strong>Kit Degustação (3x 80g)</strong> com desconto especial.
-                        </p>
-                        <div class="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start">
-                            <div class="rounded-md shadow">
-                                <a href="#oferta" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-brand-accent hover:bg-green-600 md:py-4 md:text-lg transition transform hover:scale-105">
-                                    QUERO PROVAR AGORA
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </main>
-            </div>
-        </div>
+    // --- UI HELPERS ---
+    function addLog(txt, role) {
+        const d = document.createElement('div');
+        if(role === 'sys') {
+            d.style.textAlign = 'center'; d.style.color = '#666'; d.style.fontSize = '0.8rem'; d.innerText = txt;
+        } else {
+            d.className = `msg ${role}`;
+            d.innerText = txt;
+        }
+        const m = document.getElementById('chat-log');
+        m.appendChild(d);
+        m.scrollTop = m.scrollHeight;
+    }
+
+    function updateSug() {
+        const el = document.getElementById('sug-text');
+        if(!hasATIS && step === 0) {
+            el.innerText = "(Aguardando ATIS...)";
+            return;
+        }
+        if(step < script.length) {
+            el.innerText = script[step].pilot();
+        } else {
+            el.innerText = "Voo em Cruzeiro / Monitoramento.";
+        }
+    }
+
+    function copySug() {
+        const t = document.getElementById('sug-text').innerText;
+        if(!t.includes("...")) document.getElementById('inp').value = t;
+    }
+
+    function setFreq(role) {
+        const dv = document.getElementById('disp-freq');
+        const dl = document.getElementById('disp-station');
+        let c = '#fff', v = '', l = '';
+
+        if(role === 'gnd') { c = 'var(--c-gnd)'; v = flight.freqs.gnd; l = 'SOLO'; }
+        if(role === 'twr') { c = 'var(--c-twr)'; v = flight.freqs.twr; l = 'TORRE'; }
+        if(role === 'app') { c = 'var(--c-app)'; v = flight.freqs.app; l = 'CONTROLE'; }
+        if(role === 'acc') { c = 'var(--c-acc)'; v = flight.freqs.acc; l = 'CENTRO'; }
+
+        dv.style.color = c; 
+        dv.innerText = v; 
+        dl.innerText = l;
         
-        <div class="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2 bg-gray-100 flex items-center justify-center h-64 lg:h-full">
-            <div class="w-full h-full relative group cursor-pointer bg-brand-main/20 flex flex-col items-center justify-center text-brand-dark">
-                <i class="fas fa-play-circle text-6xl mb-4 opacity-80 group-hover:scale-110 transition"></i>
-                <p class="font-semibold uppercase tracking-wider">Assista à Crocância</p>
-                <p class="text-xs text-gray-600 mt-2">(Aqui entra seu vídeo de 15s mostrando o produto)</p>
-                </div>
-        </div>
-    </header>
+        if(audioCtx) playSquelch();
+        addLog(`>>> RÁDIO: ${l} (${v}) <<<`, 'sys');
+    }
 
-    <section class="py-12 bg-brand-light/30">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center">
-                <h2 class="text-base text-brand-main font-semibold tracking-wide uppercase">Artesanal de Verdade</h2>
-                <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-brand-dark sm:text-4xl font-serif">
-                    Não é apenas um doce, é uma experiência.
-                </p>
-            </div>
+    // --- ATIS & AUDIO ---
+    function playATIS() {
+        if(!audioCtx) initAudio();
+        playSquelch();
+        
+        const txt = `${flight.dep}, Informação ${flight.atis}. Hora 1400 Zulu. Vento 110 graus, 8 nós. Visibilidade maior que 10 quilômetros. Teto 4 mil pés. Temperatura 28. QNH ${flight.qnh}. Informe ${flight.atis} no contato inicial.`;
+        
+        document.getElementById('atis-text').innerText = txt;
+        
+        const u = new SpeechSynthesisUtterance(toPhonetic(txt));
+        u.lang = 'pt-BR';
+        u.rate = 1.1;
+        u.pitch = 0.9; // Robótico
+        
+        u.onend = () => { playSquelch(); hasATIS = true; updateSug(); };
+        window.speechSynthesis.speak(u);
+    }
 
-            <div class="mt-10">
-                <dl class="space-y-10 md:space-y-0 md:grid md:grid-cols-3 md:gap-x-8 md:gap-y-10">
-                    <div class="relative">
-                        <dt>
-                            <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-brand-main text-white">
-                                <i class="fas fa-leaf"></i>
-                            </div>
-                            <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Coco Selecionado</p>
-                        </dt>
-                        <dd class="mt-2 ml-16 text-base text-gray-500">
-                            Usamos apenas cocos frescos, cortados na espessura ideal para garantir a textura perfeita entre o macio e o crocante.
-                        </dd>
-                    </div>
+    // Motor Fonético e Efeitos
+    const phMap = {'0':'Zero','1':'Uno','2':'Dois','3':'Três','4':'Quatro','5':'Cinco','6':'Meia','7':'Sete','8':'Oito','9':'Niner','.':'Decimal'};
+    
+    function toPhonetic(str) {
+        return str.replace(/([A-Z]{2}-[A-Z]{3})|(\d{3}\.\d{2})|(\b\d{1,4}\b)|(\d{2}[LRC])/g, m => {
+            return m.toUpperCase().split('').map(c => phMap[c] || c).join(' ');
+        });
+    }
 
-                    <div class="relative">
-                        <dt>
-                            <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-brand-main text-white">
-                                <i class="fas fa-fire"></i>
-                            </div>
-                            <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Torra Perfeita</p>
-                        </dt>
-                        <dd class="mt-2 ml-16 text-base text-gray-500">
-                            Caramelização lenta em tachos de cobre. O açúcar envolve o coco sem esconder o sabor natural da fruta.
-                        </dd>
-                    </div>
+    function initAudio() {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const b = audioCtx.createBuffer(1, audioCtx.sampleRate, audioCtx.sampleRate);
+        const d = b.getChannelData(0);
+        for(let i=0; i<d.length; i++) d[i] = Math.random() * 0.15 - 0.075;
+        noiseNode = b;
+    }
 
-                    <div class="relative">
-                        <dt>
-                            <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-brand-main text-white">
-                                <i class="fas fa-box-open"></i>
-                            </div>
-                            <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Embalagem de 80g</p>
-                        </dt>
-                        <dd class="mt-2 ml-16 text-base text-gray-500">
-                            A medida certa para o seu lanche da tarde, pré-treino ou para acompanhar aquele cafézinho.
-                        </dd>
-                    </div>
-                </dl>
-            </div>
-        </div>
-    </section>
+    function playSquelch() {
+        if(!audioCtx) return;
+        const s = audioCtx.createBufferSource(); s.buffer = noiseNode;
+        const g = audioCtx.createGain(); g.gain.value = 0.2;
+        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+        s.connect(g); g.connect(audioCtx.destination); s.start();
+    }
 
-    <section id="oferta" class="py-16 bg-white">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="bg-brand-dark rounded-2xl shadow-xl overflow-hidden md:flex">
-                <div class="md:w-1/2 p-2 bg-white flex items-center justify-center">
-                    <div class="bg-gray-200 w-full h-64 md:h-full rounded-xl flex items-center justify-center text-gray-400">
-                        <span class="text-center p-4">Foto do Kit com 3 Pacotes<br>(80g cada)</span>
-                    </div>
-                </div>
-                <div class="md:w-1/2 p-8 text-white flex flex-col justify-center">
-                    <div class="uppercase tracking-wide text-sm text-brand-main font-bold">Oferta Exclusiva Online</div>
-                    <h2 class="mt-2 text-3xl font-extrabold font-serif">Kit Triplo Sabor</h2>
-                    <p class="mt-4 text-gray-300">
-                        Garanta 3 pacotes de 80g do nosso Coco Caramelizado Premium. Ideal para ter sempre à mão ou presentear alguém especial.
-                    </p>
-                    
-                    <div class="mt-6 flex items-baseline">
-                        <span class="text-3xl font-extrabold tracking-tight">R$ 49,90</span>
-                        <span class="ml-2 text-lg text-gray-400 line-through">R$ 65,00</span>
-                    </div>
-                    
-                    <div class="mt-8">
-                        <button class="w-full bg-brand-accent border border-transparent rounded-md py-4 px-4 flex items-center justify-center text-lg font-bold text-white hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 shadow-lg transition transform hover:-translate-y-1">
-                            <i class="fab fa-whatsapp mr-2"></i> PEDIR MEU KIT AGORA
-                        </button>
-                        <p class="mt-3 text-xs text-center text-gray-400">
-                            *Compra segura. Entrega rápida em Conchas e região.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+    function speak(txt, role) {
+        playSquelch();
+        const u = new SpeechSynthesisUtterance(toPhonetic(txt));
+        u.lang = 'pt-BR';
+        
+        if(role === 'gnd') { u.rate=1.1; u.pitch=1.0; }
+        if(role === 'twr') { u.rate=1.3; u.pitch=1.2; } // Torre Aguda/Rápida
+        if(role === 'app') { u.rate=1.0; u.pitch=0.8; } // Controle Grave
+        if(role === 'acc') { u.rate=1.1; u.pitch=0.7; } // Centro Muito Grave
 
-    <footer class="bg-gray-900">
-        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 md:flex md:items-center md:justify-between lg:px-8">
-            <div class="flex justify-center space-x-6 md:order-2">
-                <a href="#" class="text-gray-400 hover:text-gray-300">
-                    <i class="fab fa-instagram text-2xl"></i>
-                </a>
-                <a href="#" class="text-gray-400 hover:text-gray-300">
-                    <i class="fab fa-facebook text-2xl"></i>
-                </a>
-            </div>
-            <div class="mt-8 md:mt-0 md:order-1">
-                <p class="text-center text-base text-gray-400">
-                    &copy; 2026 Coco Premium Artesanal. Produzido com amor em Conchas, SP.
-                </p>
-            </div>
-        </div>
-    </footer>
+        // Tentar pegar voz Google
+        const voices = window.speechSynthesis.getVoices();
+        const v = voices.find(vo => vo.name.includes("Google") && vo.lang.includes("pt-BR")) || voices.find(vo => vo.lang.includes("pt-BR"));
+        if(v) u.voice = v;
 
+        u.onend = playSquelch;
+        window.speechSynthesis.speak(u);
+    }
+    
+    window.speechSynthesis.getVoices(); // Pré-carregar
+
+</script>
 </body>
 </html>
