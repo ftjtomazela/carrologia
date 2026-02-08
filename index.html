@@ -2,487 +2,444 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ATC V11 - STABLE & FULL FLIGHT</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ATC V13 - FULL FLIGHT</title>
     <style>
         :root {
-            --bg: #101010;
-            --panel: #1e1e1e;
-            --border: #333;
-            --text: #ddd;
-            
-            /* Cores de Frequência */
-            --c-atis: #ffd700; /* Amarelo Ouro */
-            --c-gnd: #ef5350;  /* Vermelho */
-            --c-twr: #66bb6a;  /* Verde */
-            --c-app: #29b6f6;  /* Azul Claro */
-            --c-acc: #ab47bc;  /* Roxo (Centro) */
+            --bg: #000;
+            --panel: #111;
+            --accent: #00e5ff; /* Ciano Neon */
+            --atis: #ffca28;
+            --gnd: #ff5252;
+            --twr: #69f0ae;
+            --app: #448aff;
+            --acc: #e040fb;
         }
 
         body {
-            font-family: 'Consolas', 'Courier New', monospace;
             background: var(--bg);
-            color: var(--text);
+            color: #fff;
+            font-family: -apple-system, monospace;
             margin: 0;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            overflow: hidden;
         }
 
         /* HEADER */
         header {
-            background: #000;
-            padding: 15px;
-            border-bottom: 2px solid #333;
+            padding: 10px 15px;
+            border-bottom: 1px solid #333;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            background: #0a0a0a;
         }
-        
-        .flight-info { font-size: 0.9rem; color: #666; }
-        .callsign-box { font-size: 1.5rem; font-weight: bold; color: #fff; letter-spacing: 1px; }
-
-        .radio-box { text-align: right; }
-        .freq-val { font-size: 2rem; font-weight: bold; color: #444; transition: color 0.3s; }
-        .freq-lbl { font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase; color: #666; }
+        .freq-disp { font-size: 1.6rem; font-weight: 800; color: var(--accent); transition: color 0.3s; }
+        .stn-lbl { font-size: 0.7rem; color: #666; letter-spacing: 1px; }
 
         /* ATIS BAR */
         #atis-bar {
-            background: #252525;
-            padding: 10px 20px;
-            border-bottom: 1px solid #333;
+            background: #1a1a1a;
+            padding: 8px;
             display: flex;
-            align-items: center;
             justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
         }
         .atis-btn {
-            background: var(--c-atis); color: #000; border: none; padding: 6px 12px;
-            font-weight: bold; cursor: pointer; border-radius: 4px; font-size: 0.8rem;
+            background: var(--atis); color: #000; border: none; padding: 5px 10px;
+            border-radius: 4px; font-weight: bold; font-size: 0.8rem; flex: 1;
         }
-        .atis-marquee { font-size: 0.8rem; color: var(--c-atis); font-style: italic; white-space: nowrap; overflow: hidden; max-width: 60%; }
+        .atis-info { font-size: 0.8rem; color: var(--atis); margin-left: 10px; font-style: italic; display:none; }
 
-        /* CHAT AREA */
-        main {
+        /* LOG AREA */
+        #log {
             flex: 1;
-            padding: 20px;
             overflow-y: auto;
-            background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
+            padding: 10px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 8px;
         }
+        .hidden { display: none !important; }
 
-        .msg { padding: 12px; border-radius: 6px; max-width: 85%; font-size: 0.95rem; line-height: 1.4; animation: popIn 0.3s ease; }
-        @keyframes popIn { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        .msg.pilot { align-self: flex-end; border-right: 4px solid #fff; background: rgba(255,255,255,0.05); text-align: right; color: #fff; }
+        .msg { padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; max-width: 90%; line-height: 1.3; }
+        .msg.pilot { align-self: flex-end; border-right: 3px solid #fff; background: #222; text-align: right; }
         
-        /* Estilos ATC */
-        .msg.gnd { border-left: 4px solid var(--c-gnd); color: var(--c-gnd); background: rgba(239, 83, 80, 0.08); }
-        .msg.twr { border-left: 4px solid var(--c-twr); color: var(--c-twr); background: rgba(102, 187, 106, 0.08); }
-        .msg.app { border-left: 4px solid var(--c-app); color: var(--c-app); background: rgba(41, 182, 246, 0.08); }
-        .msg.acc { border-left: 4px solid var(--c-acc); color: var(--c-acc); background: rgba(171, 71, 188, 0.08); }
+        /* Cores ATC */
+        .msg.gnd { border-left: 3px solid var(--gnd); color: var(--gnd); background: rgba(255,82,82,0.1); }
+        .msg.twr { border-left: 3px solid var(--twr); color: var(--twr); background: rgba(105,240,174,0.1); }
+        .msg.app { border-left: 3px solid var(--app); color: var(--app); background: rgba(68,138,255,0.1); }
+        .msg.acc { border-left: 3px solid var(--acc); color: var(--acc); background: rgba(224,64,251,0.1); }
 
-        /* CONTROL DECK */
+        /* DECK */
         #deck {
-            background: var(--panel);
+            background: #151515;
             padding: 15px;
+            padding-bottom: 30px; /* Safe area iPhone */
             border-top: 1px solid #333;
         }
-        
-        .sug-box {
-            background: rgba(255,255,255,0.03); border: 1px dashed #444; padding: 10px;
-            margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
-        }
-        .sug-box:hover { background: rgba(255,255,255,0.08); border-color: #666; }
-        
-        .input-row { display: flex; gap: 10px; }
-        input[type="text"] {
-            flex: 1; background: #000; border: 1px solid #444; color: #fff; padding: 12px; font-family: inherit; font-size: 1rem;
-        }
-        button.send-btn {
-            background: #eee; color: #000; border: none; padding: 0 25px; font-weight: bold; cursor: pointer;
+
+        #toggle-hist {
+            width: 100%; background: #222; color: #666; border: none; padding: 5px;
+            font-size: 0.7rem; margin-bottom: 10px; border-radius: 4px;
         }
 
-        /* SETUP OVERLAY */
-        #setup { position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 100; display: flex; align-items: center; justify-content: center; }
-        .setup-card { background: #151515; padding: 30px; width: 320px; text-align: center; border: 1px solid #333; border-radius: 8px; }
-        input.setup-in { width: 100%; box-sizing: border-box; margin-bottom: 10px; text-align: center; }
-        button.setup-btn { width: 100%; padding: 12px; background: var(--c-app); color: #000; font-weight: bold; border: none; cursor: pointer; margin-top: 5px; }
-        
-        .hidden { display: none !important; }
+        .sug-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px dashed #444;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+        .sug-lbl { font-size: 0.7rem; color: #888; font-weight: bold; margin-bottom: 4px; }
+        .sug-txt { font-size: 1rem; color: #fff; font-style: italic; }
+
+        .inp-row { display: flex; gap: 8px; height: 45px; }
+        input {
+            flex: 1; background: #000; border: 1px solid #444; color: #fff;
+            padding: 0 10px; border-radius: 6px; font-size: 16px; /* Evita zoom no iOS */
+        }
+        button.send {
+            width: 70px; background: var(--accent); color: #000; border: none;
+            border-radius: 6px; font-weight: 900;
+        }
+
+        /* SETUP */
+        #setup { position: fixed; inset: 0; background: #000; z-index: 99; display: flex; flex-direction: column; justify-content: center; padding: 30px; }
+        .setup-in { padding: 15px; background: #111; border: 1px solid #333; color: #fff; width: 100%; box-sizing: border-box; text-align: center; margin-bottom: 10px; }
+        .setup-btn { padding: 15px; background: #007AFF; color: #fff; border: none; width: 100%; font-weight: bold; }
+
     </style>
 </head>
 <body>
 
 <div id="setup">
-    <div class="setup-card">
-        <h2 style="color:#fff; margin-top:0;">FLIGHT BRIEFING</h2>
-        <div style="font-size:0.8rem; color:#aaa; margin-bottom:5px;">SIMBRIEF USERNAME</div>
-        <input type="text" id="sb-user" class="setup-in" placeholder="Ex: JSmith">
-        <button class="setup-btn" onclick="fetchSimBrief()">IMPORTAR PLANO</button>
-        
-        <hr style="border-color:#333; margin:15px 0;">
-        
-        <div style="font-size:0.8rem; color:#aaa; margin-bottom:5px;">DADOS MANUAIS (OPCIONAL)</div>
-        <input type="text" id="manual-icao" class="setup-in" value="SBGR" placeholder="Origem">
-        <input type="text" id="manual-callsign" class="setup-in" value="TAM3304" placeholder="Callsign">
-        <button class="setup-btn" style="background:#444; color:#fff;" onclick="startSim()">INICIAR VOO</button>
-    </div>
+    <h1 style="color:#fff; text-align:center;">FULL FLIGHT V13</h1>
+    <input type="text" id="sb-user" class="setup-in" placeholder="SimBrief Username">
+    <button class="setup-btn" onclick="importData()">IMPORTAR DADOS</button>
+    <button class="setup-btn" style="background:#333; margin-top:10px;" onclick="startSim()">VOO PADRÃO</button>
 </div>
 
 <header>
     <div>
-        <div class="flight-info">FLIGHT DECK</div>
-        <div class="callsign-box" id="disp-callsign">---</div>
+        <div class="stn-lbl" id="stn-lbl">OFFLINE</div>
+        <div class="freq-disp" id="freq-disp">---.---</div>
     </div>
-    <div class="radio-box">
-        <div class="freq-lbl" id="disp-station">OFFLINE</div>
-        <div class="freq-val" id="disp-freq">---.---</div>
+    <div style="text-align:right;">
+        <div class="stn-lbl">CALLSIGN</div>
+        <div style="font-weight:bold;" id="cs-disp">PT-AAA</div>
     </div>
 </header>
 
 <div id="atis-bar">
-    <button class="atis-btn" onclick="playATIS()">🔊 OUVIR ATIS</button>
-    <div class="atis-marquee" id="atis-text">Aguardando sintonização...</div>
+    <button class="atis-btn" id="atis-btn" onclick="playATIS()">🔊 OUVIR ATIS (SAÍDA)</button>
+    <div class="atis-info" id="atis-info">Info Alpha</div>
 </div>
 
-<main id="chat-log"></main>
+<main id="log"></main>
 
 <div id="deck">
-    <div class="sug-box" onclick="copySug()">
-        <div>
-            <div style="font-size:0.7rem; color:#666; font-weight:bold;">SUGESTÃO (CLIQUE):</div>
-            <div style="color:#ccc; font-style:italic;" id="sug-text">...</div>
-        </div>
-        <span>📋</span>
+    <button id="toggle-hist" onclick="toggleLog()">🔼 ESCONDER HISTÓRICO</button>
+    
+    <div class="sug-card" onclick="copySug()">
+        <div class="sug-lbl">SUGESTÃO (TOQUE PARA COPIAR):</div>
+        <div class="sug-txt" id="sug-txt">...</div>
     </div>
-    <div class="input-row">
+
+    <div class="inp-row">
         <input type="text" id="inp" placeholder="Mensagem..." onkeypress="if(event.key==='Enter') send()">
-        <button class="send-btn" onclick="send()">ENV</button>
+        <button class="send" onclick="send()">ENV</button>
     </div>
 </div>
 
 <script>
-    // --- ESTADO GLOBAL ---
-    let flight = {
-        callsign: 'TAM3304',
-        dep: 'SBGR',
-        arr: 'SBGL',
-        rwy: '09L',
-        sid: 'VETOR',
-        alt: 'FL180',
-        squawk: '2000',
-        atis: 'Alpha',
+    // --- DADOS ---
+    let f = { 
+        callsign: 'PT-IOS', 
+        dep: 'SBMT', arr: 'SBGL', 
+        rwy_dep: '12', rwy_arr: '10', 
+        sid: 'VETOR', star: 'PIRA1A',
+        alt: 'FL140', squawk: '2000',
+        atis_dep: 'Alpha', atis_arr: 'Bravo',
         qnh: '1013',
         freqs: { gnd: '121.90', twr: '118.10', app: '129.50', acc: '124.30' }
     };
     
     let step = 0;
     let hasATIS = false;
-    let audioCtx, noiseNode;
+    let phase = 'DEP'; // DEP ou ARR
 
-    // --- ROTEIRO INTELIGENTE (Script) ---
+    // --- ROTEIRO COMPLETO ---
     const script = [
-        // FASE 1: SOLO (GND)
+        // 1. SOLO (SAÍDA)
         { 
-            role: 'gnd',
-            hint: 'Solicitar Autorização (Requer ATIS)',
-            pilot: () => `Solo, ${flight.callsign}, com informação ${flight.atis}, solicita autorização para ${flight.arr}.`,
-            key: ['autorização', 'solicita', 'alpha'],
-            reply: () => `${flight.callsign}, autorizado ${flight.arr}, saída ${flight.sid}, nível inicial 060, transponder ${flight.squawk}.`
+            role: 'gnd', hint: 'Requer ATIS', 
+            pilot: () => `Solo, ${f.callsign}, informação ${f.atis_dep}, solicita autorização ${f.arr}.`, 
+            key: ['autorização','alpha'], 
+            reply: () => `${f.callsign}, autorizado ${f.arr}, saída ${f.sid}, nível 060, transponder ${f.squawk}.`
         },
         { 
-            role: 'gnd',
-            hint: 'Cotejamento',
-            pilot: () => `Autorizado ${flight.arr}, saída ${flight.sid}, 060, squawk ${flight.squawk}, ${flight.callsign}.`,
-            key: ['autorizado', flight.squawk],
-            reply: () => `${flight.callsign}, cotejamento correto. Chame pronto para acionamento.`
+            role: 'gnd', hint: 'Cotejar', 
+            pilot: () => `Autorizado ${f.arr}, saída ${f.sid}, 060, ${f.squawk}, ${f.callsign}.`, 
+            key: ['autorizado'], 
+            reply: () => `${f.callsign}, correto. Chame pronto táxi.`
         },
         { 
-            role: 'gnd',
-            hint: 'Acionamento e Pushback',
-            pilot: () => `${flight.callsign}, pronto para acionamento e pushback.`,
-            key: ['acionamento', 'pushback'],
-            reply: () => `${flight.callsign}, acionamento e pushback aprovado. Cauda livre.`
+            role: 'gnd', hint: 'Táxi', 
+            pilot: () => `${f.callsign}, pronto táxi.`, 
+            key: ['táxi'], 
+            reply: () => `${f.callsign}, taxie ponto de espera ${f.rwy_dep}. Chame Torre ${f.freqs.twr}.`,
+            act: 'twr'
+        },
+        
+        // 2. TORRE (SAÍDA)
+        { 
+            role: 'twr', hint: 'Decolagem', 
+            pilot: () => `Torre, ${f.callsign}, pronto ponto de espera ${f.rwy_dep}.`, 
+            key: ['torre','pronto'], 
+            reply: () => `${f.callsign}, autorizado decolagem ${f.rwy_dep}.`
         },
         { 
-            role: 'gnd',
-            hint: 'Táxi',
-            pilot: () => `${flight.callsign}, pronto para táxi.`,
-            key: ['táxi', 'pronto'],
-            reply: () => `${flight.callsign}, taxie via Alfa até o ponto de espera pista ${flight.rwy}. Monitorando Torre em ${flight.freqs.twr}.`,
-            action: 'switch_twr'
+            role: 'twr', hint: 'Handoff Saída', 
+            pilot: () => `Decolado, ${f.callsign}.`, 
+            key: ['decolado'], 
+            reply: () => `${f.callsign}, contate Controle Saída ${f.freqs.app}.`,
+            act: 'app'
         },
-        // FASE 2: TORRE (TWR)
+
+        // 3. CONTROLE (SUBIDA)
         { 
-            role: 'twr',
-            hint: 'Ponto de Espera',
-            pilot: () => `Torre, ${flight.callsign}, ponto de espera ${flight.rwy}, pronto.`,
-            key: ['torre', 'espera'],
-            reply: () => `${flight.callsign}, autorizado decolagem pista ${flight.rwy}, vento calmo.`
-        },
-        // FASE 3: CONTROLE (APP)
-        { 
-            role: 'twr',
-            hint: 'Troca de Frequência (Handoff)',
-            pilot: () => `Decolado, ${flight.callsign}.`,
-            key: ['decolado', 'livrando'],
-            reply: () => `${flight.callsign}, contate Controle Saída em ${flight.freqs.app}.`,
-            action: 'switch_app'
+            role: 'app', hint: 'Subida', 
+            pilot: () => `Controle, ${f.callsign}, passando 3000 pés.`, 
+            key: ['controle'], 
+            reply: () => `${f.callsign}, contato radar. Subida livre nível ${f.alt}.`
         },
         { 
-            role: 'app',
-            hint: 'Chamada Inicial Controle',
-            pilot: () => `Controle, ${flight.callsign}, passando 2500 pés.`,
-            key: ['controle', 'passando'],
-            reply: () => `${flight.callsign}, contato radar. Subida livre para nível de cruzeiro ${flight.alt}.`
+            role: 'app', hint: 'Handoff Centro', 
+            pilot: () => `Nível ${f.alt}, ${f.callsign}.`, 
+            key: ['nível'], 
+            reply: () => `${f.callsign}, chame Centro ${f.freqs.acc}.`,
+            act: 'acc'
         },
-        // FASE 4: CENTRO (ACC) - CRUZEIRO
+
+        // 4. CENTRO (CRUZEIRO & DESCIDA)
         { 
-            role: 'app',
-            hint: 'Troca para Centro (Cruzeiro)',
-            pilot: () => `Nível ${flight.alt}, ${flight.callsign}.`,
-            key: ['nível', 'cruzando', 'mantendo'],
-            reply: () => `${flight.callsign}, chame Centro Brasília em ${flight.freqs.acc}. Bom voo.`,
-            action: 'switch_acc'
+            role: 'acc', hint: 'Cruzeiro', 
+            pilot: () => `Centro, ${f.callsign}, nível de cruzeiro.`, 
+            key: ['centro'], 
+            reply: () => `${f.callsign}, ciente. Reporte ideal de descida.`
         },
         { 
-            role: 'acc',
-            hint: 'Chamada Inicial Centro',
-            pilot: () => `Centro Brasília, ${flight.callsign}, mantendo nível ${flight.alt}.`,
-            key: ['centro', 'mantendo'],
-            reply: () => `${flight.callsign}, ciente. Mantenha vigilância. Reporte pronto para descida.`
+            role: 'acc', hint: 'Pedir Descida', 
+            pilot: () => `Centro, ${f.callsign}, solicita descida.`, 
+            key: ['descida'], 
+            reply: () => `${f.callsign}, autorizado descida nível 100. Chame Controle ${f.freqs.app}.`,
+            act: 'app_arr' // Ação especial para mudar ATIS
         },
-        // ... Fim da simulação por enquanto ...
+
+        // 5. CONTROLE (APROXIMAÇÃO)
         { 
-            role: 'acc',
-            hint: 'Fim do Voo',
-            pilot: () => `(Voo em Cruzeiro...)`,
-            key: ['xyz'],
-            reply: () => `Fim da Simulação.`
+            role: 'app', hint: 'Descida Inicial (Ouça ATIS Chegada)', 
+            pilot: () => `Controle, ${f.callsign}, descendo nível 100, info ${f.atis_arr}.`, 
+            key: ['descendo','bravo'], 
+            reply: () => `${f.callsign}, ciente. Espere vetoração ILS pista ${f.rwy_arr}.`
+        },
+        { 
+            role: 'app', hint: 'Interceptação', 
+            pilot: () => `Ciente, aguarda vetor ILS ${f.rwy_arr}, ${f.callsign}.`, 
+            key: ['ils','vetor'], 
+            reply: () => `${f.callsign}, curve direita proa 090, autorizado aproximação. Reporte estabelecido.`
+        },
+        { 
+            role: 'app', hint: 'Handoff Torre', 
+            pilot: () => `Estabelecido no localizador, ${f.callsign}.`, 
+            key: ['estabelecido'], 
+            reply: () => `${f.callsign}, chame Torre ${f.freqs.twr}.`,
+            act: 'twr'
+        },
+
+        // 6. TORRE (POUSO)
+        { 
+            role: 'twr', hint: 'Final', 
+            pilot: () => `Torre, ${f.callsign}, na final ${f.rwy_arr}.`, 
+            key: ['torre','final'], 
+            reply: () => `${f.callsign}, vento calmo, autorizado pouso ${f.rwy_arr}.`
+        },
+        { 
+            role: 'twr', hint: 'Solo Controlado', 
+            pilot: () => `No solo, livrando pista, ${f.callsign}.`, 
+            key: ['solo','livrando'], 
+            reply: () => `${f.callsign}, bem vindo. Contate Solo ${f.freqs.gnd}.`,
+            act: 'gnd'
+        },
+
+        // 7. SOLO (GATE)
+        { 
+            role: 'gnd', hint: 'Táxi Gate', 
+            pilot: () => `Solo, ${f.callsign}, livrou pista, solicita táxi pátio.`, 
+            key: ['solo','táxi'], 
+            reply: () => `${f.callsign}, taxie via Bravo até o pátio. Corte a critério.`
         }
     ];
 
-    // --- FUNÇÕES DE IMPORTAÇÃO (BUG FIX) ---
-    async function fetchSimBrief() {
-        const user = document.getElementById('sb-user').value;
-        const btn = document.querySelector('.setup-btn');
-        
-        if(!user) return alert("Digite o usuário do SimBrief!");
-        
-        btn.innerText = "CARREGANDO...";
-        
+    // --- FUNÇÕES ---
+    async function importData() {
+        const u = document.getElementById('sb-user').value;
+        if(!u) return alert("Digite usuário");
         try {
-            const url = `https://www.simbrief.com/api/xml.fetcher.php?username=${user}&json=1`;
-            const req = await fetch(url);
-            const json = await req.json();
-
-            // PARSER SEGURO (Evita [object Object])
-            // Usamos o operador ?. (Optional Chaining) para não quebrar se algo faltar
+            const r = await fetch(`https://www.simbrief.com/api/xml.fetcher.php?username=${u}&json=1`);
+            const d = await r.json();
             
-            flight.callsign = (json.general?.icao_airline || "") + (json.general?.flight_number || "GEN");
-            if(flight.callsign === "GEN") flight.callsign = json.general?.callsign || "PT-SIM"; // Fallback
-
-            flight.dep = json.origin?.icao_code || "SBGR";
-            flight.arr = json.destination?.icao_code || "SBGL";
-            flight.rwy = json.origin?.plan_rwy || "09L";
+            f.callsign = d.general.icao_airline + d.general.flight_number;
+            f.dep = d.origin.icao_code;
+            f.arr = d.destination.icao_code;
+            f.rwy_dep = d.origin.plan_rwy;
+            f.rwy_arr = d.destination.plan_rwy;
+            f.alt = "FL" + Math.round(d.general.cruise_altitude/100);
             
-            // Tenta pegar SID da rota (primeira palavra)
-            const rawRoute = json.general?.route || "VETOR";
-            flight.sid = rawRoute.split(' ')[0];
-            
-            // Altitude (Converter pés para FL)
-            const alt = json.general?.initial_altitude || "18000";
-            flight.alt = "FL" + Math.round(parseInt(alt) / 100);
-
-            flight.squawk = "47" + Math.floor(Math.random() * 90 + 10); // Gera Squawk Random
-
-            alert(`Plano Carregado!\nDe: ${flight.dep}\nPara: ${flight.arr}\nAltitude: ${flight.alt}`);
             startSim();
-
-        } catch (e) {
-            console.error(e);
-            alert("Erro ao ler SimBrief. Verifique se você gerou o OFP recentemente.");
-            btn.innerText = "IMPORTAR PLANO";
-        }
+        } catch(e) { alert("Erro SimBrief"); }
     }
 
     function startSim() {
-        // Se não veio do SimBrief, pega dos inputs manuais
-        if(document.getElementById('setup').style.display !== 'none') {
-            const manCall = document.getElementById('manual-callsign').value;
-            if(manCall) flight.callsign = manCall.toUpperCase();
-        }
-
         document.getElementById('setup').style.display = 'none';
-        document.getElementById('disp-callsign').innerText = flight.callsign;
-        
-        initAudio();
-        setFreq('gnd'); // Inicia no Solo
+        document.getElementById('cs-disp').innerText = f.callsign;
+        setFreq('gnd');
         updateSug();
-        addLog(`BEM VINDO AO COCKPIT, ${flight.callsign}.`, 'sys');
+        window.AudioContext = window.AudioContext || window.webkitAudioContext;
+        if(!audioCtx) audioCtx = new AudioContext();
     }
 
-    // --- LÓGICA DE CHAT ---
-    function send() {
-        const inp = document.getElementById('inp');
-        const txt = inp.value.trim();
-        if(!txt) return;
+    function toggleLog() {
+        const log = document.getElementById('log');
+        const btn = document.getElementById('toggle-hist');
+        if(log.classList.contains('hidden')) {
+            log.classList.remove('hidden');
+            btn.innerText = "🔼 ESCONDER HISTÓRICO";
+        } else {
+            log.classList.add('hidden');
+            btn.innerText = "🔽 MOSTRAR HISTÓRICO";
+        }
+    }
 
-        addLog(txt, 'pilot');
+    function playATIS() {
+        playSquelch();
+        let txt = "";
+        
+        if(phase === 'DEP') {
+            txt = `${f.dep}, Informação ${f.atis_dep}. Vento 100 graus 8 nós. QNH ${f.qnh}. Pista em uso ${f.rwy_dep}.`;
+            hasATIS = true;
+        } else {
+            txt = `${f.arr}, Informação ${f.atis_arr}. Vento calmo. QNH ${f.qnh}. Esperar ILS Pista ${f.rwy_arr}.`;
+        }
+
+        document.getElementById('atis-info').innerText = phase === 'DEP' ? "Info Alpha" : "Info Bravo";
+        document.getElementById('atis-info').style.display = 'block';
+
+        const u = new SpeechSynthesisUtterance(toPhonetic(txt));
+        u.lang = 'pt-BR'; u.rate = 1.1; u.pitch = 0.9;
+        u.onend = playSquelch;
+        window.speechSynthesis.speak(u);
+        
+        updateSug();
+    }
+
+    function send() {
+        const i = document.getElementById('inp');
+        const t = i.value.trim();
+        if(!t) return;
+        
+        addLog(t, 'pilot');
 
         if(step < script.length) {
-            const st = script[step];
+            const s = script[step];
             
-            // Validações
-            if(st.hint.includes("Requer ATIS") && !hasATIS) {
-                setTimeout(() => addLog("SISTEMA: Ouça o ATIS primeiro!", 'sys'), 500);
-                inp.value = '';
-                return;
+            if(s.hint.includes("Requer ATIS") && !hasATIS) {
+                 setTimeout(()=>addLog("SISTEMA: Ouça o ATIS primeiro!", 'msg sys'), 500);
+                 i.value=''; return;
             }
 
-            // Verifica keywords
-            const hit = st.key.some(k => txt.toLowerCase().includes(k));
-            
-            if(hit || txt.length > 8) {
-                setTimeout(() => {
-                    const reply = st.reply();
-                    speak(reply, st.role);
-                    addLog(reply, st.role);
-
-                    if(st.action) {
-                        setTimeout(() => triggerAction(st.action), 4000);
-                    }
+            if(s.key.some(k=>t.toLowerCase().includes(k)) || t.length>10) {
+                setTimeout(()=>{
+                    const ans = s.reply();
+                    speak(ans, s.role);
+                    addLog(ans, s.role);
                     
-                    step++;
-                    updateSug();
+                    if(s.act) setTimeout(()=>changeMode(s.act), 4000);
+                    step++; updateSug();
                 }, 1000);
             }
         }
-        inp.value = '';
+        i.value = '';
     }
 
-    function triggerAction(act) {
-        if(act === 'switch_twr') setFreq('twr');
-        if(act === 'switch_app') setFreq('app');
-        if(act === 'switch_acc') setFreq('acc');
-    }
-
-    // --- UI HELPERS ---
-    function addLog(txt, role) {
-        const d = document.createElement('div');
-        if(role === 'sys') {
-            d.style.textAlign = 'center'; d.style.color = '#666'; d.style.fontSize = '0.8rem'; d.innerText = txt;
+    function changeMode(act) {
+        if(act === 'app_arr') {
+            phase = 'ARR'; // Muda para fase de chegada
+            setFreq('app');
+            const btn = document.getElementById('atis-btn');
+            btn.innerText = "🔊 OUVIR ATIS (CHEGADA)";
+            btn.style.background = "#ff9100";
+            addLog(">>> INICIANDO DESCIDA / MUDANÇA DE ATIS <<<", 'msg sys');
         } else {
-            d.className = `msg ${role}`;
-            d.innerText = txt;
+            setFreq(act);
         }
-        const m = document.getElementById('chat-log');
-        m.appendChild(d);
-        m.scrollTop = m.scrollHeight;
+    }
+
+    function setFreq(r) {
+        const d = document.getElementById('freq-disp');
+        const l = document.getElementById('stn-lbl');
+        let c='#fff', n='', f='';
+        
+        if(r==='gnd'){c='var(--gnd)'; n='SOLO'; f=f.freqs.gnd;}
+        if(r==='twr'){c='var(--twr)'; n='TORRE'; f=f.freqs.twr;}
+        if(r==='app'){c='var(--app)'; n='CONTROLE'; f=f.freqs.app;}
+        if(r==='acc'){c='var(--acc)'; n='CENTRO'; f=f.freqs.acc;}
+
+        d.style.color=c; d.innerText=f; l.innerText=n;
+        if(audioCtx) playSquelch();
     }
 
     function updateSug() {
-        const el = document.getElementById('sug-text');
-        if(!hasATIS && step === 0) {
-            el.innerText = "(Aguardando ATIS...)";
-            return;
-        }
-        if(step < script.length) {
-            el.innerText = script[step].pilot();
-        } else {
-            el.innerText = "Voo em Cruzeiro / Monitoramento.";
-        }
+        if(!hasATIS && step===0) document.getElementById('sug-txt').innerText = "(Aguardando ATIS...)";
+        else document.getElementById('sug-txt').innerText = step<script.length ? script[step].pilot() : "Voo Finalizado.";
     }
-
-    function copySug() {
-        const t = document.getElementById('sug-text').innerText;
-        if(!t.includes("...")) document.getElementById('inp').value = t;
-    }
-
-    function setFreq(role) {
-        const dv = document.getElementById('disp-freq');
-        const dl = document.getElementById('disp-station');
-        let c = '#fff', v = '', l = '';
-
-        if(role === 'gnd') { c = 'var(--c-gnd)'; v = flight.freqs.gnd; l = 'SOLO'; }
-        if(role === 'twr') { c = 'var(--c-twr)'; v = flight.freqs.twr; l = 'TORRE'; }
-        if(role === 'app') { c = 'var(--c-app)'; v = flight.freqs.app; l = 'CONTROLE'; }
-        if(role === 'acc') { c = 'var(--c-acc)'; v = flight.freqs.acc; l = 'CENTRO'; }
-
-        dv.style.color = c; 
-        dv.innerText = v; 
-        dl.innerText = l;
-        
-        if(audioCtx) playSquelch();
-        addLog(`>>> RÁDIO: ${l} (${v}) <<<`, 'sys');
-    }
-
-    // --- ATIS & AUDIO ---
-    function playATIS() {
-        if(!audioCtx) initAudio();
-        playSquelch();
-        
-        const txt = `${flight.dep}, Informação ${flight.atis}. Hora 1400 Zulu. Vento 110 graus, 8 nós. Visibilidade maior que 10 quilômetros. Teto 4 mil pés. Temperatura 28. QNH ${flight.qnh}. Informe ${flight.atis} no contato inicial.`;
-        
-        document.getElementById('atis-text').innerText = txt;
-        
-        const u = new SpeechSynthesisUtterance(toPhonetic(txt));
-        u.lang = 'pt-BR';
-        u.rate = 1.1;
-        u.pitch = 0.9; // Robótico
-        
-        u.onend = () => { playSquelch(); hasATIS = true; updateSug(); };
-        window.speechSynthesis.speak(u);
-    }
-
-    // Motor Fonético e Efeitos
-    const phMap = {'0':'Zero','1':'Uno','2':'Dois','3':'Três','4':'Quatro','5':'Cinco','6':'Meia','7':'Sete','8':'Oito','9':'Niner','.':'Decimal'};
     
-    function toPhonetic(str) {
-        return str.replace(/([A-Z]{2}-[A-Z]{3})|(\d{3}\.\d{2})|(\b\d{1,4}\b)|(\d{2}[LRC])/g, m => {
-            return m.toUpperCase().split('').map(c => phMap[c] || c).join(' ');
-        });
+    function copySug() { 
+        document.getElementById('inp').value = document.getElementById('sug-txt').innerText; 
     }
 
-    function initAudio() {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const b = audioCtx.createBuffer(1, audioCtx.sampleRate, audioCtx.sampleRate);
-        const d = b.getChannelData(0);
-        for(let i=0; i<d.length; i++) d[i] = Math.random() * 0.15 - 0.075;
-        noiseNode = b;
+    function addLog(t, type) {
+        const d = document.createElement('div');
+        d.className = `msg ${type}`; d.innerText = t;
+        const l = document.getElementById('log');
+        l.appendChild(d); l.scrollTop = l.scrollHeight;
     }
 
+    /* AUDIO ENGINE */
+    let audioCtx, noise;
     function playSquelch() {
         if(!audioCtx) return;
-        const s = audioCtx.createBufferSource(); s.buffer = noiseNode;
-        const g = audioCtx.createGain(); g.gain.value = 0.2;
-        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+        const s=audioCtx.createBufferSource(); 
+        if(!noise){ noise=audioCtx.createBuffer(1,audioCtx.sampleRate,audioCtx.sampleRate); const d=noise.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*0.2-0.1; }
+        s.buffer=noise; const g=audioCtx.createGain(); g.gain.value=0.2;
+        g.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+0.2);
         s.connect(g); g.connect(audioCtx.destination); s.start();
     }
-
-    function speak(txt, role) {
+    const map={'0':'Zero','1':'Uno','2':'Dois','3':'Três','4':'Quatro','5':'Cinco','6':'Meia','7':'Sete','8':'Oito','9':'Niner','.':'Decimal'};
+    function toPhonetic(t){ return t.replace(/([A-Z]{2}-[A-Z]{3})|(\d{3}\.\d{2})|(\b\d{1,4}\b)|(\d{2}[LRC])/g, m=>m.toUpperCase().split('').map(c=>map[c]||c).join(' ')); }
+    function speak(t,r) {
         playSquelch();
-        const u = new SpeechSynthesisUtterance(toPhonetic(txt));
-        u.lang = 'pt-BR';
-        
-        if(role === 'gnd') { u.rate=1.1; u.pitch=1.0; }
-        if(role === 'twr') { u.rate=1.3; u.pitch=1.2; } // Torre Aguda/Rápida
-        if(role === 'app') { u.rate=1.0; u.pitch=0.8; } // Controle Grave
-        if(role === 'acc') { u.rate=1.1; u.pitch=0.7; } // Centro Muito Grave
-
-        // Tentar pegar voz Google
-        const voices = window.speechSynthesis.getVoices();
-        const v = voices.find(vo => vo.name.includes("Google") && vo.lang.includes("pt-BR")) || voices.find(vo => vo.lang.includes("pt-BR"));
-        if(v) u.voice = v;
-
-        u.onend = playSquelch;
-        window.speechSynthesis.speak(u);
+        const u=new SpeechSynthesisUtterance(toPhonetic(t)); u.lang='pt-BR';
+        if(r==='twr'){u.rate=1.3;u.pitch=1.1;} if(r==='acc'){u.rate=1.1;u.pitch=0.7;}
+        const v=window.speechSynthesis.getVoices().find(x=>x.lang.includes('pt-BR')); if(v)u.voice=v;
+        u.onend=playSquelch; window.speechSynthesis.speak(u);
     }
-    
-    window.speechSynthesis.getVoices(); // Pré-carregar
-
+    window.speechSynthesis.getVoices();
 </script>
 </body>
 </html>
