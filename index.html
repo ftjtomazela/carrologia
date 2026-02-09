@@ -3,38 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ATC V16 - iOS FIX</title>
+    <title>ATC V17 - INSTRUCTOR</title>
     <style>
         :root {
-            --bg: #000; --panel: #111; --accent: #00e5ff;
+            --bg: #000; --panel: #111; --accent: #00e5ff; --err: #ff3333;
             --atis: #ffca28; --gnd: #ff5252; --twr: #69f0ae; --app: #448aff; --acc: #e040fb;
         }
         
         * { box-sizing: border-box; }
-
-        body { 
-            background: var(--bg); 
-            color: #fff; 
-            font-family: -apple-system, monospace; 
-            margin: 0; 
-            /* O SEGREDO DO IPHONE: svh (Small Viewport Height) */
-            height: 100svh; 
-            display: flex; 
-            flex-direction: column; 
-            overflow: hidden; 
-        }
+        body { background: var(--bg); color: #fff; font-family: -apple-system, monospace; margin: 0; height: 100svh; display: flex; flex-direction: column; overflow: hidden; }
         
         /* HEADER */
-        header { 
-            padding: 10px 15px; 
-            padding-top: max(10px, env(safe-area-inset-top)); /* Respeita o Notch */
-            border-bottom: 1px solid #333; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            background: #0a0a0a;
-            flex-shrink: 0; /* Não deixa encolher */
-        }
+        header { padding: 10px 15px; padding-top: max(10px, env(safe-area-inset-top)); border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; background: #0a0a0a; flex-shrink: 0; }
         .freq-disp { font-size: 1.6rem; font-weight: 800; color: var(--accent); }
         .stn-lbl { font-size: 0.7rem; color: #666; letter-spacing: 1px; }
 
@@ -43,95 +23,60 @@
         .tab { flex: 1; padding: 12px; text-align: center; color: #666; font-weight: bold; font-size: 0.8rem; cursor: pointer; }
         .tab.active { color: #fff; background: #222; border-bottom: 2px solid var(--accent); }
 
-        /* CONTEÚDO (Scrollável) */
-        #main-content { 
-            flex: 1; 
-            position: relative; 
-            overflow: hidden; 
-            background: #050505;
-        }
-        .page { position: absolute; inset: 0; display: none; flex-direction: column; }
+        /* CONTENT */
+        #main-content { flex: 1; position: relative; overflow: hidden; background: #050505; }
+        .page { position: absolute; inset: 0; display: none; flex-direction: column; overflow-y: auto; -webkit-overflow-scrolling: touch; }
         .page.active { display: flex; }
 
-        /* PÁGINA COMMS */
-        #atis-bar { 
-            background: #1a1a1a; 
-            padding: 8px; 
-            display: flex; 
-            gap: 10px;
-            align-items: center; 
-            border-bottom: 1px solid #333; 
-            flex-shrink: 0;
-        }
+        /* PAGINA COMMS */
+        #atis-bar { background: #1a1a1a; padding: 8px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid #333; flex-shrink: 0; }
         .atis-btn { background: var(--atis); color: #000; border: none; padding: 8px; border-radius: 6px; font-weight: bold; font-size: 0.8rem; flex: 1; }
         
-        #log { 
-            flex: 1; 
-            overflow-y: auto; 
-            padding: 10px; 
-            padding-bottom: 20px;
-            display: flex; 
-            flex-direction: column; 
-            gap: 10px; 
-            -webkit-overflow-scrolling: touch; /* Scroll suave no iOS */
-        }
-        
+        #log { flex: 1; overflow-y: auto; padding: 10px; padding-bottom: 20px; display: flex; flex-direction: column; gap: 10px; }
         .msg { padding: 10px 14px; border-radius: 8px; font-size: 0.95rem; max-width: 85%; line-height: 1.4; }
         .msg.pilot { align-self: flex-end; border-right: 3px solid #fff; background: #222; text-align: right; }
-        .msg.sys { align-self: center; color: #555; font-size: 0.75rem; font-style: italic; }
+        .msg.sys { align-self: center; color: #555; font-size: 0.75rem; font-style: italic; margin: 10px 0; }
+        .msg.hint { align-self: center; color: var(--atis); border: 1px dashed var(--atis); background: rgba(255, 202, 40, 0.1); font-size: 0.8rem; }
         
-        /* Cores ATC */
+        /* CORES ATC */
         .msg.gnd { border-left: 3px solid var(--gnd); color: var(--gnd); background: rgba(255,82,82,0.1); }
         .msg.twr { border-left: 3px solid var(--twr); color: var(--twr); background: rgba(105,240,174,0.1); }
         .msg.app { border-left: 3px solid var(--app); color: var(--app); background: rgba(68,138,255,0.1); }
         .msg.acc { border-left: 3px solid var(--acc); color: var(--acc); background: rgba(224,64,251,0.1); }
 
-        /* PÁGINA MAPA */
-        #map-container { height: 100%; display: flex; align-items: center; justify-content: center; }
-        #map-img { max-width: 100%; max-height: 100%; }
-        .no-map { color: #444; padding: 20px; text-align: center; }
+        /* PAGINA ESCOLA (NOVO) */
+        .ref-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .ref-table th { text-align: left; color: var(--accent); border-bottom: 1px solid #444; padding: 5px; font-size: 0.8rem; }
+        .ref-table td { border-bottom: 1px solid #222; padding: 8px 5px; font-size: 0.9rem; color: #ccc; }
+        .ref-section { padding: 15px; }
+        .ref-title { color: #fff; font-weight: bold; margin-bottom: 10px; border-left: 3px solid var(--accent); padding-left: 10px; }
 
-        /* RODAPÉ (FIXO) */
-        #deck { 
-            background: #151515; 
-            padding: 10px; 
-            border-top: 1px solid #333;
-            flex-shrink: 0;
-            /* Garante que fique acima da barra home do iPhone */
-            padding-bottom: max(15px, env(safe-area-inset-bottom)); 
-        }
-
-        .sug-card { 
-            background: rgba(255,255,255,0.05); border: 1px dashed #444; 
-            padding: 10px; border-radius: 8px; margin-bottom: 8px; cursor: pointer; 
-        }
-        .sug-lbl { font-size: 0.7rem; color: #888; font-weight: bold; margin-bottom: 4px; }
-        .sug-txt { font-size: 0.95rem; color: #fff; font-style: italic; }
+        /* DECK */
+        #deck { background: #151515; padding: 10px; border-top: 1px solid #333; flex-shrink: 0; padding-bottom: max(15px, env(safe-area-inset-bottom)); }
+        .sug-card { background: rgba(255,255,255,0.05); border: 1px dashed #444; padding: 10px; border-radius: 8px; margin-bottom: 8px; cursor: pointer; display: none; } /* Escondido por padrao no modo HARD */
         
         .inp-row { display: flex; gap: 8px; height: 44px; }
-        input { 
-            flex: 1; background: #000; border: 1px solid #444; color: #fff; 
-            padding: 0 12px; border-radius: 8px; font-size: 16px; /* Evita zoom automático no input */
-        }
-        button.send { width: 70px; background: var(--accent); color: #000; border: none; border-radius: 8px; font-weight: 800; }
-
-        /* SETUP MODAL */
-        #setup { position: fixed; inset: 0; background: #000; z-index: 100; display: flex; flex-direction: column; justify-content: center; padding: 30px; padding-bottom: 20%; }
-        .setup-in { padding: 15px; background: #111; border: 1px solid #333; color: #fff; width: 100%; box-sizing: border-box; text-align: center; margin-bottom: 10px; border-radius: 8px; }
-        .setup-btn { padding: 15px; background: #007AFF; color: #fff; border: none; width: 100%; font-weight: bold; border-radius: 8px; }
-        .resume-btn { padding: 15px; background: var(--twr); color: #000; border: none; width: 100%; font-weight: bold; border-radius: 8px; margin-bottom: 10px; display: none; }
+        input { flex: 1; background: #000; border: 1px solid #444; color: #fff; padding: 0 12px; border-radius: 8px; font-size: 16px; transition: border 0.2s; }
+        input.error { border-color: var(--err); animation: shake 0.3s; }
+        @keyframes shake { 0%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} 100%{transform:translateX(0)} }
         
-        .hidden { display: none !important; }
+        button { border: none; border-radius: 8px; font-weight: 800; cursor: pointer; }
+        button.send { width: 60px; background: var(--accent); color: #000; }
+        button.help { width: 40px; background: #333; color: #aaa; font-size: 1.2rem; }
+
+        /* SETUP */
+        #setup { position: fixed; inset: 0; background: #000; z-index: 100; display: flex; flex-direction: column; justify-content: center; padding: 30px; }
+        .setup-in { padding: 15px; background: #111; border: 1px solid #333; color: #fff; width: 100%; box-sizing: border-box; text-align: center; margin-bottom: 10px; border-radius: 8px; }
+        .setup-btn { padding: 15px; background: #007AFF; color: #fff; width: 100%; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
 <div id="setup">
-    <h2 style="color:#fff; text-align:center;">EFB V16 (iOS)</h2>
-    <button id="resume-btn" class="resume-btn" onclick="resumeFlight()">↩ RETOMAR VOO</button>
+    <h2 style="color:#fff; text-align:center;">ATC ACADEMY V17</h2>
     <input type="text" id="sb-user" class="setup-in" placeholder="SimBrief Username">
-    <button class="setup-btn" onclick="importData()">IMPORTAR (SIMBRIEF)</button>
-    <button class="setup-btn" style="background:#333; margin-top:10px;" onclick="startSim()">VOO LIVRE</button>
+    <button class="setup-btn" onclick="importData()">IMPORTAR SIMBRIEF</button>
+    <button class="setup-btn" style="background:#333;" onclick="startSim()">VOO LIVRE</button>
 </div>
 
 <header>
@@ -146,7 +91,8 @@
 </header>
 
 <div class="tabs">
-    <div class="tab active" onclick="switchTab('comms')">COMMS</div>
+    <div class="tab active" onclick="switchTab('comms')">RÁDIO</div>
+    <div class="tab" onclick="switchTab('school')">ESCOLA</div>
     <div class="tab" onclick="switchTab('map')">MAPA</div>
 </div>
 
@@ -154,72 +100,119 @@
     <div id="page-comms" class="page active">
         <div id="atis-bar">
             <button class="atis-btn" id="atis-btn" onclick="fetchRealATIS()">☁️ METAR REAL</button>
-            <div style="font-size:0.8rem; color:#888; display:none;" id="atis-info">...</div>
         </div>
         <div id="log"></div>
     </div>
 
+    <div id="page-school" class="page">
+        <div class="ref-section">
+            <div class="ref-title">ALFABETO FONÉTICO</div>
+            <table class="ref-table">
+                <tr><td>A</td><td>Alpha</td><td>N</td><td>November</td></tr>
+                <tr><td>B</td><td>Bravo</td><td>O</td><td>Oscar</td></tr>
+                <tr><td>C</td><td>Charlie</td><td>P</td><td>Papa</td></tr>
+                <tr><td>D</td><td>Delta</td><td>Q</td><td>Quebec</td></tr>
+                <tr><td>E</td><td>Echo</td><td>R</td><td>Romeo</td></tr>
+                <tr><td>F</td><td>Foxtrot</td><td>S</td><td>Sierra</td></tr>
+                <tr><td>G</td><td>Golf</td><td>T</td><td>Tango</td></tr>
+                <tr><td>H</td><td>Hotel</td><td>U</td><td>Uniform</td></tr>
+                <tr><td>I</td><td>India</td><td>V</td><td>Victor</td></tr>
+                <tr><td>J</td><td>Juliet</td><td>W</td><td>Whiskey</td></tr>
+                <tr><td>K</td><td>Kilo</td><td>X</td><td>X-ray</td></tr>
+                <tr><td>L</td><td>Lima</td><td>Y</td><td>Yankee</td></tr>
+                <tr><td>M</td><td>Mike</td><td>Z</td><td>Zulu</td></tr>
+            </table>
+
+            <div class="ref-title">NÚMEROS</div>
+            <table class="ref-table">
+                <tr><td>0</td><td>Zero</td><td>5</td><td>Cinco</td></tr>
+                <tr><td>1</td><td>Uno</td><td>6</td><td>Meia</td></tr>
+                <tr><td>2</td><td>Dois</td><td>7</td><td>Sete</td></tr>
+                <tr><td>3</td><td>Três</td><td>8</td><td>Oito</td></tr>
+                <tr><td>4</td><td>Quatro</td><td>9</td><td>Niner</td></tr>
+                <tr><td>.</td><td>Decimal</td><td>100</td><td>Uno Cento</td></tr>
+            </table>
+
+            <div class="ref-title">GLOSSÁRIO</div>
+            <table class="ref-table">
+                <tr><th>TERMO</th><th>SIGNIFICADO</th></tr>
+                <tr><td>QNH</td><td>Ajuste do Altímetro (Pressão)</td></tr>
+                <tr><td>Squawk</td><td>Código do Transponder</td></tr>
+                <tr><td>Wilco</td><td>Will Comply (Vou cumprir)</td></tr>
+                <tr><td>Roger</td><td>Ciente (Entendi)</td></tr>
+                <tr><td>ILS</td><td>Sistema de Pouso por Instrumento</td></tr>
+            </table>
+        </div>
+    </div>
+
     <div id="page-map" class="page">
-        <div id="map-container">
-            <div class="no-map">Sem mapa disponível.</div>
+        <div style="display:flex; justify-content:center; align-items:center; height:100%; color:#444;" id="map-container">
+            Sem mapa.
         </div>
     </div>
 </div>
 
 <div id="deck">
-    <div class="sug-card" onclick="copySug()">
-        <div class="sug-lbl">TOQUE PARA COPIAR:</div>
+    <div class="sug-card" id="sug-card" onclick="copySug()">
+        <div class="sug-lbl">RESPOSTA CORRETA:</div>
         <div class="sug-txt" id="sug-txt">...</div>
     </div>
+
     <div class="inp-row">
-        <input type="text" id="inp" placeholder="Mensagem..." onkeypress="if(event.key==='Enter') send()">
+        <button class="help" onclick="toggleHelp()">?</button>
+        <input type="text" id="inp" placeholder="Fale aqui..." onkeypress="if(event.key==='Enter') send()">
         <button class="send" onclick="send()">ENV</button>
     </div>
 </div>
 
 <script>
     // --- ESTADO ---
-    let f = { callsign: 'PT-IOS', dep: 'SBMT', arr: 'SBGL', rwy_dep: '12', rwy_arr: '10', sid: 'VETOR', alt: 'FL140', squawk: '2000', map_url: '', freqs: { gnd: '121.90', twr: '118.10', app: '129.50', acc: '124.30' } };
+    let f = { callsign: 'PT-IOS', dep: 'SBMT', arr: 'SBGL', rwy_dep: '12', rwy_arr: '10', sid: 'VETOR', alt: 'FL140', squawk: '2000', freqs: { gnd: '121.90', twr: '118.10', app: '129.50', acc: '124.30' } };
     let state = { step: 0, hasATIS: false, phase: 'DEP' };
 
-    // --- ROTEIRO ---
+    // --- ROTEIRO (Com validação estrita) ---
     const script = [
-        { role: 'gnd', hint: 'Requer ATIS', pilot: () => `Solo, ${f.callsign}, info ${state.phase==='DEP'?'Alpha':'Bravo'}, solicita autorização.`, key: ['autorização','alpha'], reply: () => `${f.callsign}, autorizado ${f.arr}, saída ${f.sid}, nível 060, squawk ${f.squawk}.` },
-        { role: 'gnd', hint: 'Cotejar', pilot: () => `Autorizado ${f.arr}, saída ${f.sid}, 060, ${f.squawk}, ${f.callsign}.`, key: ['autorizado'], reply: () => `${f.callsign}, correto. Chame pronto táxi.` },
-        { role: 'gnd', hint: 'Táxi', pilot: () => `${f.callsign}, pronto táxi.`, key: ['táxi'], reply: () => `${f.callsign}, taxie ponto de espera ${f.rwy_dep}. Chame Torre ${f.freqs.twr}.`, act: 'twr' },
-        { role: 'twr', hint: 'Decolagem', pilot: () => `Torre, ${f.callsign}, pronto espera ${f.rwy_dep}.`, key: ['torre','pronto'], reply: () => `${f.callsign}, autorizado decolagem ${f.rwy_dep}.` },
-        { role: 'twr', hint: 'Handoff', pilot: () => `Decolado, ${f.callsign}.`, key: ['decolado'], reply: () => `${f.callsign}, contate Controle ${f.freqs.app}.`, act: 'app' },
-        { role: 'app', hint: 'Subida', pilot: () => `Controle, ${f.callsign}, subindo.`, key: ['controle'], reply: () => `${f.callsign}, contato radar. Subida livre nível ${f.alt}.` },
-        { role: 'app', hint: 'Handoff ACC', pilot: () => `Nível ${f.alt}, ${f.callsign}.`, key: ['nível'], reply: () => `${f.callsign}, chame Centro ${f.freqs.acc}.`, act: 'acc' },
-        { role: 'acc', hint: 'Cruzeiro', pilot: () => `Centro, ${f.callsign}, nível de cruzeiro.`, key: ['centro'], reply: () => `${f.callsign}, ciente. Reporte ideal de descida.` },
-        { role: 'acc', hint: 'Descida', pilot: () => `Centro, ${f.callsign}, solicita descida.`, key: ['descida'], reply: () => `${f.callsign}, autorizado descida FL100. Chame Controle ${f.freqs.app}.`, act: 'app_arr' },
-        { role: 'app', hint: 'Aproximação', pilot: () => `Controle, ${f.callsign}, descendo FL100, info Bravo.`, key: ['descendo','bravo'], reply: () => `${f.callsign}, espere vetoração ILS ${f.rwy_arr}.` },
-        { role: 'app', hint: 'Intercept', pilot: () => `Ciente, aguarda vetor ${f.rwy_arr}, ${f.callsign}.`, key: ['ils','vetor'], reply: () => `${f.callsign}, curve direita proa 090, autorizado aproximação. Reporte estabelecido.` },
-        { role: 'app', hint: 'Estabelecido', pilot: () => `Estabelecido, ${f.callsign}.`, key: ['estabelecido'], reply: () => `${f.callsign}, chame Torre ${f.freqs.twr}.`, act: 'twr' },
-        { role: 'twr', hint: 'Final', pilot: () => `Torre, ${f.callsign}, na final ${f.rwy_arr}.`, key: ['torre','final'], reply: () => `${f.callsign}, livre pouso ${f.rwy_arr}.` },
-        { role: 'twr', hint: 'Solo', pilot: () => `No solo, livrando, ${f.callsign}.`, key: ['solo','livrando'], reply: () => `${f.callsign}, bem vindo. Contate Solo ${f.freqs.gnd}.`, act: 'gnd' },
-        { role: 'gnd', hint: 'Gate', pilot: () => `Solo, ${f.callsign}, solicita táxi pátio.`, key: ['solo','táxi'], reply: () => `${f.callsign}, taxie via Bravo. Corte a critério.` }
+        { role: 'gnd', hint: 'Peça autorização e informe o ATIS', pilot: () => `Solo, ${f.callsign}, info ${state.phase==='DEP'?'Alpha':'Bravo'}, solicita autorização.`, key: ['autorização','alpha'], reply: () => `${f.callsign}, autorizado ${f.arr}, saída ${f.sid}, nível 060, transponder ${f.squawk}.` },
+        
+        { role: 'gnd', hint: 'Faça o cotejamento (Repita a autorização)', pilot: () => `Autorizado ${f.arr}, saída ${f.sid}, 060, ${f.squawk}, ${f.callsign}.`, key: ['autorizado', f.squawk], reply: () => `${f.callsign}, correto. Chame pronto táxi.` },
+        
+        { role: 'gnd', hint: 'Peça Táxi', pilot: () => `${f.callsign}, pronto táxi.`, key: ['táxi'], reply: () => `${f.callsign}, taxie ponto de espera ${f.rwy_dep}. Chame Torre ${f.freqs.twr}.`, act: 'twr' },
+        
+        { role: 'twr', hint: 'Informe Ponto de Espera', pilot: () => `Torre, ${f.callsign}, pronto espera ${f.rwy_dep}.`, key: ['torre','pronto'], reply: () => `${f.callsign}, autorizado decolagem ${f.rwy_dep}.` },
+        
+        { role: 'twr', hint: 'Reporte Decolagem', pilot: () => `Decolado, ${f.callsign}.`, key: ['decolado'], reply: () => `${f.callsign}, contate Controle Saída ${f.freqs.app}.`, act: 'app' },
+        
+        { role: 'app', hint: 'Chamada Inicial Controle', pilot: () => `Controle, ${f.callsign}, subindo.`, key: ['controle'], reply: () => `${f.callsign}, contato radar. Subida livre nível ${f.alt}.` },
+        
+        { role: 'app', hint: 'Reporte Nível / Handoff', pilot: () => `Nível ${f.alt}, ${f.callsign}.`, key: ['nível'], reply: () => `${f.callsign}, chame Centro ${f.freqs.acc}.`, act: 'acc' },
+        
+        { role: 'acc', hint: 'Chamada Centro', pilot: () => `Centro, ${f.callsign}, nível de cruzeiro.`, key: ['centro'], reply: () => `${f.callsign}, ciente. Reporte ideal de descida.` },
+        
+        { role: 'acc', hint: 'Peça Descida', pilot: () => `Centro, ${f.callsign}, solicita descida.`, key: ['descida'], reply: () => `${f.callsign}, autorizado descida nível 100. Chame Controle ${f.freqs.app}.`, act: 'app_arr' },
+        
+        { role: 'app', hint: 'Descida Inicial (Informe ATIS Chegada)', pilot: () => `Controle, ${f.callsign}, descendo nível 100, info Bravo.`, key: ['descendo','bravo'], reply: () => `${f.callsign}, ciente. Espere vetoração ILS pista ${f.rwy_arr}.` },
+        
+        { role: 'app', hint: 'Coteje Vetoração', pilot: () => `Ciente, aguarda vetor ILS ${f.rwy_arr}, ${f.callsign}.`, key: ['ils','vetor'], reply: () => `${f.callsign}, curve direita proa 090, autorizado aproximação. Reporte estabelecido.` },
+        
+        { role: 'app', hint: 'Reporte Estabelecido no ILS', pilot: () => `Estabelecido, ${f.callsign}.`, key: ['estabelecido'], reply: () => `${f.callsign}, chame Torre ${f.freqs.twr}.`, act: 'twr' },
+        
+        { role: 'twr', hint: 'Chamada Final', pilot: () => `Torre, ${f.callsign}, na final ${f.rwy_arr}.`, key: ['torre','final'], reply: () => `${f.callsign}, livre pouso ${f.rwy_arr}.` },
+        
+        { role: 'twr', hint: 'Livrando Pista', pilot: () => `No solo, livrando, ${f.callsign}.`, key: ['solo','livrando'], reply: () => `${f.callsign}, bem vindo. Contate Solo ${f.freqs.gnd}.`, act: 'gnd' },
+        
+        { role: 'gnd', hint: 'Peça Táxi Pátio', pilot: () => `Solo, ${f.callsign}, solicita táxi pátio.`, key: ['solo','táxi'], reply: () => `${f.callsign}, taxie via Bravo. Corte a critério.` }
     ];
 
     // --- FUNÇÕES ---
-    window.onload = () => {
-        if(localStorage.getItem('atc_s')) {
-            document.getElementById('resume-btn').style.display = 'block';
-            document.getElementById('sb-user').value = localStorage.getItem('sb_u') || '';
-        }
-    };
-
     async function importData() {
         const u = document.getElementById('sb-user').value;
         const btn = document.querySelector('.setup-btn');
         if(!u) return alert("Digite usuário");
         btn.innerText = "CARREGANDO...";
-        
         try {
             const r = await fetch(`https://www.simbrief.com/api/xml.fetcher.php?username=${u}&json=1`);
             const d = await r.json();
             
-            // Tratamento de dados seguro
             let al = d.general.icao_airline || "";
             let num = d.general.flight_number || "";
             f.callsign = (al && typeof al==='string') ? al+num : (d.aircraft.reg_num || "PT-SIM");
@@ -227,45 +220,28 @@
             f.dep = d.origin.icao_code || "SBMT"; f.arr = d.destination.icao_code || "SBGL";
             f.rwy_dep = d.origin.plan_rwy || "12"; f.rwy_arr = d.destination.plan_rwy || "10";
             f.alt = "FL" + Math.round((parseInt(d.general.cruise_altitude)||14000)/100);
-            f.map_url = d.images?.directory ? `${d.images.directory}${d.images.map[0].link}` : "";
+            
+            if(d.images?.directory) document.getElementById('map-container').innerHTML = `<img src="${d.images.directory}${d.images.map[0].link}" style="width:100%; height:100%; object-fit:contain;">`;
 
             state = { step: 0, hasATIS: false, phase: 'DEP' };
-            localStorage.setItem('sb_u', u);
             startSim();
-        } catch(e) { console.error(e); alert("Erro ao importar."); btn.innerText = "IMPORTAR"; }
+        } catch(e) { alert("Erro ao importar."); btn.innerText = "IMPORTAR"; }
     }
 
-    function resumeFlight() {
-        if(localStorage.getItem('atc_f')) {
-            f = JSON.parse(localStorage.getItem('atc_f'));
-            state = JSON.parse(localStorage.getItem('atc_s'));
-            startSim(true);
-        }
-    }
-
-    function startSim(resumed = false) {
+    function startSim() {
         document.getElementById('setup').style.display = 'none';
         document.getElementById('cs-disp').innerText = f.callsign;
-        
-        if(f.map_url) document.getElementById('map-container').innerHTML = `<img id="map-img" src="${f.map_url}">`;
-        
-        // Restaura frequência
-        let r = 'gnd';
-        if(state.step>=3) r='twr'; if(state.step>=5) r='app'; if(state.step>=7) r='acc';
-        if(state.step>=9) r='app'; if(state.step>=12) r='twr'; if(state.step>=14) r='gnd';
-        
-        setFreq(r, false);
-        updateSug();
-        initAudio();
-        addLog(resumed ? ">>> VOO RESTAURADO <<<" : `>>> BEM VINDO, ${f.callsign} <<<`, 'sys');
-        saveState();
+        setFreq('gnd', false);
+        window.AudioContext = window.AudioContext || window.webkitAudioContext;
+        if(!audioCtx) audioCtx = new AudioContext();
+        addLog(`>>> BEM VINDO, ${f.callsign}. SELECIONE A ABA ESCOLA PARA AJUDA. <<<`, 'sys');
     }
 
     function switchTab(t) {
         document.querySelectorAll('.tab').forEach(e => e.classList.remove('active'));
         document.querySelectorAll('.page').forEach(e => e.classList.remove('active'));
-        if(t === 'comms') { document.querySelector('.tab:nth-child(1)').classList.add('active'); document.getElementById('page-comms').classList.add('active'); } 
-        else { document.querySelector('.tab:nth-child(2)').classList.add('active'); document.getElementById('page-map').classList.add('active'); }
+        document.getElementById(`page-${t}`).classList.add('active');
+        document.querySelectorAll(`.tab`)[['comms','school','map'].indexOf(t)].classList.add('active');
     }
 
     async function fetchRealATIS() {
@@ -281,28 +257,64 @@
             let txt = `${icao} Info ${state.phase==='DEP'?'Alpha':'Bravo'}. Vento ${wind[1]} ${wind[2]}kt. QNH ${qnh[1]}.`;
             speak(txt, 'atis');
             state.hasATIS = true;
-            btn.innerText = state.phase === 'DEP' ? "SAÍDA (Alpha)" : "CHEGADA (Bravo)";
-            updateSug(); saveState();
-        } catch(e) { speak("Erro Metar. Info Alpha.", 'atis'); state.hasATIS=true; updateSug(); }
+            btn.innerText = state.phase === 'DEP' ? "Info Alpha (OK)" : "Info Bravo (OK)";
+            btn.style.background = "#4caf50";
+        } catch(e) { speak("Erro Metar. Info Alpha.", 'atis'); state.hasATIS=true; }
     }
 
     function send() {
-        const i = document.getElementById('inp');
-        const t = i.value.trim();
-        if(!t) return;
-        addLog(t, 'pilot');
+        const inp = document.getElementById('inp');
+        const txt = inp.value.trim();
+        if(!txt) return;
+
+        addLog(txt, 'pilot');
+
         if(state.step < script.length) {
             const s = script[state.step];
-            if(s.hint.includes("Requer ATIS") && !state.hasATIS) { setTimeout(()=>addLog("⚠️ Ouça o METAR!", 'sys'), 500); i.value=''; return; }
-            if(s.key.some(k=>t.toLowerCase().includes(k)) || t.length>8) {
+
+            // Validação de ATIS
+            if(s.hint.includes("Requer ATIS") && !state.hasATIS) {
+                setTimeout(()=>addLog("⚠️ Ouça o METAR/ATIS antes de chamar!", 'sys'), 500);
+                inp.value = ''; return;
+            }
+
+            // Validação de Palavras-Chave (MODO PROFESSOR)
+            const missing = s.key.filter(k => !txt.toLowerCase().includes(k.toLowerCase()));
+            
+            if(missing.length === 0 || txt.length > 15) {
+                // Sucesso
                 setTimeout(()=>{
-                    const ans = s.reply(); speak(ans, s.role); addLog(ans, s.role);
+                    const ans = s.reply();
+                    speak(ans, s.role);
+                    addLog(ans, s.role);
                     if(s.act) setTimeout(()=>changeMode(s.act), 4000);
-                    state.step++; updateSug(); saveState();
-                }, 1000);
+                    state.step++;
+                    document.getElementById('sug-card').style.display = 'none'; // Esconde cola
+                }, 800);
+            } else {
+                // Erro (Feedback)
+                inp.classList.add('error');
+                setTimeout(()=>inp.classList.remove('error'), 500);
+                if(window.navigator.vibrate) window.navigator.vibrate(200);
+                setTimeout(()=>{
+                    addLog(`❌ Faltou dizer: "${missing.join(', ')}"`, 'hint');
+                }, 500);
             }
         }
-        i.value = '';
+        inp.value = '';
+    }
+
+    function toggleHelp() {
+        const card = document.getElementById('sug-card');
+        if(state.step < script.length) {
+            document.getElementById('sug-txt').innerText = script[state.step].pilot();
+            card.style.display = card.style.display === 'block' ? 'none' : 'block';
+        }
+    }
+    
+    function copySug() { 
+        document.getElementById('inp').value = document.getElementById('sug-txt').innerText; 
+        document.getElementById('sug-card').style.display = 'none';
     }
 
     function changeMode(act) {
@@ -311,7 +323,6 @@
             const btn = document.getElementById('atis-btn');
             btn.innerText = "☁️ METAR CHEGADA"; btn.style.background = "#ff9100";
         } else { setFreq(act); }
-        saveState();
     }
 
     function setFreq(r, snd=true) {
@@ -323,22 +334,16 @@
         if(snd && audioCtx) playSquelch();
     }
 
-    function updateSug() {
-        if(!state.hasATIS && state.step===0) document.getElementById('sug-txt').innerText = "(Toque em METAR REAL acima)";
-        else document.getElementById('sug-txt').innerText = state.step<script.length ? script[state.step].pilot() : "Voo Finalizado.";
-    }
-    function copySug() { document.getElementById('inp').value = document.getElementById('sug-txt').innerText; }
     function addLog(t, type) {
         const d = document.createElement('div'); d.className=`msg ${type}`; d.innerText=t;
         const l = document.getElementById('log'); l.appendChild(d); l.scrollTop = l.scrollHeight;
     }
-    function saveState() { localStorage.setItem('atc_f', JSON.stringify(f)); localStorage.setItem('atc_s', JSON.stringify(state)); }
 
     /* AUDIO */
     let audioCtx, noise;
-    function initAudio() { window.AudioContext=window.AudioContext||window.webkitAudioContext; if(!audioCtx)audioCtx=new AudioContext(); }
     function playSquelch() {
-        if(!audioCtx) initAudio(); if(audioCtx.state==='suspended') audioCtx.resume();
+        if(!audioCtx) { window.AudioContext=window.AudioContext||window.webkitAudioContext; audioCtx=new AudioContext(); }
+        if(audioCtx.state==='suspended') audioCtx.resume();
         const s=audioCtx.createBufferSource(); 
         if(!noise){ noise=audioCtx.createBuffer(1,audioCtx.sampleRate,audioCtx.sampleRate); const d=noise.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*0.2-0.1; }
         s.buffer=noise; const g=audioCtx.createGain(); g.gain.value=0.2;
